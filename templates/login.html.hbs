@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Log in</title>
+  </head>
+  <body>
+    <form action="login" method="post">
+      <input type="hidden" name="client_id" value="{{ auth_req.client_id }}">
+      <input type="hidden" name="scope" value="{{ auth_req.scope }}">
+      <input type="hidden" name="state">
+      <input type="hidden" name="redirect_uri" value="{{ auth_req.redirect_uri }}">
+      <div>
+        <label for="username">Username</label>
+        <input type="text" name="username" id="name" required>
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" required>
+      </div>
+      <div>
+        <input type="submit" value="Log in">
+      </div>
+    </form>
+  </body>
+</html>
