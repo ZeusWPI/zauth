@@ -3,9 +3,12 @@
 
 extern crate rocket;
 extern crate rocket_contrib;
+extern crate chrono;
+
 #[macro_use] extern crate serde_derive;
 
 mod oauth;
+mod models;
 
 use rocket_contrib::Template;
 

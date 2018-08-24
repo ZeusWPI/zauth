@@ -6,17 +6,17 @@
   </head>
   <body>
     <form action="login" method="post">
-      <input type="hidden" name="client_id" value="{{ auth_req.client_id }}">
-      <input type="hidden" name="scope" value="{{ auth_req.scope }}">
-      <input type="hidden" name="state">
-      <input type="hidden" name="redirect_uri" value="{{ auth_req.redirect_uri }}">
-      <div>
+      <input type="hidden" name="state" value="{{ state }}">
         <label for="username">Username</label>
         <input type="text" name="username" id="name" required>
       </div>
       <div>
         <label for="password">Password</label>
         <input type="password" name="password" id="password" required>
+      </div>
+      <div>
+        <label for="remember_me">Remember me</label>
+        <input type="checkbox" name="remember_me" id="remember_me" required>
       </div>
       <div>
         <input type="submit" value="Log in">

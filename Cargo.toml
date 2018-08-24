@@ -4,12 +4,14 @@ version = "0.1.0"
 authors = ["Rien Maertens <maertensrien@gmail.com>"]
 
 [dependencies]
-rocket = "0.3.15"
-rocket_codegen = "0.3.15"
+chrono = { version = "0.4", features = ["serde"] }
+rocket = "0.3"
+rocket_codegen = "0.3"
 serde = "1.0"
 serde_derive = "1.0"
+serde_urlencoded = "0.5"
 
 [dependencies.rocket_contrib]
-version = "0.3.15"
+version = "0.3"
 default-features = false
 features = ["handlebars_templates"]
