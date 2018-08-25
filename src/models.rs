@@ -8,18 +8,27 @@ extern crate serde_urlencoded;
 #[derive(Serialize, Deserialize, Debug, FromForm)]
 pub struct State {
     client_id: String,
-    redirect_uri: Option<String>,
+    redirect_uri: String,
     scope: Option<String>,
-    state: Option<String>
+    client_state: Option<String>
 }
 
 impl State {
+    pub fn redirect_uri_with_state(&self) -> String {
+        let state_param = self.client_state.as_ref().map_or(String::new(), |s| format!("state={}", s));
+        format!("{}?{}", self.redirect_uri, state_param)
+    }
+
+    pub fn client_state(&self) -> Option<&String> {
+        self.client_state.as_ref()
+    }
+
     pub fn from_req(auth_req : AuthorizationRequest) -> State {
         State {
             client_id : auth_req.client_id,
             redirect_uri : auth_req.redirect_uri,
             scope : auth_req.scope,
-            state : auth_req.state
+            client_state : auth_req.state
         }
     }
 
@@ -59,7 +68,7 @@ impl Client {
         &self.id
     }
 
-    pub fn redirect_uri_acceptable(&self, _redirect_uri : &Option<String>) -> bool {
+    pub fn redirect_uri_acceptable(&self, _redirect_uri : &str) -> bool {
         true
     }
 
@@ -77,7 +86,13 @@ pub struct User {
 }
 
 impl User {
-    pub fn find(username : &String, _password : &String) -> Option<User> {
+    pub fn find(username : &String) -> Option<User> {
+        Some(User{
+            username : username.clone()
+        })
+    }
+
+    pub fn find_and_authenticate(username : &String, _password : &String) -> Option<User> {
         Some(User{
             username : username.clone()
         })
@@ -97,6 +112,11 @@ impl Session {
             username,
             expiry
         }
+    }
+
+    pub fn user(&self) -> User {
+        User::find(&self.username)
+            .expect("session for unexisting user")
     }
 
     pub fn add_to_cookies(user : &User, cookies : &mut Cookies) {

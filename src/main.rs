@@ -6,16 +6,25 @@ extern crate rocket_contrib;
 extern crate chrono;
 
 #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate lazy_static;
 
 mod oauth;
 mod models;
+mod http_authentication;
 
 use rocket_contrib::Template;
+use rocket::response::status::NotFound;
+
+#[get("/favicon.ico")]
+pub fn favicon() -> NotFound<()> {
+    NotFound(())
+}
 
 
 fn main() {
     let rocket = rocket::ignite();
     oauth::mount("/oauth/", rocket)
+        .mount("/", routes![favicon])
         .attach(Template::fairing())
         .launch();
 }

@@ -1,26 +1,32 @@
+extern crate serde_urlencoded;
+extern crate chrono;
+extern crate regex;
+extern crate base64;
+
 use rocket::Rocket;
+use rocket::Outcome;
+use rocket::http::Status;
 use rocket::http::Cookies;
 use rocket::response::status::{BadRequest,NotFound};
 use rocket::response::Redirect;
 use rocket::request::Form;
 use rocket_contrib::Template;
+use rocket::request::{self, Request, FromRequest};
 
 use models::*;
-
-extern crate serde_urlencoded;
-extern crate chrono;
+use http_authentication::{BasicAuthentication};
 
 pub const SESSION_VALIDITY_MINUTES : i64 = 60;
 
 pub fn mount(loc : &'static str, rocket : Rocket) -> Rocket {
-    rocket.mount(loc, routes![authorize, authorize_parse_failed, login_get, login_post, grant_get, grant_post])
+    rocket.mount(loc, routes![authorize, authorize_parse_failed, login_get, login_post, grant_get, grant_post, token])
 }
 
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 pub struct AuthorizationRequest {
     pub response_type: String,
     pub client_id: String,
-    pub redirect_uri: Option<String>,
+    pub redirect_uri: String,
     pub scope: Option<String>,
     pub state: Option<String>
 }
@@ -64,7 +70,7 @@ fn login_get(state : State) -> Template {
 fn login_post(mut cookies : Cookies, form : Form<LoginFormData>) -> Result<Redirect, Template> {
     let data = form.into_inner();
     let state = State::decode(&data.state).unwrap();
-    if let Some(user) = User::find(&data.username, &data.password) {
+    if let Some(user) = User::find_and_authenticate(&data.username, &data.password) {
         Session::add_to_cookies(&user, &mut cookies);
         Ok(Redirect::to(&format!("./grant?{}", data.state)))
     } else {
@@ -87,11 +93,45 @@ fn grant_get(mut cookies : Cookies, state : State) -> Result<Template, String> {
     }
 }
 
-#[post("/grant", data="<data>")]
-fn grant_post(mut cookies : Cookies, data : Form<GrantFormData>) -> String {
-    if let Some(_) = Session::from_cookies(&mut cookies) {
-        String::from(format!("{:?}", data.into_inner()))
+#[post("/grant", data="<form>")]
+fn grant_post(mut cookies : Cookies, form : Form<GrantFormData>) -> Result<Redirect, String> {
+    if let Some(session) = Session::from_cookies(&mut cookies) {
+        let data = form.into_inner();
+        let state = State::decode(&data.state).unwrap();
+        if data.grant {
+            Ok(authorization_granted(state, session.user()))
+        } else {
+            Ok(authorization_denied(state))
+        }
     } else {
-        String::from("No cookie :(")
+        Err(String::from("No cookie :("))
     }
 }
+
+fn authorization_granted(state : State, user : User) -> Redirect {
+    // add code to state
+
+    let authorization_code = "authorization_code";
+    Redirect::to(&format!("{}&code={}", state.redirect_uri_with_state(), authorization_code))
+}
+
+fn authorization_denied(state : State) -> Redirect {
+    Redirect::to(&format!("{}&error=access_denied", state.redirect_uri_with_state()))
+}
+
+#[derive(FromForm, Debug)]
+struct TokenFormData {
+    grant_type : String,
+    code : String,
+    redirect_uri : String,
+    client_id : String
+}
+
+
+#[post("/token", data="<form>")]
+fn token(auth : BasicAuthentication, form : Form<TokenFormData>) -> String {
+    format!("{:?}", auth)
+}
+
+
+
