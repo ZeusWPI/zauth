@@ -4,12 +4,15 @@
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate chrono;
+extern crate regex;
+extern crate rand;
 
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate lazy_static;
 
 mod oauth;
 mod models;
+mod token_store;
 mod http_authentication;
 
 use rocket_contrib::Template;

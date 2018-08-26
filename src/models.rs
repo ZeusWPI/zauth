@@ -6,25 +6,21 @@ use oauth::*;
 extern crate serde_urlencoded;
 
 #[derive(Serialize, Deserialize, Debug, FromForm)]
-pub struct State {
-    client_id: String,
-    redirect_uri: String,
-    scope: Option<String>,
-    client_state: Option<String>
+pub struct AuthState {
+    pub client_id: String,
+    pub redirect_uri: String,
+    pub scope: Option<String>,
+    pub client_state: Option<String>
 }
 
-impl State {
+impl AuthState {
     pub fn redirect_uri_with_state(&self) -> String {
         let state_param = self.client_state.as_ref().map_or(String::new(), |s| format!("state={}", s));
         format!("{}?{}", self.redirect_uri, state_param)
     }
 
-    pub fn client_state(&self) -> Option<&String> {
-        self.client_state.as_ref()
-    }
-
-    pub fn from_req(auth_req : AuthorizationRequest) -> State {
-        State {
+    pub fn from_req(auth_req : AuthorizationRequest) -> AuthState {
+        AuthState {
             client_id : auth_req.client_id,
             redirect_uri : auth_req.redirect_uri,
             scope : auth_req.scope,
@@ -36,7 +32,7 @@ impl State {
         serde_urlencoded::to_string(self).unwrap()
     }
 
-    pub fn decode(state_str : &str) -> Option<State> {
+    pub fn decode(state_str : &str) -> Option<AuthState> {
         serde_urlencoded::from_str(state_str).ok()
     }
 }
@@ -48,7 +44,7 @@ pub struct TemplateContext {
 }
 
 impl TemplateContext {
-    pub fn from_state(state : State) -> TemplateContext {
+    pub fn from_state(state : AuthState) -> TemplateContext {
         TemplateContext {
             client_name : state.client_id.clone(),
             state : state.encode()
@@ -86,6 +82,10 @@ pub struct User {
 }
 
 impl User {
+    pub fn username(&self) -> &String {
+        &self.username
+    }
+
     pub fn find(username : &String) -> Option<User> {
         Some(User{
             username : username.clone()
