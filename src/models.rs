@@ -3,7 +3,9 @@ use chrono::{DateTime, Local, Duration};
 
 use oauth::*;
 
+extern crate bincode;
 extern crate serde_urlencoded;
+extern crate base64;
 
 #[derive(Serialize, Deserialize, Debug, FromForm)]
 pub struct AuthState {
@@ -28,12 +30,20 @@ impl AuthState {
         }
     }
 
-    pub fn encode(&self) -> String {
+    pub fn encode_url(&self) -> String {
         serde_urlencoded::to_string(self).unwrap()
     }
 
-    pub fn decode(state_str : &str) -> Option<AuthState> {
+    pub fn decode_url(state_str : &str) -> Option<AuthState> {
         serde_urlencoded::from_str(state_str).ok()
+    }
+
+    pub fn encode_b64(&self) -> String {
+        base64::encode(&bincode::serialize(self).unwrap())
+    }
+
+    pub fn decode_b64(state_str : &str) -> Option<AuthState> {
+        bincode::deserialize(&base64::decode(state_str).ok().unwrap()).ok()
     }
 }
 
@@ -47,7 +57,7 @@ impl TemplateContext {
     pub fn from_state(state : AuthState) -> TemplateContext {
         TemplateContext {
             client_name : state.client_id.clone(),
-            state : state.encode()
+            state : state.encode_b64()
         }
     }
 }

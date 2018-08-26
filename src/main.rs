@@ -15,19 +15,21 @@ mod models;
 mod token_store;
 mod http_authentication;
 
-use rocket_contrib::Template;
-use rocket::response::status::NotFound;
+use rocket::Rocket;
 
 #[get("/favicon.ico")]
-pub fn favicon() -> NotFound<()> {
-    NotFound(())
+pub fn favicon() -> &'static str {
+    ""
+}
+
+fn rocket() -> Rocket {
+    let rocket = rocket::ignite();
+    oauth::mount("/oauth/", rocket)
+        .mount("/", routes![favicon])
 }
 
 
 fn main() {
-    let rocket = rocket::ignite();
-    oauth::mount("/oauth/", rocket)
-        .mount("/", routes![favicon])
-        .attach(Template::fairing())
-        .launch();
+    rocket().launch();
 }
+
