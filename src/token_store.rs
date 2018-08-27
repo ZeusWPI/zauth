@@ -10,6 +10,7 @@ use models::*;
 const TOKEN_VALIDITY_SECONDS : i64 = 3600;
 const TOKEN_LENGTH : usize = 32;
 
+#[derive(Debug)]
 struct Token {
     token_str : String,
     username : String,
@@ -18,6 +19,7 @@ struct Token {
     expiry    : DateTime<Local>
 }
 
+#[derive(Debug)]
 pub struct TokenStore {
     tokens : Mutex<HashMap<String, Token>>
 }
@@ -35,11 +37,11 @@ impl TokenStore {
 
     fn remove_expired_tokens(tokens : &mut HashMap<String, Token>) {
         let now = Local::now();
-        tokens.retain(|_key, token| token.expiry < now);
+        tokens.retain(|_key, token| now < token.expiry);
     }
 
     pub fn create_token(&self, client_id : &String, user : &User, redirect_uri : &String) -> String {
-        let tokens = &mut self.tokens.lock().unwrap();
+        let tokens : &mut HashMap<String, Token> = &mut self.tokens.lock().unwrap();
 
         Self::remove_expired_tokens(tokens);
 
@@ -61,7 +63,7 @@ impl TokenStore {
 
     pub fn fetch_token_username(&self, client : &Client, redirect_uri : String, token_str : String)
         -> Result<String, &'static str> {
-        let tokens = &mut self.tokens.lock().unwrap();
+        let tokens : &mut HashMap<String, Token> = &mut self.tokens.lock().unwrap();
         Self::remove_expired_tokens(tokens);
         tokens.remove(&token_str)
             .ok_or("Token not in use")

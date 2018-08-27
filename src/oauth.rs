@@ -88,7 +88,6 @@ struct GrantFormData {
 
 #[get("/grant?<state>")]
 fn grant_get(mut cookies : Cookies, state : AuthState) -> Result<Template, String> {
-    println!("Cookies: {:?}", cookies);
     if let Some(_) = Session::from_cookies(&mut cookies) {
         Ok(Template::render("grant", TemplateContext::from_state(state)))
     } else {
@@ -126,7 +125,6 @@ struct TokenFormData {
     grant_type : String,
     code : String,
     redirect_uri : String,
-    client_id : String
 }
 
 fn check_client_authentication(auth : BasicAuthentication) -> Option<Client> {
@@ -180,17 +178,14 @@ fn token(auth : BasicAuthentication, form : Form<TokenFormData>, token_state : S
     let token_store = token_state.inner();
     let client_opt = check_client_authentication(auth);
     if let Some(client) = client_opt {
-        if client.id() == &data.client_id {
-            return match token_store.fetch_token_username(&client, data.redirect_uri, data.code) {
-                Ok(username) => Ok(TokenSuccess::json(username)),
-                Err(msg)     => Err(TokenError::json_extra("invalid_grant", msg))
-            }
-        } else {
-            return Err(TokenError::json("invalid_grant"))
+        match token_store.fetch_token_username(&client, data.redirect_uri, data.code) {
+            Ok(username) => Ok(TokenSuccess::json(username)),
+            Err(msg)     => Err(TokenError::json_extra("invalid_grant", msg))
         }
+    } else {
+        // return 401, with WWW-Autheticate
+        Err(TokenError::json("invalid_client"))
     }
-    // return 401, with WWW-Autheticate
-    Err(TokenError::json("invalid_client"))
 }
 
 
@@ -198,22 +193,31 @@ fn token(auth : BasicAuthentication, form : Form<TokenFormData>, token_state : S
 #[cfg(test)]
 mod test {
     extern crate rocket;
-    extern crate percent_encoding;
+    extern crate urlencoding;
+    extern crate serde_json;
 
     use super::*;
     use rocket::http::Status;
+    use rocket::http::Header;
     use rocket::local::Client;
     use rocket::http::ContentType;
     use rocket::http::Cookie;
+    use self::serde_json::Value;
     use regex::Regex;
-    use self::percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 
     fn create_http_client() -> Client {
         Client::new(mount("/oauth", rocket::ignite())).expect("valid rocket instance")
     }
 
     fn url(content : &str) -> String {
-        utf8_percent_encode(content, DEFAULT_ENCODE_SET).to_string()
+        urlencoding::encode(content)
+    }
+
+    fn get_param(param_name : &str, query : &String) -> Option<String> {
+        Regex::new(&format!("{}=([^&]+)", param_name))
+            .expect("valid regex")
+            .captures(query)
+            .map(|c| c[1].to_string())
     }
 
     #[test]
@@ -223,9 +227,9 @@ mod test {
         let redirect_uri = "https://example.com/redirect/me/here";
         let client_id = "test";
         let client_secret = "nananana";
+        let client_state = "anarchy (╯°□°)╯ ┻━┻";
         let user_username = "batman";
         let user_password = "wolololo";
-        let state = "anarchy (╯°□°)╯ ┻━┻";
 
         // 1. User is redirected to OAuth server with request params given by the client
         //    The OAuth server should respond with a redirect to the login page.
@@ -233,7 +237,7 @@ mod test {
             "/oauth/authorize?response_type=code&redirect_uri={}&client_id={}&state={}",
             url(redirect_uri),
             url(client_id),
-            url(state)
+            url(client_state)
             );
         let response = http_client.get(authorize_url).dispatch();
 
@@ -260,7 +264,7 @@ mod test {
                                 form_state
                                );
 
-        let mut response = http_client.post(login_url)
+        let response = http_client.post(login_url)
             .body(form_body)
             .header(ContentType::Form)
             .dispatch();
@@ -268,25 +272,78 @@ mod test {
         assert_eq!(response.status(), Status::SeeOther);
         let grant_location = response.headers().get_one("Location").expect("Location header");
         assert!(grant_location.starts_with("./grant"));
-        let session_cookie_str = response.headers().get_one("Set-Cookie").expect("Session cookie");
+        let session_cookie_str = response.headers().get_one("Set-Cookie").expect("Session cookie").to_owned();
         let cookie_regex = Regex::new("^([^=]+)=([^;]+).*").unwrap();
         let (cookie_name, cookie_content) = cookie_regex.captures(&session_cookie_str)
-            .map(|c| (c[1].to_string(), c[2].to_string()))
+            .map(|c| (c[1].to_string(), urlencoding::decode(&c[2]).unwrap()))
             .expect("session cookie");
 
         // 4. User requests grant page
         let grant_url = format!("/oauth{}", &grant_location[1..]);
-        let cookie = Cookie::new(cookie_name, cookie_content);
-        println!("Cookie sent: {:?}", cookie);
-        let mut response = http_client.get(grant_url).cookie(cookie).dispatch();
+        let mut response = http_client.get(grant_url)
+            .cookie(Cookie::new(cookie_name.to_string(), cookie_content.to_string()))
+            .dispatch();
 
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(response.content_type(), Some(ContentType::HTML));
 
         let state_regex = Regex::new("<input type=\"hidden\" name=\"state\" value=\"([^\"]+)\">").unwrap();
         let body = response.body_string().expect("response body");
-        let form_state = state_regex.captures(&body).map(|c| c[1].to_string()).expect("hidden state field");
+        let form_state = state_regex.captures(&body)
+            .map(|c| c[1].to_string())
+            .expect("hidden state field");
 
+        // 5. User posts to grant page
+        let grant_url = "/oauth/grant";
+        let form_body = format!("state={}&grant=true", form_state);
+
+        let response = http_client.post(grant_url)
+            .body(form_body)
+            .cookie(Cookie::new(cookie_name.to_string(), cookie_content.to_string()))
+            .header(ContentType::Form)
+            .dispatch();
+
+        assert_eq!(response.status(), Status::SeeOther);
+        let redirect_location = response.headers().get_one("Location").expect("Location header");
+
+        let redirect_uri_regex = Regex::new("^([^?]+)?(.*)$").unwrap();
+        let (redirect_uri_base, redirect_uri_params) = redirect_uri_regex.captures(&redirect_location)
+            .map(|c| (c[1].to_string(), c[2].to_string()))
+            .unwrap();
+
+        assert_eq!(redirect_uri_base, redirect_uri);
+
+        let authorization_code = get_param("code", &redirect_uri_params).expect("authorization code");
+        let state = get_param("state", &redirect_uri_params).expect("state");
+
+        assert_eq!(client_state, urlencoding::decode(&state).expect("state decoded"));
+
+        // 6. Client requests access code
+        let token_url = "/oauth/token";
+        let form_body = format!("grant_type=authorization_code&code={}&redirect_uri={}", authorization_code, redirect_uri);
+
+        let credentials = base64::encode(&format!("{}:{}", client_id, client_secret));
+
+        println!("Request body: {:?}", form_body);
+        let req = http_client.post(token_url)
+                                .header(ContentType::Form)
+                                .header(Header::new("Authorization", format!("Basic {}", credentials)))
+                                .body(form_body);
+
+
+        let mut response = req.dispatch();
+
+        assert_eq!(response.status(), Status::Ok);
+        assert_eq!(response.content_type().expect("content type"), ContentType::JSON);
+
+        let response_body = response.body_string().expect("response body");
+        println!("{}", response_body);
+        let data : Value = serde_json::from_str(&response_body)
+                            .expect("response json values");
+
+        assert!(data["access_code"].is_string());
+        assert!(data["token_type"].is_string());
+        assert_eq!(data["token_type"], "???");
     }
 }
 

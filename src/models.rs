@@ -6,6 +6,7 @@ use oauth::*;
 extern crate bincode;
 extern crate serde_urlencoded;
 extern crate base64;
+extern crate urlencoding;
 
 #[derive(Serialize, Deserialize, Debug, FromForm)]
 pub struct AuthState {
@@ -17,7 +18,7 @@ pub struct AuthState {
 
 impl AuthState {
     pub fn redirect_uri_with_state(&self) -> String {
-        let state_param = self.client_state.as_ref().map_or(String::new(), |s| format!("state={}", s));
+        let state_param = self.client_state.as_ref().map_or(String::new(), |s| format!("state={}", urlencoding::encode(s)));
         format!("{}?{}", self.redirect_uri, state_param)
     }
 
@@ -32,10 +33,6 @@ impl AuthState {
 
     pub fn encode_url(&self) -> String {
         serde_urlencoded::to_string(self).unwrap()
-    }
-
-    pub fn decode_url(state_str : &str) -> Option<AuthState> {
-        serde_urlencoded::from_str(state_str).ok()
     }
 
     pub fn encode_b64(&self) -> String {
@@ -138,6 +135,6 @@ impl Session {
 
     pub fn from_cookies(cookies : &mut Cookies) -> Option<Session> {
         cookies.get_private("session")
-               .map_or(None, |cookie| serde_urlencoded::from_str(cookie.value()).ok())
+               .and_then(|cookie| serde_urlencoded::from_str(cookie.value()).ok())
     }
 }
