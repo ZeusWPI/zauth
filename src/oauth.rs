@@ -18,10 +18,26 @@ use http_authentication::{BasicAuthentication};
 
 pub const SESSION_VALIDITY_MINUTES : i64 = 60;
 
-pub fn mount(loc : &'static str, rocket : Rocket) -> Rocket {
+pub fn mount<C : 'static + ClientProvider, U : 'static + UserProvider>(loc : &'static str, rocket : Rocket, client_provider : C, user_provider : U)
+    -> Rocket {
     rocket.mount(loc, routes![authorize, authorize_parse_failed, login_get, login_post, grant_get, grant_post, token])
+        .manage(client_provider)
+        .manage(user_provider)
         .manage(TokenStore::new())
         .attach(Template::fairing())
+}
+
+
+
+pub trait ClientProvider : Sync + Send {
+    fn client_exists(&self, client_id : &str) -> bool;
+    fn client_has_uri(&self, client_id : &str,  redirect_uri : &str) -> bool;
+    fn authorize_client(&self, client_id : &str, client_password : &str) -> bool;
+}
+
+pub trait UserProvider : Sync + Send {
+    fn authorize_user(&self, user_id : &str, user_password : &str) -> bool;
+    fn user_access_token(&self, user_id : &str) -> String;
 }
 
 #[derive(Debug, FromForm, Serialize, Deserialize)]
@@ -205,8 +221,35 @@ mod test {
     use self::serde_json::Value;
     use regex::Regex;
 
+    struct UserProviderImpl {}
+
+    impl UserProvider for UserProviderImpl {
+        fn authorize_user(&self, user_id : &str, user_password : &str) -> bool {
+            true
+        }
+        fn user_access_token(&self, user_id : &str) -> String {
+            format!("This is an access token for {}", user_id)
+        }
+    }
+
+    struct ClientProviderImpl {}
+
+    impl ClientProvider for ClientProviderImpl {
+        fn client_exists(&self, client_id : &str) -> bool {
+            true
+        }
+        fn client_has_uri(&self, client_id : &str,  redirect_uri : &str) -> bool {
+            true
+        }
+        fn authorize_client(&self, client_id : &str, client_password : &str) -> bool {
+            true
+        }
+    }
+
     fn create_http_client() -> Client {
-        Client::new(mount("/oauth", rocket::ignite())).expect("valid rocket instance")
+        let cp = ClientProviderImpl {};
+        let up = UserProviderImpl {};
+        Client::new(mount("/oauth", rocket::ignite(), cp, up)).expect("valid rocket instance")
     }
 
     fn url(content : &str) -> String {
@@ -329,7 +372,6 @@ mod test {
                                 .header(ContentType::Form)
                                 .header(Header::new("Authorization", format!("Basic {}", credentials)))
                                 .body(form_body);
-
 
         let mut response = req.dispatch();
 
