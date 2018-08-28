@@ -1,12 +1,12 @@
-#![feature(plugin, custom_derive)]
+#![feature(plugin, custom_derive, decl_macro)]
 #![plugin(rocket_codegen)]
 
-extern crate rocket;
 extern crate rocket_contrib;
 extern crate chrono;
 extern crate regex;
 extern crate rand;
 
+#[macro_use] extern crate rocket;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate lazy_static;
 

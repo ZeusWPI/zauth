@@ -18,6 +18,7 @@ use http_authentication::{BasicAuthentication};
 
 pub const SESSION_VALIDITY_MINUTES : i64 = 60;
 
+
 pub fn mount<C : 'static + ClientProvider, U : 'static + UserProvider>(loc : &'static str, rocket : Rocket, client_provider : C, user_provider : U)
     -> Rocket {
     rocket.mount(loc, routes![authorize, authorize_parse_failed, login_get, login_post, grant_get, grant_post, token])
@@ -26,8 +27,6 @@ pub fn mount<C : 'static + ClientProvider, U : 'static + UserProvider>(loc : &'s
         .manage(TokenStore::new())
         .attach(Template::fairing())
 }
-
-
 
 pub trait ClientProvider : Sync + Send {
     fn client_exists(&self, client_id : &str) -> bool;
@@ -57,7 +56,7 @@ pub fn authorize(req : AuthorizationRequest) -> Result<Redirect, NotFound<String
     if let Some(client) = Client::find(&req.client_id) {
         if client.redirect_uri_acceptable(&req.redirect_uri) {
             let state = AuthState::from_req(req);
-            Ok(Redirect::to(&format!("./login?{}", state.encode_url())))
+            Ok(Redirect::to(format!("./login?{}", state.encode_url())))
         } else {
             Err(NotFound(format!("Redirect uri '{:?}' is not allowed for client with id '{}'", req.redirect_uri, client.id())))
         }
@@ -85,12 +84,12 @@ fn login_get(state : AuthState) -> Template {
 }
 
 #[post("/login", data="<form>")]
-fn login_post(mut cookies : Cookies, form : Form<LoginFormData>) -> Result<Redirect, Template> {
+fn login_post(mut cookies : Cookies, form : Form<LoginFormData>, ) -> Result<Redirect, Template> {
     let data = form.into_inner();
     let state = AuthState::decode_b64(&data.state).unwrap();
     if let Some(user) = User::find_and_authenticate(&data.username, &data.password) {
         Session::add_to_cookies(&user, &mut cookies);
-        Ok(Redirect::to(&format!("./grant?{}", state.encode_url())))
+        Ok(Redirect::to(format!("./grant?{}", state.encode_url())))
     } else {
         Err(Template::render("login", TemplateContext::from_state(state)))
     }
@@ -129,11 +128,11 @@ fn grant_post(mut cookies : Cookies, form : Form<GrantFormData>, token_state : S
 
 fn authorization_granted(state : AuthState, user : User, token_store : &TokenStore) -> Redirect {
     let authorization_code = token_store.create_token(&state.client_id, &user, &state.redirect_uri);
-    Redirect::to(&format!("{}&code={}", state.redirect_uri_with_state(), authorization_code))
+    Redirect::to(format!("{}&code={}", state.redirect_uri_with_state(), authorization_code))
 }
 
 fn authorization_denied(state : AuthState) -> Redirect {
-    Redirect::to(&format!("{}&error=access_denied", state.redirect_uri_with_state()))
+    Redirect::to(format!("{}&error=access_denied", state.redirect_uri_with_state()))
 }
 
 #[derive(FromForm, Debug)]
