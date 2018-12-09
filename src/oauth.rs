@@ -9,8 +9,8 @@ use rocket::http::Cookies;
 use rocket::response::status::{BadRequest,NotFound};
 use rocket::response::Redirect;
 use rocket::request::Form;
-use rocket_contrib::Template;
-use rocket_contrib::Json;
+use rocket_contrib::templates::Template;
+use rocket_contrib::json::Json;
 
 use models::*;
 use token_store::TokenStore;
@@ -18,12 +18,15 @@ use http_authentication::{BasicAuthentication};
 
 pub const SESSION_VALIDITY_MINUTES : i64 = 60;
 
+type MountPoint = &'static str;
 
 pub fn mount<C : 'static + ClientProvider, U : 'static + UserProvider>(loc : &'static str, rocket : Rocket, client_provider : C, user_provider : U)
     -> Rocket {
+        let mount_point : MountPoint = loc;
     rocket.mount(loc, routes![authorize, authorize_parse_failed, login_get, login_post, grant_get, grant_post, token])
         .manage(client_provider)
         .manage(user_provider)
+        .manage(mount_point)
         .manage(TokenStore::new())
         .attach(Template::fairing())
 }
@@ -48,15 +51,17 @@ pub struct AuthorizationRequest {
     pub state: Option<String>
 }
 
-#[get("/authorize?<req>")]
-pub fn authorize(req : AuthorizationRequest) -> Result<Redirect, NotFound<String>> {
+#[get("/authorize?<req..>")]
+pub fn authorize(req: Form<AuthorizationRequest>, mp: State<MountPoint>)
+    -> Result<Redirect, NotFound<String>> {
+    let req = req.into_inner();
     if !req.response_type.eq("code"){
         return Err(NotFound(String::from("we only support authorization code")));
     }
     if let Some(client) = Client::find(&req.client_id) {
         if client.redirect_uri_acceptable(&req.redirect_uri) {
             let state = AuthState::from_req(req);
-            Ok(Redirect::to(format!("./login?{}", state.encode_url())))
+            Ok(Redirect::to(format!("{}{}", mp.inner(), uri!(login_get: state))))
         } else {
             Err(NotFound(format!("Redirect uri '{:?}' is not allowed for client with id '{}'", req.redirect_uri, client.id())))
         }
@@ -78,18 +83,18 @@ struct LoginFormData {
     state: String
 }
 
-#[get("/login?<state>")]
-fn login_get(state : AuthState) -> Template {
-    Template::render("login", TemplateContext::from_state(state))
+#[get("/login?<state..>")]
+fn login_get(state : Form<AuthState>) -> Template {
+    Template::render("login", TemplateContext::from_state(state.into_inner()))
 }
 
 #[post("/login", data="<form>")]
-fn login_post(mut cookies : Cookies, form : Form<LoginFormData>, ) -> Result<Redirect, Template> {
+fn login_post(mut cookies : Cookies, form : Form<LoginFormData>, mp: State<MountPoint>) -> Result<Redirect, Template> {
     let data = form.into_inner();
     let state = AuthState::decode_b64(&data.state).unwrap();
     if let Some(user) = User::find_and_authenticate(&data.username, &data.password) {
         Session::add_to_cookies(&user, &mut cookies);
-        Ok(Redirect::to(format!("./grant?{}", state.encode_url())))
+        Ok(Redirect::to(format!("{}{}", mp.inner(), uri!(grant_get: state))))
     } else {
         Err(Template::render("login", TemplateContext::from_state(state)))
     }
@@ -101,10 +106,10 @@ struct GrantFormData {
     grant : bool
 }
 
-#[get("/grant?<state>")]
-fn grant_get(mut cookies : Cookies, state : AuthState) -> Result<Template, String> {
+#[get("/grant?<state..>")]
+fn grant_get(mut cookies : Cookies, state : Form<AuthState>) -> Result<Template, String> {
     if let Some(_) = Session::from_cookies(&mut cookies) {
-        Ok(Template::render("grant", TemplateContext::from_state(state)))
+        Ok(Template::render("grant", TemplateContext::from_state(state.into_inner())))
     } else {
         Err(String::from("No cookie :("))
     }
@@ -285,11 +290,11 @@ mod test {
 
         assert_eq!(response.status(), Status::SeeOther);
         let login_location = response.headers().get_one("Location").expect("Location header");
-        assert!(login_location.starts_with("./login"));
+        println!("login location: {}", login_location);
+        assert!(login_location.starts_with("/oauth/login"));
 
         // 2. User requests the login page
-        let login_url = format!("/oauth{}", &login_location[1..]);
-        let mut response = http_client.get(login_url).dispatch();
+        let mut response = http_client.get(login_location).dispatch();
 
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(response.content_type(), Some(ContentType::HTML));
@@ -313,7 +318,7 @@ mod test {
 
         assert_eq!(response.status(), Status::SeeOther);
         let grant_location = response.headers().get_one("Location").expect("Location header");
-        assert!(grant_location.starts_with("./grant"));
+        assert!(grant_location.starts_with("/oauth/grant"));
         let session_cookie_str = response.headers().get_one("Set-Cookie").expect("Session cookie").to_owned();
         let cookie_regex = Regex::new("^([^=]+)=([^;]+).*").unwrap();
         let (cookie_name, cookie_content) = cookie_regex.captures(&session_cookie_str)
@@ -321,8 +326,7 @@ mod test {
             .expect("session cookie");
 
         // 4. User requests grant page
-        let grant_url = format!("/oauth{}", &grant_location[1..]);
-        let mut response = http_client.get(grant_url)
+        let mut response = http_client.get(grant_location)
             .cookie(Cookie::new(cookie_name.to_string(), cookie_content.to_string()))
             .dispatch();
 

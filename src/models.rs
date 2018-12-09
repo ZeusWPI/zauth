@@ -8,7 +8,7 @@ extern crate serde_urlencoded;
 extern crate base64;
 extern crate urlencoding;
 
-#[derive(Serialize, Deserialize, Debug, FromForm)]
+#[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
 pub struct AuthState {
     pub client_id: String,
     pub redirect_uri: String,

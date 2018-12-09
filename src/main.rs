@@ -1,5 +1,4 @@
-#![feature(plugin, custom_derive, decl_macro)]
-#![plugin(rocket_codegen)]
+#![feature(decl_macro, proc_macro_hygiene)]
 
 extern crate rocket_contrib;
 extern crate chrono;
