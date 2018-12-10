@@ -61,8 +61,8 @@ impl TemplateContext {
 
 #[derive(Debug)]
 pub struct Client {
-    id : String,
-    allowed_uris: Vec<String>
+    pub id : String,
+    pub allowed_uris: Vec<String>
 }
 
 

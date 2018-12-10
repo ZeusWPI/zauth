@@ -144,7 +144,9 @@ fn authorization_denied(state : AuthState) -> Redirect {
 struct TokenFormData {
     grant_type : String,
     code : String,
-    redirect_uri : String,
+    redirect_uri : Option<String>,
+    client_id : Option<String>,
+    client_secret : Option<String>
 }
 
 fn check_client_authentication(auth : BasicAuthentication) -> Option<Client> {
@@ -174,7 +176,7 @@ impl TokenError {
 
 #[derive(Serialize, Debug)]
 struct TokenSuccess {
-    access_code : String,
+    access_token : String,
     token_type : String,
     expires_in : u64,
 }
@@ -182,7 +184,7 @@ struct TokenSuccess {
 impl TokenSuccess {
     fn json(username : String) -> Json<TokenSuccess> {
         Json(TokenSuccess {
-            access_code : username.clone(),
+            access_token: username.clone(),
             token_type : String::from("???"),
             expires_in: 1,
         })
@@ -192,22 +194,24 @@ impl TokenSuccess {
 
 
 #[post("/token", data="<form>")]
-fn token(auth : BasicAuthentication, form : Form<TokenFormData>, token_state : State<TokenStore>)
+fn token(auth : Option<BasicAuthentication>, form : Form<TokenFormData>, token_state : State<TokenStore>)
     -> Result<Json<TokenSuccess>, Json<TokenError>> {
     let data = form.into_inner();
     let token_store = token_state.inner();
-    let client_opt = check_client_authentication(auth);
-    if let Some(client) = client_opt {
-        match token_store.fetch_token_username(&client, data.redirect_uri, data.code) {
-            Ok(username) => Ok(TokenSuccess::json(username)),
-            Err(msg)     => Err(TokenError::json_extra("invalid_grant", msg))
-        }
-    } else {
-        // return 401, with WWW-Autheticate
-        Err(TokenError::json("invalid_client"))
+    let client = auth.and_then(check_client_authentication)
+                     .map(|client| client.id);
+    //TODO: check more client stuff (redirect_uri, id, ...)
+    match token_store.fetch_token(data.code) {
+        Ok(token)    => {
+            if client.map_or(true, |client_id| client_id == token.client_id) {
+                Ok(TokenSuccess::json(token.username))
+            } else {
+                Err(TokenError::json_extra("invalid grant", "token was not authorized to this client"))
+            }
+        },
+        Err(msg)     => Err(TokenError::json_extra("invalid_grant", msg))
     }
 }
-
 
 
 #[cfg(test)]
@@ -341,10 +345,10 @@ mod test {
 
         // 5. User posts to grant page
         let grant_url = "/oauth/grant";
-        let form_body = format!("state={}&grant=true", form_state);
+        let grant_form_body = format!("state={}&grant=true", form_state);
 
         let response = http_client.post(grant_url)
-            .body(form_body)
+            .body(grant_form_body.clone())
             .cookie(Cookie::new(cookie_name.to_string(), cookie_content.to_string()))
             .header(ContentType::Form)
             .dispatch();
@@ -364,7 +368,8 @@ mod test {
 
         assert_eq!(client_state, urlencoding::decode(&state).expect("state decoded"));
 
-        // 6. Client requests access code
+        // 6a. Client requests access code while sending its credentials
+        //     trough HTTP Auth.
         let token_url = "/oauth/token";
         let form_body = format!("grant_type=authorization_code&code={}&redirect_uri={}", authorization_code, redirect_uri);
 
@@ -386,7 +391,37 @@ mod test {
         let data : Value = serde_json::from_str(&response_body)
                             .expect("response json values");
 
-        assert!(data["access_code"].is_string());
+        assert!(data["access_token"].is_string());
+        assert!(data["token_type"].is_string());
+        assert_eq!(data["token_type"], "???");
+
+        // 6b. Client requests access code while sending its credentials
+        //     trough the form body.
+
+        // First, re-create a token
+        let token_store = http_client.rocket().state::<TokenStore>().expect("should have token store");
+        let user = &User::find(&String::from(user_username)).unwrap();
+        let authorization_code = token_store.create_token(&String::from(client_id), user, &String::from(redirect_uri));
+
+        let token_url = "/oauth/token";
+        let form_body = format!("grant_type=authorization_code&code={}&redirect_uri={}&client_secret={}", authorization_code, redirect_uri, client_secret);
+
+        println!("Request body: {:?}", form_body);
+        let req = http_client.post(token_url)
+                                .header(ContentType::Form)
+                                .body(form_body);
+
+        let mut response = req.dispatch();
+
+        assert_eq!(response.status(), Status::Ok);
+        assert_eq!(response.content_type().expect("content type"), ContentType::JSON);
+
+        let response_body = response.body_string().expect("response body");
+        println!("{}", response_body);
+        let data : Value = serde_json::from_str(&response_body)
+                            .expect("response json values");
+
+        assert!(data["access_token"].is_string());
         assert!(data["token_type"].is_string());
         assert_eq!(data["token_type"], "???");
     }

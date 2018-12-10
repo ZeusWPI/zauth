@@ -11,12 +11,12 @@ const TOKEN_VALIDITY_SECONDS : i64 = 3600;
 const TOKEN_LENGTH : usize = 32;
 
 #[derive(Debug)]
-struct Token {
-    token_str : String,
-    username : String,
-    client_id : String,
-    redirect_uri : String,
-    expiry    : DateTime<Local>
+pub struct Token {
+    pub token_str : String,
+    pub username : String,
+    pub client_id : String,
+    pub redirect_uri : String,
+    pub expiry    : DateTime<Local>
 }
 
 #[derive(Debug)]
@@ -61,20 +61,10 @@ impl TokenStore {
         return token_str
     }
 
-    pub fn fetch_token_username(&self, client : &Client, redirect_uri : String, token_str : String)
-        -> Result<String, &'static str> {
+    pub fn fetch_token(&self, token_str : String)
+        -> Result<Token, &'static str> {
         let tokens : &mut HashMap<String, Token> = &mut self.tokens.lock().unwrap();
         Self::remove_expired_tokens(tokens);
-        tokens.remove(&token_str)
-            .ok_or("Token not in use")
-            .and_then(|token| if token.redirect_uri == redirect_uri {
-                Ok(token)
-            } else {
-                Err("Redirect URI mismatch")
-            }).and_then(|token| if &token.client_id == client.id() {
-                Ok(token.username)
-            } else {
-                Err("Client ID mismatch")
-            })
+        tokens.remove(&token_str).ok_or("Token not in use")
     }
 }
