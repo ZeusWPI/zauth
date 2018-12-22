@@ -11,8 +11,8 @@ use rocket::{Rocket, State};
 use rocket_contrib::json::Json;
 use rocket_contrib::templates::Template;
 
-use http_authentication::BasicAuthentication;
 use models::*;
+use rocket_http_authentication::BasicAuthentication;
 use std::boxed::Box;
 use token_store::TokenStore;
 use util::redirect_to_relative;

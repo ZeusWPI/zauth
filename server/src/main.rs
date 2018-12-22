@@ -16,16 +16,12 @@ extern crate lazy_static;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
+extern crate rocket_oauth2_server;
 
-mod http_authentication;
-mod models;
-mod oauth;
-mod token_store;
 mod user;
-mod util;
 
-use oauth::{ClientProvider, UserProvider};
 use rocket::Rocket;
+use rocket_oauth2_server::oauth::{self, ClientProvider, UserProvider};
 use user::User;
 
 use self::regex::Regex;

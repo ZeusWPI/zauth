@@ -1,10 +1,13 @@
+extern crate base64;
+extern crate regex;
+extern crate rocket;
+#[macro_use]
+extern crate lazy_static;
+
 use self::regex::Regex;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
-
-extern crate base64;
-extern crate regex;
 
 fn b64_to_credentials(b64: String) -> Option<BasicAuthentication> {
 	let credentials = base64::decode(&b64)
