@@ -3,29 +3,44 @@
 extern crate chrono;
 extern crate rand;
 extern crate regex;
-extern crate rocket_contrib;
 
+#[macro_use]
+extern crate rocket_contrib;
 #[macro_use]
 extern crate rocket;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
 
 mod http_authentication;
 mod models;
 mod oauth;
 mod token_store;
+mod user;
 mod util;
 
 use oauth::{ClientProvider, UserProvider};
 use rocket::Rocket;
+use user::User;
 
 use self::regex::Regex;
+use diesel::SqliteConnection;
+use rocket::fairing::AdHoc;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
 use rocket_contrib::json::Json;
+
+// Embed diesel migrations (provides embedded_migrations::run())
+embed_migrations!();
+
+#[database("sqlite_database")]
+pub struct DbConn(SqliteConnection);
 
 #[get("/favicon.ico")]
 pub fn favicon() -> &'static str {
@@ -73,6 +88,11 @@ pub fn current_user(token: AuthorizationToken) -> Json<AuthorizationToken> {
 	Json(token)
 }
 
+#[get("/users")]
+pub fn users(conn: DbConn) -> Json<Vec<User>> {
+	Json(User::all(&conn))
+}
+
 #[derive(Clone)]
 struct UserProviderImpl {}
 
@@ -112,7 +132,18 @@ fn rocket() -> Rocket {
 	let cp = ClientProviderImpl {};
 	let up = UserProviderImpl {};
 	oauth::mount("/oauth/", rocket, cp, up)
-		.mount("/", routes![favicon, current_user])
+		.attach(DbConn::fairing())
+		.attach(AdHoc::on_attach("Database Migrations", |rocket| {
+			let conn = DbConn::get_one(&rocket).expect("database connection");
+			match embedded_migrations::run(&*conn) {
+				Ok(()) => Ok(rocket),
+				Err(e) => {
+					eprintln!("Failed to run database migrations: {:?}", e);
+					Err(rocket)
+				},
+			}
+		}))
+		.mount("/", routes![favicon, current_user, users])
 }
 
 fn main() {
