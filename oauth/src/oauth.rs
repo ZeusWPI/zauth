@@ -147,7 +147,7 @@ fn login_post(
 	mut cookies: Cookies,
 	form: Form<LoginFormData>,
 	mp: State<MountPoint>,
-	user_provider: State<Box<dyn UserProvider>>,
+	user_provider: State<Box<UserProvider>>,
 ) -> Result<Redirect, Template>
 {
 	let data = form.into_inner();
