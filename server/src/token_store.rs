@@ -4,7 +4,7 @@ use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use models::*;
+use models::user::*;
 
 const TOKEN_VALIDITY_SECONDS: i64 = 3600;
 const TOKEN_LENGTH: usize = 32;

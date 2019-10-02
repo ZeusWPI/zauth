@@ -3,69 +3,24 @@ extern crate chrono;
 extern crate regex;
 extern crate serde_urlencoded;
 
-use rocket::http::{Cookies, Status};
+use chrono::{DateTime, Duration, Local};
+use rocket::http::{Cookie, Cookies, Status};
 use rocket::request::Form;
 use rocket::response::status::{BadRequest, Custom};
 use rocket::response::Redirect;
-use rocket::{Rocket, State};
+use rocket::State;
 use rocket_contrib::json::Json;
 use rocket_contrib::templates::Template;
 
-use models::*;
+use models::client::*;
+use models::user::*;
+
 use rocket_http_authentication::BasicAuthentication;
-use std::boxed::Box;
 use token_store::TokenStore;
-use util::redirect_to_relative;
 
 pub const SESSION_VALIDITY_MINUTES: i64 = 60;
 
 pub type MountPoint = &'static str;
-
-#[derive(Clone)]
-struct OAuth<U: UserProvider, C: ClientProvider> {
-	user_provider:   U,
-	client_provider: C,
-}
-
-pub fn mount<C: 'static + ClientProvider, U: 'static + UserProvider>(
-	loc: &'static str,
-	rocket: Rocket,
-	client_provider: C,
-	user_provider: U,
-) -> Rocket
-{
-	let mount_point: MountPoint = loc;
-	rocket
-		.mount(
-			loc,
-			routes![
-				authorize,
-				authorize_parse_failed,
-				login_get,
-				login_post,
-				grant_get,
-				grant_post,
-				token
-			],
-		)
-		.manage(Box::new(client_provider) as Box<ClientProvider>)
-		.manage(Box::new(user_provider) as Box<UserProvider>)
-		.manage(mount_point)
-		.manage(TokenStore::new())
-		.attach(Template::fairing())
-}
-
-pub trait ClientProvider: Sync + Send {
-	fn client_exists(&self, client_id: &str) -> bool;
-	fn client_has_uri(&self, client_id: &str, redirect_uri: &str) -> bool;
-	fn client_needs_grant(&self, client_id: &str) -> bool;
-	fn authorize_client(&self, client_id: &str, client_password: &str) -> bool;
-}
-
-pub trait UserProvider: Sync + Send {
-	fn authorize_user(&self, user_id: &str, user_password: &str) -> bool;
-	fn user_access_token(&self, user_id: &str) -> String;
-}
 
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 pub struct AuthorizationRequest {
@@ -76,20 +31,116 @@ pub struct AuthorizationRequest {
 	pub state:         Option<String>,
 }
 
-#[get("/authorize?<req..>")]
+#[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
+pub struct AuthState {
+	pub client_id:    String,
+	pub redirect_uri: String,
+	pub scope:        Option<String>,
+	pub client_state: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Session {
+	username: String,
+	expiry:   DateTime<Local>,
+}
+
+impl Session {
+	pub fn new(username: String) -> Session {
+		let expiry = Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES);
+		Session { username, expiry }
+	}
+
+	pub fn user(&self) -> User {
+		User::find(&self.username).expect("session for unexisting user")
+	}
+
+	pub fn add_to_cookies(username: &str, cookies: &mut Cookies) {
+		let session = Session::new(String::from(username));
+		let session_str = serde_urlencoded::to_string(session).unwrap();
+		let session_cookie = Cookie::new("session", session_str);
+		cookies.add_private(session_cookie);
+	}
+
+	pub fn from_cookies(cookies: &mut Cookies) -> Option<Session> {
+		cookies
+			.get_private("session")
+			.and_then(|cookie| serde_urlencoded::from_str(cookie.value()).ok())
+	}
+}
+
+impl AuthState {
+	pub fn redirect_uri_with_state(&self) -> String {
+		let state_param =
+			self.client_state.as_ref().map_or(String::new(), |s| {
+				format!("state={}", urlencoding::encode(s))
+			});
+		format!("{}?{}", self.redirect_uri, state_param)
+	}
+
+	pub fn from_req(auth_req: AuthorizationRequest) -> AuthState {
+		AuthState {
+			client_id:    auth_req.client_id,
+			redirect_uri: auth_req.redirect_uri,
+			scope:        auth_req.scope,
+			client_state: auth_req.state,
+		}
+	}
+
+	pub fn encode_url(&self) -> String {
+		serde_urlencoded::to_string(self).unwrap()
+	}
+
+	pub fn encode_b64(&self) -> String {
+		base64::encode(&bincode::serialize(self).unwrap())
+	}
+
+	pub fn decode_b64(state_str: &str) -> Option<AuthState> {
+		bincode::deserialize(&base64::decode(state_str).ok().unwrap()).ok()
+	}
+}
+
+#[derive(Serialize)]
+pub struct TemplateContext {
+	client_name: String,
+	state:       String,
+}
+
+impl TemplateContext {
+	pub fn from_state(state: AuthState) -> TemplateContext {
+		TemplateContext {
+			client_name: state.client_id.clone(),
+			state:       state.encode_b64(),
+		}
+	}
+}
+
+#[get("/oauth/authorize?<req..>")]
 pub fn authorize(
 	req: Form<AuthorizationRequest>,
-	cp: State<Box<ClientProvider>>,
-	mp: State<MountPoint>,
-) -> Result<Redirect, Custom<String>>
-{
+) -> Result<Redirect, Custom<String>> {
 	let req = req.into_inner();
 	if !req.response_type.eq("code") {
-		Err(Custom(
+		return Err(Custom(
 			Status::NotImplemented,
 			String::from("we only support authorization code"),
-		))
-	} else if !cp.client_exists(&req.client_id) {
+		));
+	}
+	if let Some(client) = Client::find(&req.client_id) {
+		if client.redirect_uri_acceptable(&req.redirect_uri) {
+			let state = AuthState::from_req(req);
+			Ok(Redirect::to(uri!(login_get: state)))
+		} else {
+			Err(Custom(
+				Status::Unauthorized,
+				format!(
+					"Redirect uri '{:?}' is not allowed for client with id \
+					 '{}'",
+					req.redirect_uri, req.client_id
+				),
+			))
+		}
+	} else {
 		Err(Custom(
 			Status::Unauthorized,
 			format!(
@@ -97,21 +148,10 @@ pub fn authorize(
 				req.client_id
 			),
 		))
-	} else if !cp.client_has_uri(&req.client_id, &req.redirect_uri) {
-		Err(Custom(
-			Status::Unauthorized,
-			format!(
-				"Redirect uri '{:?}' is not allowed for client with id '{}'",
-				req.redirect_uri, req.client_id
-			),
-		))
-	} else {
-		let state = AuthState::from_req(req);
-		Ok(redirect_to_relative(uri!(login_get: state), mp.inner()))
 	}
 }
 
-#[get("/authorize")]
+#[get("/oauth/authorize")]
 pub fn authorize_parse_failed() -> BadRequest<&'static str> {
 	let msg = r#"
     The authorization request could not be processed,
@@ -121,19 +161,19 @@ pub fn authorize_parse_failed() -> BadRequest<&'static str> {
 }
 
 #[derive(FromForm, Debug)]
-struct LoginFormData {
+pub struct LoginFormData {
 	username:    String,
 	password:    String,
 	remember_me: bool,
 	state:       String,
 }
 
-#[get("/login?<state..>")]
-fn login_get(state: Form<AuthState>) -> Template {
+#[get("/oauth/login?<state..>")]
+pub fn login_get(state: Form<AuthState>) -> Template {
 	Template::render("login", TemplateContext::from_state(state.into_inner()))
 }
 
-#[get("/login")]
+#[get("/oauth/login")]
 pub fn login_parse_failed() -> BadRequest<&'static str> {
 	let msg = r#"
     The login request could not be processed,
@@ -142,19 +182,19 @@ pub fn login_parse_failed() -> BadRequest<&'static str> {
 	BadRequest(Some(msg))
 }
 
-#[post("/login", data = "<form>")]
-fn login_post(
+#[post("/oauth/login", data = "<form>")]
+pub fn login_post(
 	mut cookies: Cookies,
 	form: Form<LoginFormData>,
-	mp: State<MountPoint>,
-	user_provider: State<Box<UserProvider>>,
 ) -> Result<Redirect, Template>
 {
 	let data = form.into_inner();
 	let state = AuthState::decode_b64(&data.state).unwrap();
-	if user_provider.authorize_user(&data.username, &data.password) {
+	if let Some(user) =
+		User::find_and_authenticate(&data.username, &data.password)
+	{
 		Session::add_to_cookies(&data.username, &mut cookies);
-		Ok(redirect_to_relative(uri!(grant_get: state), mp.inner()))
+		Ok(Redirect::to(uri!(grant_get: state)))
 	} else {
 		Err(Template::render(
 			"login",
@@ -164,44 +204,46 @@ fn login_post(
 }
 
 #[derive(FromForm, Debug)]
-struct GrantFormData {
+pub struct GrantFormData {
 	state: String,
 	grant: bool,
 }
 
 #[derive(Responder)]
-enum GrantResponse {
+pub enum GrantResponse {
 	T(Template),
 	R(Redirect),
 }
 
-#[get("/grant?<state..>")]
-fn grant_get<'a>(
+#[get("/oauth/grant?<state..>")]
+pub fn grant_get<'a>(
 	mut cookies: Cookies,
 	state: Form<AuthState>,
 	token_store: State<TokenStore>,
-	client_provider: State<Box<ClientProvider>>,
 ) -> Result<GrantResponse, Custom<String>>
 {
 	let session = Session::from_cookies(&mut cookies)
 		.ok_or(Custom(Status::Unauthorized, String::from("No cookie :(")))?;
-
-	if client_provider.client_needs_grant(&state.client_id) {
-		Ok(GrantResponse::T(Template::render(
-			"grant",
-			TemplateContext::from_state(state.into_inner()),
-		)))
+	if let Some(client) = Client::find(&state.client_id) {
+		if client.needs_grant() {
+			Ok(GrantResponse::T(Template::render(
+				"grant",
+				TemplateContext::from_state(state.into_inner()),
+			)))
+		} else {
+			Ok(GrantResponse::R(authorization_granted(
+				state.into_inner(),
+				session.user(),
+				token_store.inner(),
+			)))
+		}
 	} else {
-		Ok(GrantResponse::R(authorization_granted(
-			state.into_inner(),
-			session.user(),
-			token_store.inner(),
-		)))
+		return Err(Custom(Status::NotFound, String::from("client not found")));
 	}
 }
 
-#[post("/grant", data = "<form>")]
-fn grant_post(
+#[post("/oauth/grant", data = "<form>")]
+pub fn grant_post(
 	mut cookies: Cookies,
 	form: Form<GrantFormData>,
 	token_store: State<TokenStore>,
@@ -245,7 +287,7 @@ fn authorization_denied(state: AuthState) -> Redirect {
 }
 
 #[derive(Serialize, Debug)]
-struct TokenError {
+pub struct TokenError {
 	error:             String,
 	error_description: Option<String>,
 }
@@ -267,7 +309,7 @@ impl TokenError {
 }
 
 #[derive(Serialize, Debug)]
-struct TokenSuccess {
+pub struct TokenSuccess {
 	access_token: String,
 	token_type:   String,
 	expires_in:   u64,
@@ -284,7 +326,7 @@ impl TokenSuccess {
 }
 
 #[derive(FromForm, Debug)]
-struct TokenFormData {
+pub struct TokenFormData {
 	grant_type:    String,
 	code:          String,
 	redirect_uri:  Option<String>,
@@ -292,51 +334,29 @@ struct TokenFormData {
 	client_secret: Option<String>,
 }
 
-fn get_authorization(
-	cp: &Box<ClientProvider>,
-	basic_auth: Option<BasicAuthentication>,
-	client_id: Option<String>,
-	client_secret: Option<String>,
-) -> Option<String>
-{
-	let (id, secret) = if let Some(creds) = basic_auth {
-		(creds.username, creds.password)
-	} else {
-		(client_id?, client_secret?)
-	};
-	if cp.authorize_client(&id, &secret) {
-		Some(id)
-	} else {
-		None
-	}
-}
-
-#[post("/token", data = "<form>")]
-fn token(
+#[post("/oauth/token", data = "<form>")]
+pub fn token(
 	auth: Option<BasicAuthentication>,
 	form: Form<TokenFormData>,
-	user_provider: State<Box<UserProvider>>,
-	client_provider: State<Box<ClientProvider>>,
 	token_state: State<TokenStore>,
 ) -> Result<Json<TokenSuccess>, Json<TokenError>>
 {
 	let data = form.into_inner();
+	let token = data.code.clone();
 	let token_store = token_state.inner();
 
-	let client = get_authorization(
-		client_provider.inner(),
-		auth,
-		data.client_id,
-		data.client_secret,
-	)
-	.ok_or(TokenError::json("unauthorized_client"))?;
+	let client = auth
+		.map(|auth| (auth.username, auth.password))
+		.or_else(|| Some((data.client_id?, data.client_secret?)))
+		.and_then(|auth| Client::find_and_authenticate(&auth.0, &auth.1))
+		.ok_or(TokenError::json("unauthorized_client"))?;
 
 	let token = token_store
-		.fetch_token(data.code)
+		.fetch_token(token)
 		.ok_or(TokenError::json_extra("invalid_grant", "incorrect token"))?;
 
-	if client == token.client_id {
-		let access_token = user_provider.user_access_token(&token.username);
+	if client.id == token.client_id {
+		let access_token = token.username;
 		Ok(TokenSuccess::json(access_token))
 	} else {
 		Err(TokenError::json_extra(
@@ -361,48 +381,25 @@ mod test {
 	use rocket::http::Status;
 	use rocket::local::Client;
 
-	struct UserProviderImpl {}
-
-	impl UserProvider for UserProviderImpl {
-		fn authorize_user(&self, user_id: &str, user_password: &str) -> bool {
-			true
-		}
-
-		fn user_access_token(&self, user_id: &str) -> String {
-			format!("This is an access token for {}", user_id)
-		}
-	}
-
-	struct ClientProviderImpl {}
-
-	impl ClientProvider for ClientProviderImpl {
-		fn client_exists(&self, client_id: &str) -> bool {
-			true
-		}
-
-		fn client_has_uri(&self, client_id: &str, redirect_uri: &str) -> bool {
-			true
-		}
-
-		fn client_needs_grant(&self, client_id: &str) -> bool {
-			true
-		}
-
-		fn authorize_client(
-			&self,
-			client_id: &str,
-			client_password: &str,
-		) -> bool
-		{
-			true
-		}
-	}
-
 	fn create_http_client() -> Client {
-		let cp = ClientProviderImpl {};
-		let up = UserProviderImpl {};
-		Client::new(mount("/oauth", rocket::ignite(), cp, up))
-			.expect("valid rocket instance")
+		Client::new(
+			rocket::ignite()
+				.mount(
+					"/",
+					routes![
+						authorize,
+						authorize_parse_failed,
+						login_get,
+						login_post,
+						grant_get,
+						grant_post,
+						token
+					],
+				)
+				.manage(TokenStore::new())
+				.attach(Template::fairing()),
+		)
+		.expect("valid rocket instance")
 	}
 
 	fn url(content: &str) -> String {
@@ -443,6 +440,7 @@ mod test {
 			.headers()
 			.get_one("Location")
 			.expect("Location header");
+		dbg!(login_location);
 		assert!(login_location.starts_with("/oauth/login"));
 
 		// 2. User requests the login page
@@ -626,6 +624,7 @@ mod test {
 		let data: Value =
 			serde_json::from_str(&response_body).expect("response json values");
 
+		dbg!(&data);
 		assert!(data["access_token"].is_string());
 		assert!(data["token_type"].is_string());
 		assert_eq!(data["token_type"], "???");

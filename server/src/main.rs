@@ -3,6 +3,7 @@
 extern crate chrono;
 extern crate rand;
 extern crate regex;
+extern crate rocket_http_authentication;
 
 #[macro_use]
 extern crate rocket_contrib;
@@ -16,12 +17,16 @@ extern crate lazy_static;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-extern crate rocket_oauth2_server;
 
+mod models;
+mod oauth;
+mod token_store;
 mod user;
+mod util;
 
 use rocket::Rocket;
-use rocket_oauth2_server::oauth::{self, ClientProvider, UserProvider};
+use rocket_contrib::templates::Template;
+use token_store::TokenStore;
 use user::User;
 
 use self::regex::Regex;
@@ -79,56 +84,27 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthorizationToken {
 	}
 }
 
-#[get("/current_user")]
-pub fn current_user(token: AuthorizationToken) -> Json<AuthorizationToken> {
-	Json(token)
-}
-
-#[get("/users")]
-pub fn users(conn: DbConn) -> Json<Vec<User>> {
-	Json(User::all(&conn))
-}
-
-#[derive(Clone)]
-struct UserProviderImpl {}
-
-impl UserProvider for UserProviderImpl {
-	fn authorize_user(&self, _user_id: &str, _user_password: &str) -> bool {
-		true
-	}
-
-	fn user_access_token(&self, user_id: &str) -> String {
-		format!("This is an access token for {}", user_id)
-	}
-}
-
-#[derive(Clone)]
-struct ClientProviderImpl {}
-
-impl ClientProvider for ClientProviderImpl {
-	fn client_exists(&self, _client_id: &str) -> bool {
-		true
-	}
-
-	fn client_has_uri(&self, _client_id: &str, _redirect_uri: &str) -> bool {
-		true
-	}
-
-	fn client_needs_grant(&self, _client_id: &str) -> bool {
-		true
-	}
-
-	fn authorize_client(&self, _client_id: &str, _client_secret: &str) -> bool {
-		true
-	}
-}
-
 fn rocket() -> Rocket {
 	let rocket = rocket::ignite();
-	let cp = ClientProviderImpl {};
-	let up = UserProviderImpl {};
-	oauth::mount("/oauth/", rocket, cp, up)
+	rocket
+		.mount(
+			"/",
+			routes![
+				favicon,
+				current_user,
+				users,
+				oauth::authorize,
+				oauth::authorize_parse_failed,
+				oauth::login_get,
+				oauth::login_post,
+				oauth::grant_get,
+				oauth::grant_post,
+				oauth::token
+			],
+		)
 		.attach(DbConn::fairing())
+		.manage(TokenStore::new())
+		.attach(Template::fairing())
 		.attach(AdHoc::on_attach("Database Migrations", |rocket| {
 			let conn = DbConn::get_one(&rocket).expect("database connection");
 			match embedded_migrations::run(&*conn) {
@@ -139,7 +115,16 @@ fn rocket() -> Rocket {
 				},
 			}
 		}))
-		.mount("/", routes![favicon, current_user, users])
+}
+
+#[get("/current_user")]
+pub fn current_user(token: AuthorizationToken) -> Json<AuthorizationToken> {
+	Json(token)
+}
+
+#[get("/users")]
+pub fn users(conn: DbConn) -> Json<Vec<User>> {
+	Json(User::all(&conn))
 }
 
 fn main() {

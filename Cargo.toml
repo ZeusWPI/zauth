@@ -1,6 +1,5 @@
 [workspace]
 members = [
     "server/",
-    "http_authentication/",
-    "oauth/",
+    "http_authentication/"
 ]
