@@ -13,6 +13,7 @@ const TOKEN_LENGTH: usize = 32;
 pub struct Token {
 	pub token_str:    String,
 	pub username:     String,
+	pub id:           i32,
 	pub client_id:    String,
 	pub redirect_uri: String,
 	pub expiry:       DateTime<Local>,
@@ -58,7 +59,8 @@ impl TokenStore {
 		let mut token = Token {
 			token_str:    token_str.clone(),
 			redirect_uri: redirect_uri.clone(),
-			username:     user.username().clone(),
+			username:     user.username.clone(),
+			id:           user.id.expect("user should have id"),
 			client_id:    client_id.clone(),
 			expiry:       Local::now()
 				+ Duration::seconds(TOKEN_VALIDITY_SECONDS),

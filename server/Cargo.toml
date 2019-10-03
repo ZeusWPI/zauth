@@ -6,6 +6,7 @@ authors = ["Rien Maertens <maertensrien@gmail.com>"]
 [dependencies]
 base64 = "0.10"
 bincode = "1.0"
+bcrypt = "0.6"
 chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.1"
 urlencoding = "1.0"

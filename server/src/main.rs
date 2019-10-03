@@ -1,5 +1,6 @@
 #![feature(decl_macro, proc_macro_hygiene)]
 
+extern crate bcrypt;
 extern crate chrono;
 extern crate rand;
 extern crate regex;
@@ -21,19 +22,18 @@ extern crate diesel_migrations;
 mod models;
 mod oauth;
 mod token_store;
-mod user;
 mod util;
 
+use models::user::*;
 use rocket::Rocket;
 use rocket_contrib::templates::Template;
 use token_store::TokenStore;
-use user::User;
 
 use self::regex::Regex;
 use diesel::SqliteConnection;
 use rocket::fairing::AdHoc;
 use rocket::http::Status;
-use rocket::request::{self, FromRequest, Request};
+use rocket::request::{self, Form, FromRequest, Request};
 use rocket::Outcome;
 use rocket_contrib::json::Json;
 
@@ -92,6 +92,7 @@ fn rocket() -> Rocket {
 			routes![
 				favicon,
 				current_user,
+				create_user,
 				users,
 				oauth::authorize,
 				oauth::authorize_parse_failed,
@@ -125,6 +126,23 @@ pub fn current_user(token: AuthorizationToken) -> Json<AuthorizationToken> {
 #[get("/users")]
 pub fn users(conn: DbConn) -> Json<Vec<User>> {
 	Json(User::all(&conn))
+}
+
+#[derive(FromForm)]
+pub struct NewUser {
+	username: String,
+	password: String,
+	admin:    bool,
+}
+
+#[post("/users", data = "<user>")]
+pub fn create_user(user: Form<NewUser>, conn: DbConn) -> Json<Option<User>> {
+	Json(User::create(
+		&user.username,
+		&user.password,
+		user.admin,
+		&conn,
+	))
 }
 
 fn main() {

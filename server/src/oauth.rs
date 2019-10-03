@@ -12,6 +12,7 @@ use rocket::State;
 use rocket_contrib::json::Json;
 use rocket_contrib::templates::Template;
 
+use super::DbConn;
 use models::client::*;
 use models::user::*;
 
@@ -41,31 +42,50 @@ pub struct AuthState {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Session {
-	username: String,
-	expiry:   DateTime<Local>,
+	id:     i32,
+	expiry: DateTime<Local>,
 }
 
 impl Session {
-	pub fn new(username: String) -> Session {
-		let expiry = Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES);
-		Session { username, expiry }
+	pub fn new(user: User) -> Result<Session, String> {
+		if let Some(id) = user.id {
+			let expiry =
+				Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES);
+			Ok(Session { id, expiry })
+		} else {
+			Err(String::from("User without id"))
+		}
 	}
 
-	pub fn user(&self) -> User {
-		User::find(&self.username).expect("session for unexisting user")
-	}
-
-	pub fn add_to_cookies(username: &str, cookies: &mut Cookies) {
-		let session = Session::new(String::from(username));
+	pub fn add_to_cookies(
+		user: User,
+		cookies: &mut Cookies,
+	) -> Result<(), String>
+	{
+		let session = Session::new(user)?;
 		let session_str = serde_urlencoded::to_string(session).unwrap();
 		let session_cookie = Cookie::new("session", session_str);
 		cookies.add_private(session_cookie);
+		Ok(())
 	}
 
-	pub fn from_cookies(cookies: &mut Cookies) -> Option<Session> {
+	pub fn user_from_cookies(
+		cookies: &mut Cookies,
+		conn: &DbConn,
+	) -> Option<User>
+	{
 		cookies
 			.get_private("session")
 			.and_then(|cookie| serde_urlencoded::from_str(cookie.value()).ok())
+			.and_then(|session: Self| session.user(conn))
+	}
+
+	fn user(&self, conn: &DbConn) -> Option<User> {
+		if Local::now() > self.expiry {
+			None
+		} else {
+			User::find(*&self.id, conn)
+		}
 	}
 }
 
@@ -186,14 +206,15 @@ pub fn login_parse_failed() -> BadRequest<&'static str> {
 pub fn login_post(
 	mut cookies: Cookies,
 	form: Form<LoginFormData>,
+	conn: DbConn,
 ) -> Result<Redirect, Template>
 {
 	let data = form.into_inner();
 	let state = AuthState::decode_b64(&data.state).unwrap();
-	if let Some(user) =
-		User::find_and_authenticate(&data.username, &data.password)
-	{
-		Session::add_to_cookies(&data.username, &mut cookies);
+	let user =
+		User::find_and_authenticate(&data.username, &data.password, &conn);
+	if let Some(user) = user {
+		Session::add_to_cookies(user, &mut cookies);
 		Ok(Redirect::to(uri!(grant_get: state)))
 	} else {
 		Err(Template::render(
@@ -220,10 +241,12 @@ pub fn grant_get<'a>(
 	mut cookies: Cookies,
 	state: Form<AuthState>,
 	token_store: State<TokenStore>,
+	conn: DbConn,
 ) -> Result<GrantResponse, Custom<String>>
 {
-	let session = Session::from_cookies(&mut cookies)
+	let user = Session::user_from_cookies(&mut cookies, &conn)
 		.ok_or(Custom(Status::Unauthorized, String::from("No cookie :(")))?;
+
 	if let Some(client) = Client::find(&state.client_id) {
 		if client.needs_grant() {
 			Ok(GrantResponse::T(Template::render(
@@ -233,7 +256,7 @@ pub fn grant_get<'a>(
 		} else {
 			Ok(GrantResponse::R(authorization_granted(
 				state.into_inner(),
-				session.user(),
+				user,
 				token_store.inner(),
 			)))
 		}
@@ -247,18 +270,15 @@ pub fn grant_post(
 	mut cookies: Cookies,
 	form: Form<GrantFormData>,
 	token_store: State<TokenStore>,
+	conn: DbConn,
 ) -> Result<Redirect, Custom<&'static str>>
 {
-	let session = Session::from_cookies(&mut cookies)
+	let user = Session::user_from_cookies(&mut cookies, &conn)
 		.ok_or(Custom(Status::Unauthorized, "No cookie :("))?;
 	let data = form.into_inner();
 	let state = AuthState::decode_b64(&data.state).unwrap();
 	if data.grant {
-		Ok(authorization_granted(
-			state,
-			session.user(),
-			token_store.inner(),
-		))
+		Ok(authorization_granted(state, user, token_store.inner()))
 	} else {
 		Ok(authorization_denied(state))
 	}
@@ -368,12 +388,14 @@ pub fn token(
 
 #[cfg(test)]
 mod test {
+	extern crate diesel;
 	extern crate rocket;
 	extern crate serde_json;
 	extern crate urlencoding;
 
 	use self::serde_json::Value;
 	use super::*;
+	use diesel::prelude::*;
 	use regex::Regex;
 	use rocket::http::ContentType;
 	use rocket::http::Cookie;
@@ -400,6 +422,10 @@ mod test {
 				.attach(Template::fairing()),
 		)
 		.expect("valid rocket instance")
+	}
+
+	fn db() -> SqliteConnection {
+		SqliteConnection::establish("sqlite:db/db.sqlite").unwrap()
 	}
 
 	fn url(content: &str) -> String {
@@ -594,10 +620,11 @@ mod test {
 			.rocket()
 			.state::<TokenStore>()
 			.expect("should have token store");
-		let user = &User::find(&String::from(user_username)).unwrap();
+		let db = db();
+		let user = User::find(1, &db).expect("user");
 		let authorization_code = token_store.create_token(
 			&String::from(client_id),
-			user,
+			&user,
 			&String::from(redirect_uri),
 		);
 
