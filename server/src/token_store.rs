@@ -60,7 +60,7 @@ impl TokenStore {
 			token_str:    token_str.clone(),
 			redirect_uri: redirect_uri.clone(),
 			username:     user.username.clone(),
-			id:           user.id.expect("user should have id"),
+			id:           user.id,
 			client_id:    client_id.clone(),
 			expiry:       Local::now()
 				+ Duration::seconds(TOKEN_VALIDITY_SECONDS),

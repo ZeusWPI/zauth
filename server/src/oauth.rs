@@ -42,31 +42,23 @@ pub struct AuthState {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Session {
-	id:     i32,
-	expiry: DateTime<Local>,
+	user_id: i32,
+	expiry:  DateTime<Local>,
 }
 
 impl Session {
-	pub fn new(user: User) -> Result<Session, String> {
-		if let Some(id) = user.id {
-			let expiry =
-				Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES);
-			Ok(Session { id, expiry })
-		} else {
-			Err(String::from("User without id"))
+	pub fn new(user: User) -> Session {
+		Session {
+			user_id: user.id,
+			expiry:  Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES),
 		}
 	}
 
-	pub fn add_to_cookies(
-		user: User,
-		cookies: &mut Cookies,
-	) -> Result<(), String>
-	{
-		let session = Session::new(user)?;
+	pub fn add_to_cookies(user: User, cookies: &mut Cookies) {
+		let session = Session::new(user);
 		let session_str = serde_urlencoded::to_string(session).unwrap();
 		let session_cookie = Cookie::new("session", session_str);
 		cookies.add_private(session_cookie);
-		Ok(())
 	}
 
 	pub fn user_from_cookies(
@@ -84,7 +76,7 @@ impl Session {
 		if Local::now() > self.expiry {
 			None
 		} else {
-			User::find(*&self.id, conn)
+			User::find(*&self.user_id, conn)
 		}
 	}
 }

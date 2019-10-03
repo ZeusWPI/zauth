@@ -1,83 +1,86 @@
-use diesel::dsl::max;
-use diesel::{self, prelude::*, Insertable, Queryable};
+use diesel::{self, prelude::*};
 
 use self::schema::user;
-use self::schema::user::dsl::user as all_users;
+use self::schema::user::dsl::user as users;
 
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::*;
+
+mod schema {
+	table! {
+		user {
+			id -> Integer,
+			username -> Text,
+			#[sql_name = "password"]
+			hashed_password -> Text,
+			admin -> Bool,
+		}
+	}
+}
 
 #[table_name = "user"]
 #[derive(Serialize, Queryable, Insertable, Debug, Clone)]
 pub struct User {
-	pub id:       Option<i32>,
+	pub id: i32,
+	pub username: String,
+	#[serde(skip)] // Let's not send our users their hashed password, shall we?
+	pub hashed_password: String,
+	pub admin: bool,
+}
+
+#[derive(FromForm, Debug, Clone)]
+pub struct NewUser {
 	pub username: String,
 	pub password: String,
-	pub admin:    bool,
+}
+
+#[table_name = "user"]
+#[derive(Serialize, Insertable, Debug, Clone)]
+struct NewUserHashed {
+	username:        String,
+	hashed_password: String,
 }
 
 impl User {
 	pub fn all(conn: &SqliteConnection) -> Vec<User> {
-		all_users.order(user::id.desc()).load::<User>(conn).unwrap()
+		users.order(user::id.desc()).load::<User>(conn).unwrap()
 	}
 
-	pub fn create(
-		username: &str,
-		password: &str,
-		admin: bool,
-		conn: &SqliteConnection,
-	) -> Option<User>
-	{
-		let u = User {
-			id: None,
-			username: String::from(username),
-			password: hash(password, DEFAULT_COST).unwrap(),
-			admin,
+	pub fn create(user: NewUser, conn: &SqliteConnection) -> Option<User> {
+		let user = NewUserHashed {
+			username:        user.username,
+			hashed_password: hash(user.password, DEFAULT_COST).ok()?,
 		};
 		conn.transaction(|| {
-			diesel::insert_into(user::table).values(&u).execute(conn)?;
-
-			all_users.order(user::id.desc()).first(conn)
+			// Create a new user
+			diesel::insert_into(user::table)
+				.values(&user)
+				.execute(conn)?;
+			// Fetch the last created user
+			users.order(user::id.desc()).first(conn)
 		})
 		.ok()
 	}
 
-	pub fn delete(self, conn: &SqliteConnection) -> bool {
-		diesel::delete(all_users.find(self.id))
-			.execute(conn)
-			.is_ok()
-	}
-
 	pub fn find(id: i32, conn: &SqliteConnection) -> Option<User> {
-		all_users.find(id).first(conn).ok()
+		users.find(id).first(conn).ok()
 	}
 
 	pub fn find_and_authenticate(
-		username: &String,
-		password: &String,
+		username: &str,
+		password: &str,
 		conn: &SqliteConnection,
 	) -> Option<User>
 	{
-		all_users
+		users
 			.filter(user::username.eq(username))
 			.first(conn)
 			.ok()
 			.and_then(|user: User| {
-				if verify(password, &user.password).unwrap_or(false) {
+				if verify(password, &user.hashed_password).unwrap_or(false) {
 					Some(user)
 				} else {
 					None
 				}
 			})
-	}
-}
-
-mod schema {
-	table! {
-		user {
-			id -> Nullable<Integer>,
-			username -> Text,
-			password -> Text,
-			admin -> Bool,
-		}
 	}
 }

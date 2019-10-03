@@ -1,4 +1,5 @@
 #![feature(decl_macro, proc_macro_hygiene)]
+#![recursion_limit = "26"]
 
 extern crate bcrypt;
 extern crate chrono;
@@ -128,21 +129,9 @@ pub fn users(conn: DbConn) -> Json<Vec<User>> {
 	Json(User::all(&conn))
 }
 
-#[derive(FromForm)]
-pub struct NewUser {
-	username: String,
-	password: String,
-	admin:    bool,
-}
-
 #[post("/users", data = "<user>")]
 pub fn create_user(user: Form<NewUser>, conn: DbConn) -> Json<Option<User>> {
-	Json(User::create(
-		&user.username,
-		&user.password,
-		user.admin,
-		&conn,
-	))
+	Json(User::create(user.into_inner(), &conn))
 }
 
 fn main() {
