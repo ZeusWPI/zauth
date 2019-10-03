@@ -20,11 +20,11 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 
+pub mod controllers;
 pub mod models;
-pub mod oauth;
 pub mod token_store;
-pub mod util;
 
+use controllers::*;
 use models::user::*;
 use rocket::Rocket;
 use rocket_contrib::templates::Template;
@@ -95,13 +95,13 @@ pub fn rocket() -> Rocket {
 				current_user,
 				create_user,
 				users,
-				oauth::authorize,
-				oauth::authorize_parse_failed,
-				oauth::login_get,
-				oauth::login_post,
-				oauth::grant_get,
-				oauth::grant_post,
-				oauth::token
+				oauth_controller::authorize,
+				oauth_controller::authorize_parse_failed,
+				oauth_controller::login_get,
+				oauth_controller::login_post,
+				oauth_controller::grant_get,
+				oauth_controller::grant_post,
+				oauth_controller::token
 			],
 		)
 		.attach(DbConn::fairing())

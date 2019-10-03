@@ -12,7 +12,7 @@ use rocket::State;
 use rocket_contrib::json::Json;
 use rocket_contrib::templates::Template;
 
-use super::DbConn;
+use super::super::DbConn;
 use models::client::*;
 use models::user::*;
 
