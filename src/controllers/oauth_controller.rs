@@ -21,8 +21,6 @@ use token_store::TokenStore;
 
 pub const SESSION_VALIDITY_MINUTES: i64 = 60;
 
-pub type MountPoint = &'static str;
-
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 pub struct AuthorizationRequest {
 	pub response_type: String,
@@ -38,6 +36,13 @@ pub struct AuthState {
 	pub redirect_uri: String,
 	pub scope:        Option<String>,
 	pub client_state: Option<String>,
+}
+
+pub struct UserToken {
+	pub user_id:      i32,
+	pub username:     String,
+	pub client_id:    String,
+	pub redirect_uri: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -232,7 +237,7 @@ pub enum GrantResponse {
 pub fn grant_get<'a>(
 	mut cookies: Cookies,
 	state: Form<AuthState>,
-	token_store: State<TokenStore>,
+	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
 ) -> Result<GrantResponse, Custom<String>>
 {
@@ -261,7 +266,7 @@ pub fn grant_get<'a>(
 pub fn grant_post(
 	mut cookies: Cookies,
 	form: Form<GrantFormData>,
-	token_store: State<TokenStore>,
+	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
 ) -> Result<Redirect, Custom<&'static str>>
 {
@@ -279,11 +284,15 @@ pub fn grant_post(
 fn authorization_granted(
 	state: AuthState,
 	user: User,
-	token_store: &TokenStore,
+	token_store: &TokenStore<UserToken>,
 ) -> Redirect
 {
-	let authorization_code =
-		token_store.create_token(&state.client_id, &user, &state.redirect_uri);
+	let authorization_code = token_store.create_token(UserToken {
+		user_id:      user.id,
+		username:     user.username.clone(),
+		client_id:    state.client_id.clone(),
+		redirect_uri: state.redirect_uri.clone(),
+	});
 	Redirect::to(format!(
 		"{}&code={}",
 		state.redirect_uri_with_state(),
@@ -350,7 +359,7 @@ pub struct TokenFormData {
 pub fn token(
 	auth: Option<BasicAuthentication>,
 	form: Form<TokenFormData>,
-	token_state: State<TokenStore>,
+	token_state: State<TokenStore<UserToken>>,
 ) -> Result<Json<TokenSuccess>, Json<TokenError>>
 {
 	let data = form.into_inner();
@@ -365,7 +374,8 @@ pub fn token(
 
 	let token = token_store
 		.fetch_token(token)
-		.ok_or(TokenError::json_extra("invalid_grant", "incorrect token"))?;
+		.ok_or(TokenError::json_extra("invalid_grant", "incorrect token"))?
+		.item;
 
 	if client.id == token.client_id {
 		let access_token = token.username;

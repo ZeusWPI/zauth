@@ -26,6 +26,7 @@ pub mod token_store;
 
 use controllers::*;
 use models::user::*;
+use rocket::config::Config;
 use rocket::Rocket;
 use rocket_contrib::templates::Template;
 use token_store::TokenStore;
@@ -85,8 +86,17 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthorizationToken {
 	}
 }
 
-pub fn rocket() -> Rocket {
-	let rocket = rocket::ignite();
+pub fn prepare_custom(config: Config) -> Rocket {
+	build_rocket(rocket::custom(config))
+}
+
+pub fn prepare() -> Rocket {
+	build_rocket(rocket::ignite())
+}
+
+/// Setup of the given rocket instance. Mount routes, add managed state, and
+/// attach fairings.
+fn build_rocket(rocket: Rocket) -> Rocket {
 	rocket
 		.mount(
 			"/",
@@ -104,8 +114,8 @@ pub fn rocket() -> Rocket {
 				oauth_controller::token
 			],
 		)
+		.manage(TokenStore::<oauth_controller::UserToken>::new())
 		.attach(DbConn::fairing())
-		.manage(TokenStore::new())
 		.attach(Template::fairing())
 		.attach(AdHoc::on_attach("Database Migrations", |rocket| {
 			let conn = DbConn::get_one(&rocket).expect("database connection");
