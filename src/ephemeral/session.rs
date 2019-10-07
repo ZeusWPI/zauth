@@ -1,10 +1,12 @@
 use chrono::{DateTime, Duration, Local};
-use rocket::http::{Cookie, Cookies};
+use rocket::http::{Cookie, Cookies, Status};
+use rocket::request::{FromRequest, Outcome, Request};
+use std::str::FromStr;
 
 use models::user::User;
 use DbConn;
 
-pub const SESSION_VALIDITY_MINUTES: i64 = 60;
+pub const SESSION_VALIDITY_MINUTES: i64 = 59;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Session {
@@ -27,22 +29,75 @@ impl Session {
 		cookies.add_private(session_cookie);
 	}
 
-	pub fn user_from_cookies(
-		cookies: &mut Cookies,
-		conn: &DbConn,
-	) -> Option<User>
-	{
-		cookies
-			.get_private("session")
-			.and_then(|cookie| serde_urlencoded::from_str(cookie.value()).ok())
-			.and_then(|session: Self| session.user(conn))
-	}
-
-	fn user(&self, conn: &DbConn) -> Option<User> {
+	pub fn user(&self, conn: &DbConn) -> Option<User> {
 		if Local::now() > self.expiry {
 			None
 		} else {
 			User::find(*&self.user_id, conn)
+		}
+	}
+}
+
+impl FromStr for Session {
+	type Err = serde_urlencoded::de::Error;
+
+	fn from_str(cookie: &str) -> Result<Session, Self::Err> {
+		serde_urlencoded::from_str(cookie)
+	}
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for Session {
+	type Error = &'static str;
+
+	fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
+		let session = request
+			.cookies()
+			.get_private("session")
+			.map(|cookie| Session::from_str(cookie.value()));
+		match session {
+			Some(Ok(session)) => Outcome::Success(session),
+			_ => Outcome::Failure((Status::Unauthorized, "invalid session")),
+		}
+	}
+}
+
+#[derive(Debug)]
+pub struct UserSession {
+	pub user: User,
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for UserSession {
+	type Error = &'static str;
+
+	fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
+		let session = request.guard::<Session>()?;
+		let db = request.guard::<DbConn>().map_failure(|_| {
+			(Status::InternalServerError, "could not connect to database")
+		})?;
+		match session.user(&db) {
+			Some(user) => Outcome::Success(UserSession { user }),
+			_ => Outcome::Failure((
+				Status::InternalServerError,
+				"user not found for valid session",
+			)),
+		}
+	}
+}
+
+#[derive(Debug)]
+pub struct AdminSession {
+	pub admin: User,
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for AdminSession {
+	type Error = &'static str;
+
+	fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
+		let user: User = request.guard::<UserSession>()?.user;
+		if user.admin {
+			Outcome::Success(AdminSession { admin: user })
+		} else {
+			Outcome::Failure((Status::Forbidden, "user is not an admin"))
 		}
 	}
 }

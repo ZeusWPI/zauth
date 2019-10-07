@@ -11,7 +11,7 @@ use rocket::State;
 use rocket_contrib::json::Json;
 use rocket_contrib::templates::Template;
 
-use ephemeral::session::Session;
+use ephemeral::session::{Session, UserSession};
 use models::client::*;
 use models::user::*;
 use DbConn;
@@ -183,15 +183,12 @@ pub struct UserToken {
 
 #[get("/oauth/grant?<state..>")]
 pub fn grant_get<'a>(
-	mut cookies: Cookies,
+	session: UserSession,
 	state: Form<AuthState>,
 	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
 ) -> Result<GrantResponse, Custom<String>>
 {
-	let user = Session::user_from_cookies(&mut cookies, &conn)
-		.ok_or(Custom(Status::Unauthorized, String::from("No cookie :(")))?;
-
 	if let Some(client) = Client::find(&state.client_id) {
 		if client.needs_grant() {
 			Ok(GrantResponse::T(Template::render(
@@ -201,7 +198,7 @@ pub fn grant_get<'a>(
 		} else {
 			Ok(GrantResponse::R(authorization_granted(
 				state.into_inner(),
-				user,
+				session.user,
 				token_store.inner(),
 			)))
 		}
@@ -212,18 +209,19 @@ pub fn grant_get<'a>(
 
 #[post("/oauth/grant", data = "<form>")]
 pub fn grant_post(
-	mut cookies: Cookies,
+	session: UserSession,
 	form: Form<GrantFormData>,
 	token_store: State<TokenStore<UserToken>>,
-	conn: DbConn,
 ) -> Result<Redirect, Custom<&'static str>>
 {
-	let user = Session::user_from_cookies(&mut cookies, &conn)
-		.ok_or(Custom(Status::Unauthorized, "No cookie :("))?;
 	let data = form.into_inner();
 	let state = AuthState::decode_b64(&data.state).unwrap();
 	if data.grant {
-		Ok(authorization_granted(state, user, token_store.inner()))
+		Ok(authorization_granted(
+			state,
+			session.user,
+			token_store.inner(),
+		))
 	} else {
 		Ok(authorization_denied(state))
 	}

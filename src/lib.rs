@@ -61,9 +61,9 @@ fn build_rocket(rocket: Rocket) -> Rocket {
 			"/",
 			routes![
 				favicon,
-				user_controller::current_user,
-				user_controller::create_user,
-				user_controller::list_users,
+				users_controller::current_user,
+				users_controller::create_user,
+				users_controller::list_users,
 				oauth_controller::authorize,
 				oauth_controller::login_get,
 				oauth_controller::login_post,
