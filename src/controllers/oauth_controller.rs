@@ -16,7 +16,7 @@ use models::client::*;
 use models::user::*;
 use DbConn;
 
-use rocket_http_authentication::http_authentication::BasicAuthentication;
+use http_authentication::BasicAuthentication;
 use token_store::TokenStore;
 
 #[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]

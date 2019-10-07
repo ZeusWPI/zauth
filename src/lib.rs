@@ -5,7 +5,6 @@ extern crate bcrypt;
 extern crate chrono;
 extern crate rand;
 extern crate regex;
-extern crate rocket_http_authentication;
 
 #[macro_use]
 extern crate rocket_contrib;
@@ -22,6 +21,7 @@ extern crate diesel_migrations;
 
 pub mod controllers;
 pub mod ephemeral;
+pub mod http_authentication;
 pub mod models;
 pub mod token_store;
 
