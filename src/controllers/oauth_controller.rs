@@ -5,7 +5,7 @@ extern crate serde_urlencoded;
 
 use rocket::http::{Cookies, Status};
 use rocket::request::Form;
-use rocket::response::status::{BadRequest, Custom};
+use rocket::response::status::Custom;
 use rocket::response::Redirect;
 use rocket::State;
 use rocket_contrib::json::Json;
@@ -90,7 +90,7 @@ pub fn authorize(
 	if !req.response_type.eq("code") {
 		return Err(Custom(
 			Status::NotImplemented,
-			String::from("we only support authorization code"),
+			String::from("only response_type=code is supported"),
 		));
 	}
 	if let Some(client) = Client::find(&req.client_id) {
@@ -129,15 +129,6 @@ pub struct LoginFormData {
 #[get("/oauth/login?<state..>")]
 pub fn login_get(state: Form<AuthState>) -> Template {
 	Template::render("login", TemplateContext::from_state(state.into_inner()))
-}
-
-#[get("/oauth/login")]
-pub fn login_parse_failed() -> BadRequest<&'static str> {
-	let msg = r#"
-    The login request could not be processed,
-    there are probably some parameters missing.
-    "#;
-	BadRequest(Some(msg))
 }
 
 #[post("/oauth/login", data = "<form>")]
@@ -186,7 +177,7 @@ pub fn grant_get<'a>(
 	session: UserSession,
 	state: Form<AuthState>,
 	token_store: State<TokenStore<UserToken>>,
-	conn: DbConn,
+	_conn: DbConn,
 ) -> Result<GrantResponse, Custom<String>>
 {
 	if let Some(client) = Client::find(&state.client_id) {

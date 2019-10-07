@@ -46,7 +46,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthorizationToken {
 #[get("/current_user")]
 pub fn current_user(
 	token: AuthorizationToken,
-	conn: DbConn,
+	_conn: DbConn,
 ) -> Json<AuthorizationToken>
 {
 	Json(token)
