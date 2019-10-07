@@ -16,7 +16,7 @@ use models::client::*;
 use models::user::*;
 use DbConn;
 
-use rocket_http_authentication::BasicAuthentication;
+use rocket_http_authentication::http_authentication::BasicAuthentication;
 use token_store::TokenStore;
 
 #[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
@@ -313,7 +313,7 @@ pub fn token(
 	let token_store = token_state.inner();
 
 	let client = auth
-		.map(|auth| (auth.username, auth.password))
+		.map(|auth| (auth.user, auth.password))
 		.or_else(|| Some((data.client_id?, data.client_secret?)))
 		.and_then(|auth| Client::find_and_authenticate(&auth.0, &auth.1))
 		.ok_or(TokenError::json("unauthorized_client"))?;
