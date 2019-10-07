@@ -3,8 +3,7 @@ extern crate chrono;
 extern crate regex;
 extern crate serde_urlencoded;
 
-use chrono::{DateTime, Duration, Local};
-use rocket::http::{Cookie, Cookies, Status};
+use rocket::http::{Cookies, Status};
 use rocket::request::Form;
 use rocket::response::status::{BadRequest, Custom};
 use rocket::response::Redirect;
@@ -12,23 +11,13 @@ use rocket::State;
 use rocket_contrib::json::Json;
 use rocket_contrib::templates::Template;
 
-use super::super::DbConn;
+use ephemeral::session::Session;
 use models::client::*;
 use models::user::*;
+use DbConn;
 
 use rocket_http_authentication::BasicAuthentication;
 use token_store::TokenStore;
-
-pub const SESSION_VALIDITY_MINUTES: i64 = 60;
-
-#[derive(Debug, FromForm, Serialize, Deserialize)]
-pub struct AuthorizationRequest {
-	pub response_type: String,
-	pub client_id:     String,
-	pub redirect_uri:  String,
-	pub scope:         Option<String>,
-	pub state:         Option<String>,
-}
 
 #[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
 pub struct AuthState {
@@ -36,54 +25,6 @@ pub struct AuthState {
 	pub redirect_uri: String,
 	pub scope:        Option<String>,
 	pub client_state: Option<String>,
-}
-
-pub struct UserToken {
-	pub user_id:      i32,
-	pub username:     String,
-	pub client_id:    String,
-	pub redirect_uri: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Session {
-	user_id: i32,
-	expiry:  DateTime<Local>,
-}
-
-impl Session {
-	pub fn new(user: User) -> Session {
-		Session {
-			user_id: user.id,
-			expiry:  Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES),
-		}
-	}
-
-	pub fn add_to_cookies(user: User, cookies: &mut Cookies) {
-		let session = Session::new(user);
-		let session_str = serde_urlencoded::to_string(session).unwrap();
-		let session_cookie = Cookie::new("session", session_str);
-		cookies.add_private(session_cookie);
-	}
-
-	pub fn user_from_cookies(
-		cookies: &mut Cookies,
-		conn: &DbConn,
-	) -> Option<User>
-	{
-		cookies
-			.get_private("session")
-			.and_then(|cookie| serde_urlencoded::from_str(cookie.value()).ok())
-			.and_then(|session: Self| session.user(conn))
-	}
-
-	fn user(&self, conn: &DbConn) -> Option<User> {
-		if Local::now() > self.expiry {
-			None
-		} else {
-			User::find(*&self.user_id, conn)
-		}
-	}
 }
 
 impl AuthState {
@@ -132,6 +73,15 @@ impl TemplateContext {
 	}
 }
 
+#[derive(Debug, FromForm, Serialize, Deserialize)]
+pub struct AuthorizationRequest {
+	pub response_type: String,
+	pub client_id:     String,
+	pub redirect_uri:  String,
+	pub scope:         Option<String>,
+	pub state:         Option<String>,
+}
+
 #[get("/oauth/authorize?<req..>")]
 pub fn authorize(
 	req: Form<AuthorizationRequest>,
@@ -166,15 +116,6 @@ pub fn authorize(
 			),
 		))
 	}
-}
-
-#[get("/oauth/authorize")]
-pub fn authorize_parse_failed() -> BadRequest<&'static str> {
-	let msg = r#"
-    The authorization request could not be processed,
-    there are probably some parameters missing.
-    "#;
-	BadRequest(Some(msg))
 }
 
 #[derive(FromForm, Debug)]
@@ -231,6 +172,13 @@ pub struct GrantFormData {
 pub enum GrantResponse {
 	T(Template),
 	R(Redirect),
+}
+
+pub struct UserToken {
+	pub user_id:      i32,
+	pub username:     String,
+	pub client_id:    String,
+	pub redirect_uri: String,
 }
 
 #[get("/oauth/grant?<state..>")]
