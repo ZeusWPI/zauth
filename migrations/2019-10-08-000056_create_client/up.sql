@@ -1,0 +1,7 @@
+CREATE TABLE client (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR NOT NULL,
+    secret VARCHAR NOT NULL,
+    needs_grant BOOLEAN NOT NULL DEFAULT 0,
+    redirect_uri_list VARCHAR NOT NULL DEFAULT ""
+);

@@ -13,6 +13,7 @@ use rocket::http::Header;
 use rocket::http::Status;
 
 use zauth::controllers::oauth_controller::UserToken;
+use zauth::models::client::{Client, NewClient};
 use zauth::models::user::{NewUser, User};
 use zauth::token_store::TokenStore;
 
@@ -34,7 +35,6 @@ fn normal_flow() {
 	common::with_client_db(|http_client, db| {
 		let redirect_uri = "https://example.com/redirect/me/here";
 		let client_id = "test";
-		let client_secret = "nananana";
 		let client_state = "anarchy (╯°□°)╯ ┻━┻";
 		let user_username = "batman";
 		let user_password = "wolololo";
@@ -46,6 +46,16 @@ fn normal_flow() {
 			},
 			&db,
 		);
+
+		let client = Client::create(
+			NewClient {
+				name:              String::from(client_id),
+				needs_grant:       true,
+				redirect_uri_list: String::from(redirect_uri),
+			},
+			&db,
+		)
+		.expect("client");
 
 		// 1. User is redirected to OAuth server with request params given by
 		// the client    The OAuth server should respond with a redirect to
@@ -81,6 +91,8 @@ fn normal_flow() {
 			.captures(&body)
 			.map(|c| c[1].to_string())
 			.expect("hidden state field");
+
+		dbg!(&form_state);
 
 		// 3. User posts it credentials to the login path
 		let login_url = "/oauth/login";
@@ -182,7 +194,7 @@ fn normal_flow() {
 		);
 
 		let credentials =
-			base64::encode(&format!("{}:{}", client_id, client_secret));
+			base64::encode(&format!("{}:{}", client_id, client.secret));
 
 		let req = http_client
 			.post(token_url)
@@ -205,6 +217,7 @@ fn normal_flow() {
 		let data: Value =
 			serde_json::from_str(&response_body).expect("response json values");
 
+		dbg!(&data);
 		assert!(data["access_token"].is_string());
 		assert!(data["token_type"].is_string());
 		assert_eq!(data["token_type"], "???");
@@ -221,14 +234,15 @@ fn normal_flow() {
 		let authorization_code = token_store.create_token(UserToken {
 			user_id:      user.id,
 			username:     user.username.clone(),
-			client_id:    String::from(client_id),
+			client_id:    client.id,
+			client_name:  client.name,
 			redirect_uri: String::from(redirect_uri),
 		});
 
 		let token_url = "/oauth/token";
 		let form_body = format!(
 			"grant_type=authorization_code&code={}&redirect_uri={}&client_id={}&client_secret={}",
-			authorization_code, redirect_uri, client_id, client_secret
+			authorization_code, redirect_uri, client_id, client.secret
 		);
 
 		let req = http_client

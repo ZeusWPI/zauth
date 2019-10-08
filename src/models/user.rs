@@ -17,8 +17,7 @@ mod schema {
 	}
 }
 
-#[table_name = "user"]
-#[derive(Serialize, Queryable, Insertable, Debug, Clone)]
+#[derive(Serialize, Queryable, Debug, Clone)]
 pub struct User {
 	pub id: i32,
 	pub username: String,

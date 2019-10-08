@@ -21,7 +21,8 @@ use token_store::TokenStore;
 
 #[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
 pub struct AuthState {
-	pub client_id:    String,
+	pub client_id:    i32,
+	pub client_name:  String,
 	pub redirect_uri: String,
 	pub scope:        Option<String>,
 	pub client_state: Option<String>,
@@ -36,9 +37,14 @@ impl AuthState {
 		format!("{}?{}", self.redirect_uri, state_param)
 	}
 
-	pub fn from_req(auth_req: AuthorizationRequest) -> AuthState {
+	pub fn from_req(
+		client: Client,
+		auth_req: AuthorizationRequest,
+	) -> AuthState
+	{
 		AuthState {
-			client_id:    auth_req.client_id,
+			client_id:    client.id,
+			client_name:  client.name,
 			redirect_uri: auth_req.redirect_uri,
 			scope:        auth_req.scope,
 			client_state: auth_req.state,
@@ -50,11 +56,19 @@ impl AuthState {
 	}
 
 	pub fn encode_b64(&self) -> String {
-		base64::encode(&bincode::serialize(self).unwrap())
+		base64::encode_config(
+			&bincode::serialize(self).unwrap(),
+			base64::URL_SAFE_NO_PAD,
+		)
 	}
 
 	pub fn decode_b64(state_str: &str) -> Option<AuthState> {
-		bincode::deserialize(&base64::decode(state_str).ok().unwrap()).ok()
+		bincode::deserialize(
+			&base64::decode_config(state_str, base64::URL_SAFE_NO_PAD)
+				.ok()
+				.unwrap(),
+		)
+		.ok()
 	}
 }
 
@@ -67,7 +81,7 @@ pub struct TemplateContext {
 impl TemplateContext {
 	pub fn from_state(state: AuthState) -> TemplateContext {
 		TemplateContext {
-			client_name: state.client_id.clone(),
+			client_name: state.client_name.clone(),
 			state:       state.encode_b64(),
 		}
 	}
@@ -85,7 +99,9 @@ pub struct AuthorizationRequest {
 #[get("/oauth/authorize?<req..>")]
 pub fn authorize(
 	req: Form<AuthorizationRequest>,
-) -> Result<Redirect, Custom<String>> {
+	conn: DbConn,
+) -> Result<Redirect, Custom<String>>
+{
 	let req = req.into_inner();
 	if !req.response_type.eq("code") {
 		return Err(Custom(
@@ -93,9 +109,9 @@ pub fn authorize(
 			String::from("only response_type=code is supported"),
 		));
 	}
-	if let Some(client) = Client::find(&req.client_id) {
+	if let Some(client) = Client::find_by_name(&req.client_id, &conn) {
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
-			let state = AuthState::from_req(req);
+			let state = AuthState::from_req(client, req);
 			Ok(Redirect::to(uri!(login_get: state)))
 		} else {
 			Err(Custom(
@@ -168,7 +184,8 @@ pub enum GrantResponse {
 pub struct UserToken {
 	pub user_id:      i32,
 	pub username:     String,
-	pub client_id:    String,
+	pub client_id:    i32,
+	pub client_name:  String,
 	pub redirect_uri: String,
 }
 
@@ -177,11 +194,11 @@ pub fn grant_get<'a>(
 	session: UserSession,
 	state: Form<AuthState>,
 	token_store: State<TokenStore<UserToken>>,
-	_conn: DbConn,
+	conn: DbConn,
 ) -> Result<GrantResponse, Custom<String>>
 {
-	if let Some(client) = Client::find(&state.client_id) {
-		if client.needs_grant() {
+	if let Some(client) = Client::find(state.client_id, &conn) {
+		if client.needs_grant {
 			Ok(GrantResponse::T(Template::render(
 				"grant",
 				TemplateContext::from_state(state.into_inner()),
@@ -228,6 +245,7 @@ fn authorization_granted(
 		user_id:      user.id,
 		username:     user.username.clone(),
 		client_id:    state.client_id.clone(),
+		client_name:  state.client_name.clone(),
 		redirect_uri: state.redirect_uri.clone(),
 	});
 	Redirect::to(format!(
@@ -297,6 +315,7 @@ pub fn token(
 	auth: Option<BasicAuthentication>,
 	form: Form<TokenFormData>,
 	token_state: State<TokenStore<UserToken>>,
+	conn: DbConn,
 ) -> Result<Json<TokenSuccess>, Json<TokenError>>
 {
 	let data = form.into_inner();
@@ -306,7 +325,7 @@ pub fn token(
 	let client = auth
 		.map(|auth| (auth.user, auth.password))
 		.or_else(|| Some((data.client_id?, data.client_secret?)))
-		.and_then(|auth| Client::find_and_authenticate(&auth.0, &auth.1))
+		.and_then(|auth| Client::find_and_authenticate(&auth.0, &auth.1, &conn))
 		.ok_or(TokenError::json("unauthorized_client"))?;
 
 	let token = token_store
