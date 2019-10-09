@@ -7,7 +7,6 @@
 
 body {
     background-color: #121212;
-    
 }
 
 input {
@@ -43,7 +42,6 @@ img {
 }
 
 .box {
-    /* background-color: rgba(255,255,255, 1); */
     background-color: #121212;
     color: #fff;
     padding: 50px;
@@ -59,9 +57,3 @@ img {
     width: 100vw;
     height: 100vh;
 }
-
-/* @media only screen and (max-width: 600px) {
-    .box {
-        width: 100%;
-    }
-} */
