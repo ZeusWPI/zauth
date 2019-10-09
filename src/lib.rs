@@ -65,6 +65,8 @@ fn build_rocket(rocket: Rocket) -> Rocket {
 				users_controller::current_user,
 				users_controller::create_user,
 				users_controller::list_users,
+				clients_controller::create_client,
+				clients_controller::list_clients,
 				oauth_controller::authorize,
 				oauth_controller::login_get,
 				oauth_controller::login_post,
