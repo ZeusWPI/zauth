@@ -28,6 +28,7 @@ pub mod token_store;
 use controllers::*;
 use rocket::config::Config;
 use rocket::Rocket;
+use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
 use token_store::TokenStore;
 
@@ -72,6 +73,7 @@ fn build_rocket(rocket: Rocket) -> Rocket {
 				oauth_controller::token
 			],
 		)
+		.mount("/static/", StaticFiles::from("static/"))
 		.manage(TokenStore::<oauth_controller::UserToken>::new())
 		.attach(DbConn::fairing())
 		.attach(Template::fairing())

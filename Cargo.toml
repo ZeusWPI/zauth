@@ -24,5 +24,5 @@ tempfile = "3.1"
 [dependencies.rocket_contrib]
 version="0.4.2"
 default-features = false
-features = ["handlebars_templates", "json", "diesel_sqlite_pool"]
+features = ["handlebars_templates", "json", "diesel_sqlite_pool", "serve"]
 
