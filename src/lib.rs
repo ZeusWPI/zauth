@@ -18,6 +18,8 @@ extern crate lazy_static;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
+#[macro_use]
+extern crate maplit;
 
 pub mod controllers;
 pub mod ephemeral;
@@ -67,6 +69,8 @@ fn build_rocket(rocket: Rocket) -> Rocket {
 				users_controller::list_users,
 				clients_controller::create_client,
 				clients_controller::list_clients,
+				sessions_controller::new_session,
+				sessions_controller::create_session,
 				oauth_controller::authorize,
 				oauth_controller::login_get,
 				oauth_controller::login_post,

@@ -1,4 +1,6 @@
+use rocket::http::Status;
 use rocket::request::Form;
+use rocket::response::status;
 use rocket_contrib::json::Json;
 
 use ephemeral::session::AdminSession;
@@ -15,7 +17,10 @@ pub fn create_client(
 	client: Form<NewClient>,
 	conn: DbConn,
 	_admin: AdminSession,
-) -> Json<Option<Client>>
+) -> status::Created<Json<Option<Client>>>
 {
-	Json(Client::create(client.into_inner(), &conn))
+	status::Created(
+		String::from("/"),
+		Some(Json(Client::create(client.into_inner(), &conn))),
+	)
 }

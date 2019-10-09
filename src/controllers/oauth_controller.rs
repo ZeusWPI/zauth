@@ -1,8 +1,3 @@
-extern crate base64;
-extern crate chrono;
-extern crate regex;
-extern crate serde_urlencoded;
-
 use rocket::http::{Cookies, Status};
 use rocket::request::Form;
 use rocket::response::status::Custom;

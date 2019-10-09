@@ -18,10 +18,7 @@ use zauth::models::user::{NewUser, User};
 use zauth::token_store::TokenStore;
 
 mod common;
-
-fn url(content: &str) -> String {
-	urlencoding::encode(content)
-}
+use common::url;
 
 fn get_param(param_name: &str, query: &String) -> Option<String> {
 	Regex::new(&format!("{}=([^&]+)", param_name))
@@ -32,7 +29,7 @@ fn get_param(param_name: &str, query: &String) -> Option<String> {
 
 #[test]
 fn normal_flow() {
-	common::with_client_db(|http_client, db| {
+	common::with(|http_client, db| {
 		let redirect_uri = "https://example.com/redirect/me/here";
 		let client_id = "test";
 		let client_state = "anarchy (╯°□°)╯ ┻━┻";

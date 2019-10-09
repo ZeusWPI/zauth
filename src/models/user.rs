@@ -17,7 +17,8 @@ mod schema {
 	}
 }
 
-#[derive(Serialize, Queryable, Debug, Clone)]
+#[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
+#[table_name = "user"]
 pub struct User {
 	pub id: i32,
 	pub username: String,
@@ -58,6 +59,14 @@ impl User {
 			users.order(user::id.desc()).first(conn)
 		})
 		.ok()
+	}
+
+	pub fn update(self, conn: &SqliteConnection) -> Option<()> {
+		diesel::update(user::table)
+			.set(&self)
+			.execute(conn)
+			.map(|_| ())
+			.ok()
 	}
 
 	pub fn find(id: i32, conn: &SqliteConnection) -> Option<User> {
