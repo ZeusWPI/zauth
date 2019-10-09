@@ -1,26 +1,30 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Log in</title>
-  </head>
-  <body>
-    <form action="login" method="post">
-      <input type="hidden" name="state" value="{{ state }}">
-        <label for="username">Username</label>
-        <input type="text" name="username" id="name" required>
-      </div>
-      <div>
-        <label for="password">Password</label>
-        <input type="password" name="password" id="password" required>
-      </div>
-      <div>
-        <label for="remember_me">Remember me</label>
-        <input type="checkbox" name="remember_me" id="remember_me" required>
-      </div>
-      <div>
-        <input type="submit" value="Log in">
-      </div>
-    </form>
-  </body>
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Zeus Login</title>
+
+    <link rel="stylesheet" type="text/css" href="index.css">
+
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="box">
+            <form action="login" method="post">
+                <input type="hidden" name="state" value="{{ state }}">
+                <input type="text" placeholder="Username">
+                <input type="password" placeholder="Password">
+                <input type="submit" value="Login" class="loginbutton">
+            </form>
+        </div>
+        <a href="https://zeus.ugent.be/" target="_blank">
+        <img src="https://zinc.zeus.gent/ff5f00">
+        </a>
+    </div>
+</body>
+
 </html>
