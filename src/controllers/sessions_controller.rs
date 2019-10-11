@@ -1,5 +1,7 @@
 use rocket::http::Cookies;
+use rocket::http::Status;
 use rocket::request::Form;
+use rocket::response::status;
 use rocket::response::Redirect;
 use rocket_contrib::templates::Template;
 
@@ -30,7 +32,7 @@ pub fn create_session(
 	form: Form<LoginFormData>,
 	mut cookies: Cookies,
 	conn: DbConn,
-) -> Result<Redirect, Template>
+) -> Result<Redirect, status::Custom<Template>>
 {
 	let form = form.into_inner();
 	let user =
@@ -39,12 +41,15 @@ pub fn create_session(
 		Session::add_to_cookies(user, &mut cookies);
 		Ok(Redirect::to("/"))
 	} else {
-		Err(Template::render(
-			"login",
-			LoginTemplate {
-				state: form.state.unwrap_or(String::from("")),
-				error: Some(String::from("Incorrect username or password")),
-			},
+		Err(status::Custom(
+			Status::Unauthorized,
+			Template::render(
+				"login",
+				LoginTemplate {
+					state: form.state.unwrap_or(String::from("")),
+					error: Some(String::from("Incorrect username or password")),
+				},
+			),
 		))
 	}
 }

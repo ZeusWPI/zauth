@@ -29,30 +29,32 @@ fn get_param(param_name: &str, query: &String) -> Option<String> {
 
 #[test]
 fn normal_flow() {
-	common::with(|http_client, db| {
+	common::with(|http_client| {
 		let redirect_uri = "https://example.com/redirect/me/here";
 		let client_id = "test";
 		let client_state = "anarchy (╯°□°)╯ ┻━┻";
 		let user_username = "batman";
 		let user_password = "wolololo";
 
-		User::create(
-			NewUser {
-				username: String::from(user_username),
-				password: String::from(user_password),
-			},
-			&db,
-		);
-
-		let client = Client::create(
-			NewClient {
-				name:              String::from(client_id),
-				needs_grant:       true,
-				redirect_uri_list: String::from(redirect_uri),
-			},
-			&db,
-		)
-		.expect("client");
+		let client = {
+			let db = common::db(&http_client);
+			User::create(
+				NewUser {
+					username: String::from(user_username),
+					password: String::from(user_password),
+				},
+				&db,
+			);
+			Client::create(
+				NewClient {
+					name:              String::from(client_id),
+					needs_grant:       true,
+					redirect_uri_list: String::from(redirect_uri),
+				},
+				&db,
+			)
+			.expect("client")
+		};
 
 		// 1. User is redirected to OAuth server with request params given by
 		// the client    The OAuth server should respond with a redirect to
@@ -227,7 +229,10 @@ fn normal_flow() {
 			.rocket()
 			.state::<TokenStore<UserToken>>()
 			.expect("should have token store");
-		let user = User::find(1, &db).expect("user");
+		let user = {
+			let db = common::db(&http_client);
+			User::find(1, &db).expect("user")
+		};
 		let authorization_code = token_store.create_token(UserToken {
 			user_id:      user.id,
 			username:     user.username.clone(),

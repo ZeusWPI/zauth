@@ -79,12 +79,18 @@ impl User {
 		conn: &SqliteConnection,
 	) -> Option<User>
 	{
+		println!(
+			"Searching for user '{}' with password '{}'",
+			username, password
+		);
 		users
 			.filter(user::username.eq(username))
 			.first(conn)
 			.ok()
 			.and_then(|user: User| {
+				println!("Found user: {:?}", &user);
 				if verify(password, &user.hashed_password).unwrap_or(false) {
+					println!("Password matches: {}", password);
 					Some(user)
 				} else {
 					None

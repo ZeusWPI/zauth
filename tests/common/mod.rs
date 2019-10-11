@@ -13,9 +13,14 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use common::zauth::models::user::*;
+use common::zauth::DbConn;
 
 pub fn url(content: &str) -> String {
 	urlencoding::encode(content)
+}
+
+pub fn db(client: &Client) -> DbConn {
+	DbConn::get_one(client.rocket()).expect("database connection")
 }
 
 /// Creates a rocket::local::Client for testing purposes. The rocket instance
@@ -24,15 +29,11 @@ pub fn url(content: &str) -> String {
 /// database. The database and its directory will be removed after the function
 /// has run.
 pub fn with<F>(run: F)
-where F: FnOnce(Client, SqliteConnection) -> () {
-	let dir = tempfile::tempdir().unwrap();
-	let db_path = dir.path().join("db.sqlite");
-	let db_path_str = db_path.to_str().unwrap();
-
+where F: FnOnce(Client) -> () {
 	let mut cfg = HashMap::new();
 	cfg.insert("template_dir".into(), "templates".into());
 
-	let cfg_str = format!("sqlite_database = {{ url = \"{}\" }}", db_path_str);
+	let cfg_str = format!("sqlite_database = {{ url = \"{}\" }}", ":memory:");
 	let databases: Value = Value::from_str(&cfg_str).unwrap();
 	cfg.insert("databases".into(), databases);
 
@@ -42,24 +43,25 @@ where F: FnOnce(Client, SqliteConnection) -> () {
 	let client = Client::new(zauth::prepare_custom(config))
 		.expect("valid rocket instance");
 
-	let db = SqliteConnection::establish(db_path_str).unwrap();
-
-	run(client, db);
+	run(client);
 }
 
 pub fn with_admin<F>(run: F)
-where F: FnOnce(Client, SqliteConnection) -> () {
-	with(|client, db| {
-		let mut user = User::create(
-			NewUser {
-				username: String::from("admin"),
-				password: String::from("admin"),
-			},
-			&db,
-		)
-		.unwrap();
-		user.admin = true;
-		user.update(&db);
+where F: FnOnce(Client) -> () {
+	with(|client| {
+		{
+			let db = db(&client);
+			let mut user = User::create(
+				NewUser {
+					username: String::from("admin"),
+					password: String::from("admin"),
+				},
+				&db,
+			)
+			.unwrap();
+			user.admin = true;
+			user.update(&db);
+		}
 
 		{
 			let response = client
@@ -67,9 +69,9 @@ where F: FnOnce(Client, SqliteConnection) -> () {
 				.body("username=admin&password=admin")
 				.header(ContentType::Form)
 				.dispatch();
-			assert_eq!(response.status(), Status::SeeOther);
+			assert_eq!(response.status(), Status::SeeOther, "login failed");
 		}
 
-		run(client, db);
+		run(client);
 	});
 }

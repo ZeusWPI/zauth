@@ -11,7 +11,7 @@ use common::url;
 
 #[test]
 fn should_create_client() {
-	common::with_admin(|http_client, db| {
+	common::with_admin(|http_client| {
 		let client_name = "test";
 		let client_redirect_uri = "https://example.com/redirect";
 

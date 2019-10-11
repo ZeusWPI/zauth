@@ -1,5 +1,8 @@
 [global]
 template_dir = "templates"
 
+[global.databases.mysql_database]
+url = "mysql://zauth:zauth@localhost/zauth"
+
 [global.databases.sqlite_database]
 url = "db/db.sqlite"
