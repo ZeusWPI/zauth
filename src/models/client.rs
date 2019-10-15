@@ -2,6 +2,8 @@ use diesel::{self, prelude::*};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
+use ConcreteConnection;
+
 use self::schema::client;
 use self::schema::client::dsl::client as clients;
 
@@ -45,7 +47,7 @@ pub struct NewClientWithSecret {
 }
 
 impl Client {
-	pub fn all(conn: &SqliteConnection) -> Vec<Client> {
+	pub fn all(conn: &ConcreteConnection) -> Vec<Client> {
 		clients.load::<Client>(conn).unwrap()
 	}
 
@@ -58,7 +60,7 @@ impl Client {
 
 	pub fn create(
 		client: NewClient,
-		conn: &SqliteConnection,
+		conn: &ConcreteConnection,
 	) -> Option<Client>
 	{
 		let client = NewClientWithSecret {
@@ -67,22 +69,30 @@ impl Client {
 			redirect_uri_list: client.redirect_uri_list,
 			secret:            Self::generate_random_secret(),
 		};
-		conn.transaction(|| {
-			// Create a new user
-			diesel::insert_into(client::table)
-				.values(&client)
-				.execute(conn)?;
-			// Fetch the last created user
-			clients.order(client::id.desc()).first(conn)
-		})
-		.ok()
+		dbg!(&client);
+		let client = conn
+			.transaction(|| {
+				// Create a new user
+				diesel::insert_into(client::table)
+					.values(&client)
+					.execute(conn)?;
+				// Fetch the last created user
+				clients.order(client::id.desc()).first(conn)
+			})
+			.ok();
+		dbg!(&client);
+		return client;
 	}
 
-	pub fn find_by_name(name: &str, conn: &SqliteConnection) -> Option<Client> {
+	pub fn find_by_name(
+		name: &str,
+		conn: &ConcreteConnection,
+	) -> Option<Client>
+	{
 		clients.filter(client::name.eq(name)).first(conn).ok()
 	}
 
-	pub fn find(id: i32, conn: &SqliteConnection) -> Option<Client> {
+	pub fn find(id: i32, conn: &ConcreteConnection) -> Option<Client> {
 		clients.find(id).first(conn).ok()
 	}
 
@@ -95,7 +105,7 @@ impl Client {
 	pub fn find_and_authenticate(
 		name: &str,
 		secret: &str,
-		conn: &SqliteConnection,
+		conn: &ConcreteConnection,
 	) -> Option<Client>
 	{
 		Self::find_by_name(name, conn).filter(|client| client.secret == secret)

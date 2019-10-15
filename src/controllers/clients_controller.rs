@@ -1,4 +1,3 @@
-use rocket::http::Status;
 use rocket::request::Form;
 use rocket::response::status;
 use rocket_contrib::json::Json;

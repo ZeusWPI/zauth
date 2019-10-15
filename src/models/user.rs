@@ -2,6 +2,7 @@ use diesel::{self, prelude::*};
 
 use self::schema::user;
 use self::schema::user::dsl::user as users;
+use ConcreteConnection;
 
 use bcrypt::*;
 
@@ -41,11 +42,11 @@ struct NewUserHashed {
 }
 
 impl User {
-	pub fn all(conn: &SqliteConnection) -> Vec<User> {
-		users.order(user::id.desc()).load::<User>(conn).unwrap()
+	pub fn all(conn: &ConcreteConnection) -> Vec<User> {
+		users.load::<User>(conn).unwrap()
 	}
 
-	pub fn create(user: NewUser, conn: &SqliteConnection) -> Option<User> {
+	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Option<User> {
 		let user = NewUserHashed {
 			username:        user.username,
 			hashed_password: hash(user.password, DEFAULT_COST).ok()?,
@@ -61,7 +62,7 @@ impl User {
 		.ok()
 	}
 
-	pub fn update(self, conn: &SqliteConnection) -> Option<()> {
+	pub fn update(self, conn: &ConcreteConnection) -> Option<()> {
 		diesel::update(user::table)
 			.set(&self)
 			.execute(conn)
@@ -69,28 +70,25 @@ impl User {
 			.ok()
 	}
 
-	pub fn find(id: i32, conn: &SqliteConnection) -> Option<User> {
+	pub fn find(id: i32, conn: &ConcreteConnection) -> Option<User> {
+		println!("Searching for user with id {}", id);
+		let all = users.load::<User>(conn).unwrap();
+		println!("Users: {:?}", all);
 		users.find(id).first(conn).ok()
 	}
 
 	pub fn find_and_authenticate(
 		username: &str,
 		password: &str,
-		conn: &SqliteConnection,
+		conn: &ConcreteConnection,
 	) -> Option<User>
 	{
-		println!(
-			"Searching for user '{}' with password '{}'",
-			username, password
-		);
 		users
 			.filter(user::username.eq(username))
 			.first(conn)
 			.ok()
 			.and_then(|user: User| {
-				println!("Found user: {:?}", &user);
 				if verify(password, &user.hashed_password).unwrap_or(false) {
-					println!("Password matches: {}", password);
 					Some(user)
 				} else {
 					None

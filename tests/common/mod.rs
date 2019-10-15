@@ -10,6 +10,8 @@ use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::local::Client;
 use std::collections::HashMap;
+use std::process::Command;
+use std::process::Stdio;
 use std::str::FromStr;
 
 use common::zauth::models::user::*;
@@ -23,6 +25,20 @@ pub fn db(client: &Client) -> DbConn {
 	DbConn::get_one(client.rocket()).expect("database connection")
 }
 
+pub fn reset_db(db_url: &str) -> () {
+	let status = Command::new("sh")
+		.arg("-c")
+		.arg(format!(
+			"diesel database reset --database-url \"{}\"",
+			db_url
+		))
+		.stdin(Stdio::null())
+		.stdout(Stdio::inherit())
+		.status()
+		.expect("failed to run process");
+	assert!(status.success(), "failed to reset database");
+}
+
 /// Creates a rocket::local::Client for testing purposes. The rocket instance
 /// will be configured with a Sqlite database located in a tmpdir  This
 /// executes the given function with the Client a connection to that
@@ -33,7 +49,10 @@ where F: FnOnce(Client) -> () {
 	let mut cfg = HashMap::new();
 	cfg.insert("template_dir".into(), "templates".into());
 
-	let cfg_str = format!("sqlite_database = {{ url = \"{}\" }}", ":memory:");
+	let db_url = "mysql://zauth:zauth@localhost/zauth_test";
+	reset_db(db_url);
+
+	let cfg_str = format!("mysql_database = {{ url = \"{}\" }}", db_url);
 	let databases: Value = Value::from_str(&cfg_str).unwrap();
 	cfg.insert("databases".into(), databases);
 

@@ -31,9 +31,10 @@ impl Session {
 
 	pub fn user(&self, conn: &DbConn) -> Option<User> {
 		if Local::now() > self.expiry {
+			println!("Session expired: {:?}", self);
 			None
 		} else {
-			User::find(*&self.user_id, conn)
+			User::find(self.user_id, conn)
 		}
 	}
 }

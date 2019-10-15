@@ -28,20 +28,26 @@ pub mod models;
 pub mod token_store;
 
 use controllers::*;
+use models::user::*;
 use rocket::config::Config;
+use rocket::Request;
 use rocket::Rocket;
 use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
 use token_store::TokenStore;
 
+use diesel::MysqlConnection;
 use diesel::SqliteConnection;
 use rocket::fairing::AdHoc;
 
 // Embed diesel migrations (provides embedded_migrations::run())
 embed_migrations!();
 
-#[database("sqlite_database")]
-pub struct DbConn(SqliteConnection);
+//#[database("sqlite_database")]
+// pub struct DbConn(SqliteConnection);
+#[database("mysql_database")]
+pub struct DbConn(MysqlConnection);
+pub type ConcreteConnection = MysqlConnection;
 
 #[get("/favicon.ico")]
 pub fn favicon() -> &'static str {
@@ -92,5 +98,21 @@ fn build_rocket(rocket: Rocket) -> Rocket {
 					Err(rocket)
 				},
 			}
+		}))
+		.attach(AdHoc::on_attach("Admin user", |rocket| {
+			let conn = DbConn::get_one(&rocket).expect("database connection");
+			if User::find_and_authenticate("admin", "admin", &conn).is_none() {
+				let mut user = User::create(
+					NewUser {
+						username: String::from("admin"),
+						password: String::from("admin"),
+					},
+					&conn,
+				)
+				.expect("create admin user");
+				user.admin = true;
+				user.update(&conn).expect("update admin user");
+			}
+			Ok(rocket)
 		}))
 }

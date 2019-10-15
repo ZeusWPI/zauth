@@ -21,7 +21,7 @@ fn should_create_client() {
 			url(&client_redirect_uri)
 		);
 
-		let response = http_client
+		let mut response = http_client
 			.post("/clients")
 			.body(client_form)
 			.header(ContentType::Form)
