@@ -1,0 +1,23 @@
+name: cargo test
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mariadb
+        env:
+          MYSQL_DATABASE: "zauth_test"
+          MYSQL_USER: "zauth"
+          MYSQL_PASSWORD: "zauth"
+          MYSQL_RANDOM_ROOT_PASSWORD: true
+          MYSQL_HOST: "localhost"
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
