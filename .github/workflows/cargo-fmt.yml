@@ -1,0 +1,14 @@
+name: cargo fmt
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    container:
+      image: rustlang/rust:nightly-slim
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: cargo fmt -- --check
