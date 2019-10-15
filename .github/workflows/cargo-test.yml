@@ -6,6 +6,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    container:
+      image: rustlang/rust:nightly-slim
     services:
       mysql:
         image: mariadb
