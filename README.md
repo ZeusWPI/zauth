@@ -19,8 +19,9 @@ GRANT ALL PRIVILEGES ON zauth_test . * TO 'zauth'@'localhost';
 3. We use [diesel](http://diesel.rs/) to manage our database. Install the cli
   with `cargo install diesel_cli`.
 
-4. Create the development database with `diesel database reset --database-url
-  "mysql://zauth:zauth@localhost/zauth_test"`. This will also run the migrations.
+4. Create the development database with
+  `diesel database reset --database-url "mysql://zauth:zauth@localhost/zauth_test"`.
+  This will also run the migrations.
 
 5. You can start the server with `cargo run`, it should run on
   [localhost:8000](http://localhost:8000).
