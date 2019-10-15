@@ -10,5 +10,5 @@ jobs:
       image: rustlang/rust:nightly-slim
     steps:
     - uses: actions/checkout@v1
-    - name: Build
+    - name: Check formatting
       run: cargo fmt -- --check
