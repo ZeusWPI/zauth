@@ -1,17 +1,29 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta charset="utf-8" />
-    <title>Log in</title>
-  </head>
-  <body>
-    <form action="grant" method="post">
-      <input type="hidden" name="state" value="{{ state }}">
-      <h1>Give {{ client_id }} access?</h1>
-      <div>
-        <button type="submit" name="grant" value="true">Yes</button>
-        <button type="submit" name="grant" value="false">No</button>
-      </div>
-    </form>
-  </body>
+    <title>Grant {{ client_id }} access?</title>
+
+    <link rel="stylesheet" type="text/css" href="grant.css">
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="center_card">
+            <img src="https://zinc.zeus.gent/ff5f00">
+        </div>
+        <div class="center_card">
+            <form action="grant" method="post">
+                <input type="hidden" name="state" value="{{ state }}">
+                <h1>Grant {{ client_id }} access?</h1>
+                    <div class="buttons">
+                        <button class="button-neg" type="submit" name="grant" value="false">No</button>
+                        <button type="submit" name="grant" value="true">Yes</button>
+                    </div>
+            </form>
+        </div>
+    </div>
+</body>
+
 </html>
