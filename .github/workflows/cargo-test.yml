@@ -19,6 +19,8 @@ jobs:
     - uses: actions/checkout@v1
     - name: Install Rust nightly
       run: rustup toolchain install nightly && rustup default nightly
+    - name: Install system dependencies
+      run: sudo apt install libsqlite3-dev libmysqlclient-dev
     - name: Build Zauth
       run: cargo build --verbose
     - name: Run tests

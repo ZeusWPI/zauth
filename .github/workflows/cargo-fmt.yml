@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Install Rust nightly
-      run: rustup toolchain install nightly && rustup default nightly
+    - name: Install Rust nightly and rustfmt
+      run: rustup toolchain install nightly && rustup default nightly && rustup component add rustfmt
     - name: Check formatting
       run: cargo fmt -- --check
