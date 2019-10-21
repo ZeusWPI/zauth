@@ -6,8 +6,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    container:
-      image: rustlang/rust:nightly-slim
     services:
       mysql:
         image: mariadb
@@ -19,7 +17,9 @@ jobs:
           MYSQL_HOST: "localhost"
     steps:
     - uses: actions/checkout@v1
-    - name: Build
+    - name: Install Rust nightly
+      run: rustup toolchain install nightly && rustup default nightly
+    - name: Build Zauth
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose

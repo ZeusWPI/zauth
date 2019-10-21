@@ -6,9 +6,9 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    container:
-      image: rustlang/rust:nightly-slim
     steps:
     - uses: actions/checkout@v1
+    - name: Install Rust nightly
+      run: rustup toolchain install nightly && rustup default nightly
     - name: Check formatting
       run: cargo fmt -- --check
