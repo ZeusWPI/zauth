@@ -4,7 +4,7 @@ use self::schema::user;
 use self::schema::user::dsl::user as users;
 use ConcreteConnection;
 
-use bcrypt::*;
+use pwhash::sha512_crypt;
 
 mod schema {
 	table! {
@@ -49,7 +49,7 @@ impl User {
 	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Option<User> {
 		let user = NewUserHashed {
 			username:        user.username,
-			hashed_password: hash(user.password, DEFAULT_COST).ok()?,
+			hashed_password: sha512_crypt::hash(user.password).ok()?,
 		};
 		conn.transaction(|| {
 			// Create a new user
@@ -88,7 +88,7 @@ impl User {
 			.first(conn)
 			.ok()
 			.and_then(|user: User| {
-				if verify(password, &user.hashed_password).unwrap_or(false) {
+				if sha512_crypt::verify(password, &user.hashed_password) {
 					Some(user)
 				} else {
 					None

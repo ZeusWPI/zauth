@@ -1,8 +1,8 @@
 #![feature(decl_macro, proc_macro_hygiene)]
 #![recursion_limit = "26"]
 
-extern crate bcrypt;
 extern crate chrono;
+extern crate pwhash;
 extern crate rand;
 extern crate regex;
 
