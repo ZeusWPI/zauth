@@ -75,6 +75,8 @@ fn assemble(rocket: Rocket) -> Rocket {
 				pages_controller::home_page,
 				sessions_controller::create_session,
 				sessions_controller::new_session,
+				sessions_controller::delete_session,
+				sessions_controller::destroy_session,
 				users_controller::create_user,
 				users_controller::current_user,
 				users_controller::list_users,

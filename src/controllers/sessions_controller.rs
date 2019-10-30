@@ -4,6 +4,7 @@ use rocket::request::Form;
 use rocket::response::status;
 use rocket::response::Redirect;
 use rocket_contrib::templates::Template;
+use std::collections::HashMap;
 
 use ephemeral::session::Session;
 use models::user::User;
@@ -11,13 +12,18 @@ use DbConn;
 
 #[derive(Serialize)]
 pub struct LoginTemplate {
-	state: String,
+	state: Option<String>,
 	error: Option<String>,
 }
 
 #[get("/login?<state>")]
-pub fn new_session(state: String) -> Template {
+pub fn new_session(state: Option<String>) -> Template {
 	Template::render("login", LoginTemplate { state, error: None })
+}
+
+#[get("/logout")]
+pub fn delete_session() -> Template {
+	Template::render("logout", HashMap::<String, String>::new())
 }
 
 #[derive(FromForm, Debug)]
@@ -46,10 +52,16 @@ pub fn create_session(
 			Template::render(
 				"login",
 				LoginTemplate {
-					state: form.state.unwrap_or(String::from("")),
+					state: form.state,
 					error: Some(String::from("Incorrect username or password")),
 				},
 			),
 		))
 	}
+}
+
+#[post("/logout")]
+pub fn destroy_session(mut cookies: Cookies) -> Redirect {
+	Session::destroy(&mut cookies);
+	Redirect::to("/")
 }

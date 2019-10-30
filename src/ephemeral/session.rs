@@ -29,6 +29,10 @@ impl Session {
 		cookies.add_private(session_cookie);
 	}
 
+	pub fn destroy(cookies: &mut Cookies) {
+		cookies.remove_private(Cookie::named("session"))
+	}
+
 	pub fn user(&self, conn: &DbConn) -> Option<User> {
 		if Local::now() > self.expiry {
 			println!("Session expired: {:?}", self);
