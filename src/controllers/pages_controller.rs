@@ -15,7 +15,7 @@ pub struct HomeTemplate {
 #[get("/")]
 pub fn home_page(session: Option<UserSession>, conn: DbConn) -> Template {
 	Template::render(
-		"home",
+		"pages/home",
 		HomeTemplate {
 			current_user: session.map(|session| session.user),
 			clients:      Client::all(&conn),

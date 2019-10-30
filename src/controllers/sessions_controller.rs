@@ -18,12 +18,12 @@ pub struct LoginTemplate {
 
 #[get("/login?<state>")]
 pub fn new_session(state: Option<String>) -> Template {
-	Template::render("login", LoginTemplate { state, error: None })
+	Template::render("session/login", LoginTemplate { state, error: None })
 }
 
 #[get("/logout")]
 pub fn delete_session() -> Template {
-	Template::render("logout", HashMap::<String, String>::new())
+	Template::render("session/logout", HashMap::<String, String>::new())
 }
 
 #[derive(FromForm, Debug)]
@@ -50,7 +50,7 @@ pub fn create_session(
 		Err(status::Custom(
 			Status::Unauthorized,
 			Template::render(
-				"login",
+				"session/login",
 				LoginTemplate {
 					state: form.state,
 					error: Some(String::from("Incorrect username or password")),

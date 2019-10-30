@@ -195,7 +195,7 @@ pub fn grant_get<'a>(
 	if let Some(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
 			Ok(GrantResponse::T(Template::render(
-				"grant",
+				"oauth/grant",
 				TemplateContext::from_state(state.into_inner()),
 			)))
 		} else {
