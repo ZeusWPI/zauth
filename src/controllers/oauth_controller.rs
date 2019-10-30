@@ -139,7 +139,10 @@ pub struct LoginFormData {
 
 #[get("/oauth/login?<state..>")]
 pub fn login_get(state: Form<AuthState>) -> Template {
-	Template::render("login", TemplateContext::from_state(state.into_inner()))
+	Template::render(
+		"session/login",
+		TemplateContext::from_state(state.into_inner()),
+	)
 }
 
 #[post("/oauth/login", data = "<form>")]
@@ -158,7 +161,7 @@ pub fn login_post(
 		Ok(Redirect::to(uri!(grant_get: state)))
 	} else {
 		Err(Template::render(
-			"login",
+			"session/login",
 			TemplateContext::from_state(state),
 		))
 	}
@@ -243,11 +246,12 @@ fn authorization_granted(
 		client_name:  state.client_name.clone(),
 		redirect_uri: state.redirect_uri.clone(),
 	});
-	Redirect::to(format!(
+	let uri = format!(
 		"{}&code={}",
 		state.redirect_uri_with_state(),
 		authorization_code
-	))
+	);
+	Redirect::to(uri)
 }
 
 fn authorization_denied(state: AuthState) -> Redirect {
