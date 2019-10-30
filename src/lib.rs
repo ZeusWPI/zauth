@@ -96,20 +96,4 @@ fn assemble(rocket: Rocket) -> Rocket {
 				},
 			}
 		}))
-		.attach(AdHoc::on_attach("Admin user", |rocket| {
-			let conn = DbConn::get_one(&rocket).expect("database connection");
-			if User::find_and_authenticate("admin", "admin", &conn).is_none() {
-				let mut user = User::create(
-					NewUser {
-						username: String::from("admin"),
-						password: String::from("admin"),
-					},
-					&conn,
-				)
-				.expect("create admin user");
-				user.admin = true;
-				user.update(&conn).expect("update admin user");
-			}
-			Ok(rocket)
-		}))
 }

@@ -1,17 +1,11 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Log in</title>
-  </head>
-  <body>
-    <form action="grant" method="post">
-      <input type="hidden" name="state" value="{{ state }}">
-      <h1>Give {{ client_name }} access?</h1>
-      <div>
+{% extends "layout" %}
+{% block content %}
+<form action="grant" method="post">
+    <input type="hidden" name="state" value="{{ state }}">
+    <h1>Give {{ client_name }} access?</h1>
+    <div>
         <button type="submit" name="grant" value="true">Yes</button>
         <button type="submit" name="grant" value="false">No</button>
-      </div>
-    </form>
-  </body>
-</html>
+    </div>
+</form>
+{% endblock content %}

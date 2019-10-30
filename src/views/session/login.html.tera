@@ -1,30 +1,19 @@
-<!doctype html>
-
-<html lang="en">
-
-<head>
-    <meta charset="utf-8">
-
-    <title>Zeus Login</title>
-
+{% extends "layout" %}
+{% block head %}
     <link rel="stylesheet" type="text/css" href="/static/login.css">
-
-</head>
-
-<body>
-    <div class="wrapper">
-        <div class="box">
-            <form action="login" method="post">
-                <input type="hidden" name="state" value="{{ state }}">
-                <input type="text" placeholder="Username" name="username" id="name" required>
-                <input type="password" placeholder="Password" name="password" id="password" required>
-                <input type="submit" value="Login" class="loginbutton">
-            </form>
-        </div>
-        <a href="https://zeus.ugent.be/" target="_blank">
-        <img src="https://zinc.zeus.gent/ff5f00">
-        </a>
-    </div>
-</body>
-
-</html>
+{% endblock head %}
+{% block content %}
+<div class="wrapper">
+  <div class="box">
+    <form action="login" method="post">
+      <input type="hidden" name="state" value="{{ state }}">
+      <input type="text" placeholder="Username" name="username" id="name" required>
+      <input type="password" placeholder="Password" name="password" id="password" required>
+      <input type="submit" value="Login" class="loginbutton">
+    </form>
+  </div>
+  <a href="https://zeus.ugent.be/" target="_blank">
+    <img src="https://zinc.zeus.gent/ff5f00">
+  </a>
+</div>
+{% endblock content %}
