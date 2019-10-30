@@ -26,7 +26,6 @@ pub mod models;
 pub mod token_store;
 
 use controllers::*;
-use models::user::*;
 use rocket::config::Config;
 use rocket::Rocket;
 use rocket_contrib::serve::StaticFiles;

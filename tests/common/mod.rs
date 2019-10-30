@@ -4,7 +4,6 @@ extern crate tempfile;
 extern crate urlencoding;
 extern crate zauth;
 
-use diesel::prelude::*;
 use rocket::config::{Config, Value};
 use rocket::http::ContentType;
 use rocket::http::Status;
