@@ -7,7 +7,7 @@
   <body>
     <form action="grant" method="post">
       <input type="hidden" name="state" value="{{ state }}">
-      <h1>Give {{ client_id }} access?</h1>
+      <h1>Give {{ client_name }} access?</h1>
       <div>
         <button type="submit" name="grant" value="true">Yes</button>
         <button type="submit" name="grant" value="false">No</button>

@@ -18,8 +18,6 @@ extern crate lazy_static;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-#[macro_use]
-extern crate maplit;
 
 pub mod controllers;
 pub mod ephemeral;
@@ -30,21 +28,17 @@ pub mod token_store;
 use controllers::*;
 use models::user::*;
 use rocket::config::Config;
-use rocket::Request;
 use rocket::Rocket;
 use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
 use token_store::TokenStore;
 
 use diesel::MysqlConnection;
-use diesel::SqliteConnection;
 use rocket::fairing::AdHoc;
 
 // Embed diesel migrations (provides embedded_migrations::run())
 embed_migrations!();
 
-//#[database("sqlite_database")]
-// pub struct DbConn(SqliteConnection);
 #[database("mysql_database")]
 pub struct DbConn(MysqlConnection);
 pub type ConcreteConnection = MysqlConnection;
@@ -55,34 +49,35 @@ pub fn favicon() -> &'static str {
 }
 
 pub fn prepare_custom(config: Config) -> Rocket {
-	build_rocket(rocket::custom(config))
+	assemble(rocket::custom(config))
 }
 
 pub fn prepare() -> Rocket {
-	build_rocket(rocket::ignite())
+	assemble(rocket::ignite())
 }
 
 /// Setup of the given rocket instance. Mount routes, add managed state, and
 /// attach fairings.
-fn build_rocket(rocket: Rocket) -> Rocket {
+fn assemble(rocket: Rocket) -> Rocket {
 	rocket
 		.mount(
 			"/",
 			routes![
 				favicon,
-				users_controller::current_user,
-				users_controller::create_user,
-				users_controller::list_users,
 				clients_controller::create_client,
 				clients_controller::list_clients,
-				sessions_controller::new_session,
-				sessions_controller::create_session,
 				oauth_controller::authorize,
-				oauth_controller::login_get,
-				oauth_controller::login_post,
 				oauth_controller::grant_get,
 				oauth_controller::grant_post,
-				oauth_controller::token
+				oauth_controller::login_get,
+				oauth_controller::login_post,
+				oauth_controller::token,
+				pages_controller::home_page,
+				sessions_controller::create_session,
+				sessions_controller::new_session,
+				users_controller::create_user,
+				users_controller::current_user,
+				users_controller::list_users,
 			],
 		)
 		.mount("/static/", StaticFiles::from("static/"))

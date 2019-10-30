@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Zauth</title>
+  </head>
+  <body>
+    <h1>Welcome to the Zauth debug page</h1>
+    {% if current_user %}
+    <p>You are logged in as <b>{{ current_user.username }}</b>.
+    {% else %}
+    <p>You are not logged in.
+    {% endif %}
+    <h2>Clients ({{ clients | length }})</h2>
+    <ul>
+    {% for client in clients %}
+    <li>{{ client.name }}</li>
+    {% endfor %}
+    </ul>
+    <h2>Users ({{ users | length }})</h2>
+    <ul>
+    {% for user in users %}
+    <li>{{ user.username }}</li>
+    {% endfor %}
+    </ul>
+  </body>
+</html>
