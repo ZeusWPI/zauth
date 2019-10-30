@@ -1,4 +1,6 @@
 {% extends "layout" %}
 {% block content %}
-<button type="submit" name="logout" value="true">Confirm</button>
+<form action="/logout" method="post">
+    <button type="submit" name="logout" value="true">Confirm</button>
+</form>
 {% endblock %}

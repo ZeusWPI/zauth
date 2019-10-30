@@ -71,9 +71,6 @@ impl User {
 	}
 
 	pub fn find(id: i32, conn: &ConcreteConnection) -> Option<User> {
-		println!("Searching for user with id {}", id);
-		let all = users.load::<User>(conn).unwrap();
-		println!("Users: {:?}", all);
 		users.find(id).first(conn).ok()
 	}
 

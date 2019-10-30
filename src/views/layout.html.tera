@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    {% block title %}
+        {% if title %}
+            <title>{{ title }}</title>
+        {% else %}
+            <title>Zauth</title>
+        {% endif %}
+    {% endblock title %}
+    {% block head %}
+    {% endblock head %}
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+</head>
+<body>
+    {% block content %}{% endblock content %}
+</body>
+</html>

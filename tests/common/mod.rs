@@ -47,7 +47,7 @@ pub fn reset_db(db_url: &str) -> () {
 pub fn with<F>(run: F)
 where F: FnOnce(Client) -> () {
 	let mut cfg = HashMap::new();
-	cfg.insert("template_dir".into(), "templates".into());
+	cfg.insert("template_dir".into(), "src/views/".into());
 
 	let db_url = "mysql://zauth:zauth@localhost/zauth_test";
 	reset_db(db_url);
