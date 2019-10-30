@@ -9,51 +9,47 @@ body {
     background-color: #121212;
 }
 
-input {
-    margin: 5px;
-    border-radius: 5px;
-    padding: 10px;
-    background-color: rgba(255,255,255, 0.15);
-    border: none;
-    color: white;
-    width: 100%;
-    box-sizing: content-box;
+img {
+    width: 8em;
 }
 
-input[type=submit] {
+h1 {
+    margin-bottom: 30px;
+}
+
+button {
     margin: 5px;
     border-radius: 5px;
     padding: 10px;
     color: white;
     border: none;
     background-color: #ff5f00;
-    width: 100%;
-    box-sizing: content-box;
+    flex-grow: 1;
     cursor: pointer;
 }
 
-img {
-    padding: 15px;
-    width: 8rem;
-    position: absolute;
-    top: 15%;
-    left: 50%;
-    transform: translate(-50%);
-}
-
-.box {
-    background-color: #121212;
-    color: #fff;
-    padding: 50px;
-    border-radius: 5px;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 25%;
+.button-neg {
+    background-color: rgba(255, 255, 255, 0.10)
 }
 
 .wrapper {
     width: 100vw;
     height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.center_card {
+    display: flex;
+    justify-content: center;
+    padding: 10vh;
+    color: white;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    flex-grow: 1;
 }

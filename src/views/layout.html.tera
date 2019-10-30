@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    {% block title %}
+    <title>
+      {% block title %}
         {% if title %}
-            <title>{{ title }}</title>
+          {{ title }}
         {% else %}
-            <title>Zauth</title>
+          Zauth
         {% endif %}
-    {% endblock title %}
+      {% endblock title %}
+    </title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
     {% block head %}
     {% endblock head %}
-    <link rel="stylesheet" type="text/css" href="/static/style.css">
 </head>
 <body>
     {% block content %}{% endblock content %}
