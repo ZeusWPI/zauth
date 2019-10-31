@@ -3,6 +3,7 @@ use rocket::http::{Cookie, Cookies, Status};
 use rocket::request::{FromRequest, Outcome, Request};
 use std::str::FromStr;
 
+use errors::*;
 use models::user::User;
 use DbConn;
 
@@ -46,7 +47,7 @@ impl Session {
 impl FromStr for Session {
 	type Err = serde_urlencoded::de::Error;
 
-	fn from_str(cookie: &str) -> Result<Session, Self::Err> {
+	fn from_str(cookie: &str) -> std::result::Result<Session, Self::Err> {
 		serde_urlencoded::from_str(cookie)
 	}
 }

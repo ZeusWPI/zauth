@@ -1,9 +1,10 @@
 [package]
 name = "zauth"
 version = "0.1.0"
-authors = ["Rien Maertens <maertensrien@gmail.com>"]
+authors = ["Rien Maertens <rien.maertens@posteo.be>"]
 
 [dependencies]
+error-chain = "0.12"
 base64 = "0.10"
 bincode = "1.0"
 pwhash = "0.2"

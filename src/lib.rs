@@ -7,6 +7,8 @@ extern crate rand;
 extern crate regex;
 
 #[macro_use]
+extern crate error_chain;
+#[macro_use]
 extern crate rocket_contrib;
 #[macro_use]
 extern crate rocket;
@@ -21,6 +23,7 @@ extern crate diesel_migrations;
 
 pub mod controllers;
 pub mod ephemeral;
+pub mod errors;
 pub mod http_authentication;
 pub mod models;
 pub mod token_store;
