@@ -61,7 +61,7 @@ fn normal_flow() {
 		// the login page.
 		let authorize_url = format!(
 			"/oauth/authorize?response_type=code&redirect_uri={}&client_id={}&\
-			state={}",
+			 state={}",
 			url(redirect_uri),
 			url(client_id),
 			url(client_state)
@@ -244,8 +244,8 @@ fn normal_flow() {
 
 		let token_url = "/oauth/token";
 		let form_body = format!(
-			"grant_type=authorization_code&code={}&redirect_uri={}&client_id={}\
-			&client_secret={}",
+			"grant_type=authorization_code&code={}&redirect_uri={}&\
+			 client_id={}&client_secret={}",
 			authorization_code, redirect_uri, client_id, client.secret
 		);
 

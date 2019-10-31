@@ -22,7 +22,7 @@ jobs:
     - name: Install Rust nightly and diesel-cli
       run: rustup toolchain install nightly &&
         rustup default nightly &&
-        cargo install diesel-cli
+        cargo install diesel_cli
     - name: Build Zauth
       run: cargo build --verbose
     - name: Run tests
