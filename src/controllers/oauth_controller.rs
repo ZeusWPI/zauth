@@ -7,6 +7,7 @@ use rocket_contrib::json::Json;
 use rocket_contrib::templates::Template;
 
 use ephemeral::session::{Session, UserSession};
+use errors::*;
 use models::client::*;
 use models::user::*;
 use DbConn;
@@ -95,37 +96,32 @@ pub struct AuthorizationRequest {
 pub fn authorize(
 	req: Form<AuthorizationRequest>,
 	conn: DbConn,
-) -> Result<Redirect, Custom<String>>
+) -> Result<Redirect>
 {
 	let req = req.into_inner();
 	if !req.response_type.eq("code") {
-		return Err(Custom(
-			Status::NotImplemented,
-			String::from("only response_type=code is supported"),
-		));
+		return Err(ErrorKind::NotImplemented(String::from(
+			"only response_type=code is supported",
+		))
+		.into());
 	}
 	if let Some(client) = Client::find_by_name(&req.client_id, &conn) {
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
 			let state = AuthState::from_req(client, req);
 			Ok(Redirect::to(uri!(login_get: state)))
 		} else {
-			Err(Custom(
-				Status::Unauthorized,
-				format!(
-					"Redirect uri '{:?}' is not allowed for client with id \
-					 '{}'",
-					req.redirect_uri, req.client_id
-				),
+			Err(ErrorKind::Unauthorized(format!(
+				"client with id {} is not authorized to useredirect_uri '{}'",
+				req.client_id, req.redirect_uri
 			))
+			.into())
 		}
 	} else {
-		Err(Custom(
-			Status::Unauthorized,
-			format!(
-				"Client with id '{}' is not known to this server",
-				req.client_id
-			),
+		Err(ErrorKind::Unauthorized(format!(
+			"client with id {} is not authorized on this server",
+			req.client_id
 		))
+		.into())
 	}
 }
 
@@ -150,7 +146,7 @@ pub fn login_post(
 	mut cookies: Cookies,
 	form: Form<LoginFormData>,
 	conn: DbConn,
-) -> Result<Redirect, Template>
+) -> std::result::Result<Redirect, Template>
 {
 	let data = form.into_inner();
 	let state = AuthState::decode_b64(&data.state).unwrap();
@@ -193,7 +189,7 @@ pub fn grant_get<'a>(
 	state: Form<AuthState>,
 	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> Result<GrantResponse, Custom<String>>
+) -> std::result::Result<GrantResponse, Custom<String>>
 {
 	if let Some(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
@@ -218,7 +214,7 @@ pub fn grant_post(
 	session: UserSession,
 	form: Form<GrantFormData>,
 	token_store: State<TokenStore<UserToken>>,
-) -> Result<Redirect, Custom<&'static str>>
+) -> std::result::Result<Redirect, Custom<&'static str>>
 {
 	let data = form.into_inner();
 	let state = AuthState::decode_b64(&data.state).unwrap();
@@ -315,7 +311,7 @@ pub fn token(
 	form: Form<TokenFormData>,
 	token_state: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> Result<Json<TokenSuccess>, Json<TokenError>>
+) -> std::result::Result<Json<TokenSuccess>, Json<TokenError>>
 {
 	let data = form.into_inner();
 	let token = data.code.clone();

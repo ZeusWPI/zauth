@@ -1,5 +1,5 @@
 #![feature(decl_macro, proc_macro_hygiene)]
-#![recursion_limit = "26"]
+#![recursion_limit = "256"]
 
 extern crate chrono;
 extern crate pwhash;
