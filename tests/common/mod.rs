@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 extern crate diesel;
 extern crate parking_lot;
 extern crate rocket;
@@ -12,8 +14,6 @@ use rocket::config::{Config, Value};
 use rocket::http::ContentType;
 use rocket::http::Status;
 use std::collections::HashMap;
-use std::process::Command;
-use std::process::Stdio;
 use std::str::FromStr;
 
 use crate::common::zauth::models::client::*;
