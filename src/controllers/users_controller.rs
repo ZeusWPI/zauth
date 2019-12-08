@@ -4,8 +4,8 @@ use rocket::request::{self, Form, FromRequest, Request};
 use rocket::Outcome;
 use rocket_contrib::json::Json;
 
-use models::user::*;
-use DbConn;
+use crate::models::user::*;
+use crate::DbConn;
 
 #[derive(Serialize)]
 pub struct AuthorizationToken {

@@ -1,9 +1,9 @@
 use rocket_contrib::templates::Template;
 
-use ephemeral::session::UserSession;
-use models::client::Client;
-use models::user::User;
-use DbConn;
+use crate::ephemeral::session::UserSession;
+use crate::models::client::Client;
+use crate::models::user::User;
+use crate::DbConn;
 
 #[derive(Serialize)]
 pub struct HomeTemplate {

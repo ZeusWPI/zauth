@@ -28,12 +28,12 @@ pub mod http_authentication;
 pub mod models;
 pub mod token_store;
 
-use controllers::*;
+use crate::controllers::*;
+use crate::token_store::TokenStore;
 use rocket::config::Config;
 use rocket::Rocket;
 use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
-use token_store::TokenStore;
 
 use diesel::MysqlConnection;
 use rocket::fairing::AdHoc;

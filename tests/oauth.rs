@@ -18,7 +18,7 @@ use zauth::models::user::{NewUser, User};
 use zauth::token_store::TokenStore;
 
 mod common;
-use common::url;
+use crate::common::url;
 
 fn get_param(param_name: &str, query: &String) -> Option<String> {
 	Regex::new(&format!("{}=([^&]+)", param_name))

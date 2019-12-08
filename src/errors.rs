@@ -1,6 +1,6 @@
 use rocket::http::Status;
 use rocket::request::Request;
-use rocket::response::{self, Responder, Response, ResponseBuilder};
+use rocket::response::{self, Responder, Response};
 
 error_chain! {
 	foreign_links {

@@ -6,9 +6,9 @@ use rocket::response::Redirect;
 use rocket_contrib::templates::Template;
 use std::collections::HashMap;
 
-use ephemeral::session::Session;
-use models::user::User;
-use DbConn;
+use crate::ephemeral::session::Session;
+use crate::models::user::User;
+use crate::DbConn;
 
 #[derive(Serialize)]
 pub struct LoginTemplate {

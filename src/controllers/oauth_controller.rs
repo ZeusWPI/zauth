@@ -6,14 +6,14 @@ use rocket::State;
 use rocket_contrib::json::Json;
 use rocket_contrib::templates::Template;
 
-use ephemeral::session::{Session, UserSession};
-use errors::*;
-use models::client::*;
-use models::user::*;
-use DbConn;
+use crate::ephemeral::session::{Session, UserSession};
+use crate::errors::*;
+use crate::models::client::*;
+use crate::models::user::*;
+use crate::DbConn;
 
-use http_authentication::BasicAuthentication;
-use token_store::TokenStore;
+use crate::http_authentication::BasicAuthentication;
+use crate::token_store::TokenStore;
 
 #[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
 pub struct AuthState {

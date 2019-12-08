@@ -13,8 +13,8 @@ use std::process::Command;
 use std::process::Stdio;
 use std::str::FromStr;
 
-use common::zauth::models::user::*;
-use common::zauth::DbConn;
+use crate::common::zauth::models::user::*;
+use crate::common::zauth::DbConn;
 
 pub fn url(content: &str) -> String {
 	urlencoding::encode(content)

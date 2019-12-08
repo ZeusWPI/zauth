@@ -3,9 +3,8 @@ use rocket::http::{Cookie, Cookies, Status};
 use rocket::request::{FromRequest, Outcome, Request};
 use std::str::FromStr;
 
-use errors::*;
-use models::user::User;
-use DbConn;
+use crate::models::user::User;
+use crate::DbConn;
 
 pub const SESSION_VALIDITY_MINUTES: i64 = 59;
 

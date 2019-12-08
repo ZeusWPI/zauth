@@ -6,7 +6,7 @@ use rocket::http::Status;
 
 mod common;
 
-use common::url;
+use crate::common::url;
 
 #[test]
 fn should_create_client() {
@@ -20,7 +20,7 @@ fn should_create_client() {
 			url(&client_redirect_uri)
 		);
 
-		let mut response = http_client
+		let response = http_client
 			.post("/clients")
 			.body(client_form)
 			.header(ContentType::Form)

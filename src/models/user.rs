@@ -2,7 +2,7 @@ use diesel::{self, prelude::*};
 
 use self::schema::user;
 use self::schema::user::dsl::user as users;
-use ConcreteConnection;
+use crate::ConcreteConnection;
 
 use pwhash::sha512_crypt;
 

@@ -2,7 +2,7 @@ use diesel::{self, prelude::*};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
-use ConcreteConnection;
+use crate::ConcreteConnection;
 
 use self::schema::client;
 use self::schema::client::dsl::client as clients;
