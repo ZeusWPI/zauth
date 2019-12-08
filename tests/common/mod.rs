@@ -1,41 +1,38 @@
 extern crate diesel;
+extern crate parking_lot;
 extern crate rocket;
 extern crate tempfile;
 extern crate urlencoding;
 extern crate zauth;
 
+use diesel::sql_query;
+use diesel::RunQueryDsl;
+use parking_lot::Mutex;
 use rocket::config::{Config, Value};
 use rocket::http::ContentType;
 use rocket::http::Status;
-use rocket::local::Client;
 use std::collections::HashMap;
 use std::process::Command;
 use std::process::Stdio;
 use std::str::FromStr;
 
+use crate::common::zauth::models::client::*;
 use crate::common::zauth::models::user::*;
 use crate::common::zauth::DbConn;
+
+type HttpClient = rocket::local::Client;
+
+// Rocket doesn't support transactional testing yet, so we use a lock to
+// serialize tests.
+static DB_LOCK: Mutex<()> = Mutex::new(());
 
 pub fn url(content: &str) -> String {
 	urlencoding::encode(content)
 }
 
-pub fn db(client: &Client) -> DbConn {
-	DbConn::get_one(client.rocket()).expect("database connection")
-}
-
-pub fn reset_db(db_url: &str) -> () {
-	let status = Command::new("sh")
-		.arg("-c")
-		.arg(format!(
-			"diesel database reset --database-url \"{}\"",
-			db_url
-		))
-		.stdin(Stdio::null())
-		.stdout(Stdio::inherit())
-		.status()
-		.expect("failed to run process");
-	assert!(status.success(), "failed to reset database");
+fn reset_db(db: &DbConn) {
+	assert!(sql_query("TRUNCATE TABLE user").execute(&db.0).is_ok());
+	assert!(sql_query("TRUNCATE TABLE client").execute(&db.0).is_ok());
 }
 
 /// Creates a rocket::local::Client for testing purposes. The rocket instance
@@ -43,32 +40,34 @@ pub fn reset_db(db_url: &str) -> () {
 /// executes the given function with the Client a connection to that
 /// database. The database and its directory will be removed after the function
 /// has run.
-pub fn with<F>(run: F)
-where F: FnOnce(Client) -> () {
+pub fn as_visitor<F>(run: F)
+where F: FnOnce(HttpClient, DbConn) -> () {
+	// Prepare config
 	let mut cfg = HashMap::new();
-	cfg.insert("template_dir".into(), "src/views/".into());
-
 	let db_url = "mysql://zauth:zauth@localhost/zauth_test";
-	reset_db(db_url);
-
 	let cfg_str = format!("mysql_database = {{ url = \"{}\" }}", db_url);
 	let databases: Value = Value::from_str(&cfg_str).unwrap();
 	cfg.insert("databases".into(), databases);
-
+	cfg.insert("template_dir".into(), "src/views/".into());
 	let mut config = Config::development();
 	config.set_extras(cfg);
 
-	let client = Client::new(zauth::prepare_custom(config))
-		.expect("valid rocket instance");
+	let _lock = DB_LOCK.lock();
+	let client =
+		HttpClient::new(zauth::prepare_custom(config)).expect("rocket client");
 
-	run(client);
+	let db = DbConn::get_one(client.rocket()).expect("database connection");
+	reset_db(&db);
+	assert_eq!(0, User::all(&db).len());
+	assert_eq!(0, Client::all(&db).len());
+
+	run(client, db);
 }
 
-pub fn with_admin<F>(run: F)
-where F: FnOnce(Client) -> () {
-	with(|client| {
+pub fn as_admin<F>(run: F)
+where F: FnOnce(HttpClient, DbConn) -> () {
+	as_visitor(|client, db| {
 		{
-			let db = db(&client);
 			let mut user = User::create(
 				NewUser {
 					username: String::from("admin"),
@@ -90,6 +89,6 @@ where F: FnOnce(Client) -> () {
 			assert_eq!(response.status(), Status::SeeOther, "login failed");
 		}
 
-		run(client);
+		run(client, db);
 	});
 }

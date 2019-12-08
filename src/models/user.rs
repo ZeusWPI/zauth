@@ -74,6 +74,10 @@ impl User {
 		users.find(id).first(conn).ok()
 	}
 
+	pub fn last(conn: &ConcreteConnection) -> Option<User> {
+		users.order(user::id.desc()).first(conn).ok()
+	}
+
 	pub fn find_and_authenticate(
 		username: &str,
 		password: &str,

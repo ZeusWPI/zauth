@@ -29,7 +29,7 @@ fn get_param(param_name: &str, query: &String) -> Option<String> {
 
 #[test]
 fn normal_flow() {
-	common::with(|http_client| {
+	common::as_visitor(|http_client, db| {
 		let redirect_uri = "https://example.com/redirect/me/here";
 		let client_id = "test";
 		let client_state = "anarchy (╯°□°)╯ ┻━┻";
@@ -37,7 +37,6 @@ fn normal_flow() {
 		let user_password = "wolololo";
 
 		let client = {
-			let db = common::db(&http_client);
 			User::create(
 				NewUser {
 					username: String::from(user_username),
@@ -230,10 +229,7 @@ fn normal_flow() {
 			.rocket()
 			.state::<TokenStore<UserToken>>()
 			.expect("should have token store");
-		let user = {
-			let db = common::db(&http_client);
-			User::find(1, &db).expect("user")
-		};
+		let user = User::find(1, &db).expect("user");
 		let authorization_code = token_store.create_token(UserToken {
 			user_id:      user.id,
 			username:     user.username.clone(),
