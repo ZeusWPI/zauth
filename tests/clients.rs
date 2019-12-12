@@ -9,7 +9,7 @@ mod common;
 use crate::common::url;
 
 #[test]
-fn should_create_client() {
+fn create_client() {
 	common::as_admin(|http_client, _db| {
 		let client_name = "test";
 		let client_redirect_uri = "https://example.com/redirect";

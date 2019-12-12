@@ -30,7 +30,7 @@ pub struct Client {
 	pub redirect_uri_list: String,
 }
 
-#[derive(FromForm, Debug, Clone)]
+#[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct NewClient {
 	pub name:              String,
 	pub needs_grant:       bool,
