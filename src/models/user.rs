@@ -28,7 +28,7 @@ pub struct User {
 	pub admin: bool,
 }
 
-#[derive(FromForm, Debug, Clone)]
+#[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
 	pub username: String,
 	pub password: String,

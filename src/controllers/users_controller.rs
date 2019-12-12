@@ -1,9 +1,10 @@
 use regex::Regex;
 use rocket::http::Status;
-use rocket::request::{self, Form, FromRequest, Request};
+use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
 use rocket_contrib::json::Json;
 
+use crate::ephemeral::from_api::Api;
 use crate::models::user::*;
 use crate::DbConn;
 
@@ -58,6 +59,6 @@ pub fn list_users(conn: DbConn) -> Json<Vec<User>> {
 }
 
 #[post("/users", data = "<user>")]
-pub fn create_user(user: Form<NewUser>, conn: DbConn) -> Json<Option<User>> {
+pub fn create_user(user: Api<NewUser>, conn: DbConn) -> Json<Option<User>> {
 	Json(User::create(user.into_inner(), &conn))
 }
