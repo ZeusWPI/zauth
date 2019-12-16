@@ -1,4 +1,4 @@
-#![feature(decl_macro, proc_macro_hygiene)]
+#![feature(decl_macro, proc_macro_hygiene, trace_macros)]
 #![recursion_limit = "256"]
 
 extern crate chrono;
@@ -21,6 +21,8 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 
+#[macro_use]
+pub mod views;
 pub mod controllers;
 pub mod ephemeral;
 pub mod errors;

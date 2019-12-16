@@ -68,21 +68,6 @@ impl AuthState {
 	}
 }
 
-#[derive(Serialize)]
-pub struct TemplateContext {
-	client_name: String,
-	state:       String,
-}
-
-impl TemplateContext {
-	pub fn from_state(state: AuthState) -> TemplateContext {
-		TemplateContext {
-			client_name: state.client_name.clone(),
-			state:       state.encode_b64(),
-		}
-	}
-}
-
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 pub struct AuthorizationRequest {
 	pub response_type: String,
@@ -135,10 +120,11 @@ pub struct LoginFormData {
 
 #[get("/oauth/login?<state..>")]
 pub fn login_get(state: Form<AuthState>) -> Template {
-	Template::render(
-		"session/login",
-		TemplateContext::from_state(state.into_inner()),
-	)
+	template! {
+		"session/login";
+		client_name: String = state.client_name.clone(),
+		state:       String = state.encode_b64(),
+	}
 }
 
 #[post("/oauth/login", data = "<form>")]
@@ -156,10 +142,11 @@ pub fn login_post(
 		Session::add_to_cookies(user, &mut cookies);
 		Ok(Redirect::to(uri!(grant_get: state)))
 	} else {
-		Err(Template::render(
-			"session/login",
-			TemplateContext::from_state(state),
-		))
+		Err(template! {
+			"session/login";
+			client_name: String = state.client_name.clone(),
+			state:       String = state.encode_b64(),
+		})
 	}
 }
 
@@ -193,10 +180,11 @@ pub fn grant_get<'a>(
 {
 	if let Some(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
-			Ok(GrantResponse::T(Template::render(
-				"oauth/grant",
-				TemplateContext::from_state(state.into_inner()),
-			)))
+			Ok(GrantResponse::T(template! {
+				"oauth/grant";
+				client_name: String = state.client_name.clone(),
+				state:       String = state.encode_b64(),
+			}))
 		} else {
 			Ok(GrantResponse::R(authorization_granted(
 				state.into_inner(),
@@ -205,7 +193,7 @@ pub fn grant_get<'a>(
 			)))
 		}
 	} else {
-		return Err(Custom(Status::NotFound, String::from("client not found")));
+		Err(Custom(Status::NotFound, String::from("client not found")))
 	}
 }
 

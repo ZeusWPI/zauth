@@ -4,26 +4,23 @@ use rocket::request::Form;
 use rocket::response::status;
 use rocket::response::Redirect;
 use rocket_contrib::templates::Template;
-use std::collections::HashMap;
 
 use crate::ephemeral::session::Session;
 use crate::models::user::User;
 use crate::DbConn;
 
-#[derive(Serialize)]
-pub struct LoginTemplate {
-	state: Option<String>,
-	error: Option<String>,
-}
-
 #[get("/login?<state>")]
 pub fn new_session(state: Option<String>) -> Template {
-	Template::render("session/login", LoginTemplate { state, error: None })
+	template! {
+		"session/login";
+		state: Option<String> = state,
+		error: Option<String> = None
+	}
 }
 
 #[get("/logout")]
 pub fn delete_session() -> Template {
-	Template::render("session/logout", HashMap::<String, String>::new())
+	template! {"session/logout"}
 }
 
 #[derive(FromForm, Debug)]
@@ -49,13 +46,12 @@ pub fn create_session(
 	} else {
 		Err(status::Custom(
 			Status::Unauthorized,
-			Template::render(
-				"session/login",
-				LoginTemplate {
-					state: form.state,
-					error: Some(String::from("Incorrect username or password")),
-				},
-			),
+			template! {
+			"session/login";
+			state: Option<String> = form.state,
+			error: Option<String> =
+				Some(String::from("Incorrect username or password")),
+			},
 		))
 	}
 }
