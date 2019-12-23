@@ -7,7 +7,9 @@ macro_rules! template {
 	($template_name:literal) => {
 		{
 			use rocket_contrib::templates::Template;
-			Template::render($template_name, ())
+			#[derive(Serialize)]
+			struct TemplateStruct {};
+			Template::render($template_name, TemplateStruct{})
 		}
 	};
 	($template_name:literal; $($name:ident: $type:ty = $value:expr),+$(,)?) => {
@@ -62,21 +64,20 @@ impl<'r> Responder<'r> for View<'r> {
 		request
 			.accept()
 			.and_then(|accept| {
-				let accepts = accept.iter().collect::<Vec<&QMediaType>>();
+				let mut accepts = accept.iter().collect::<Vec<&QMediaType>>();
 				accepts.sort_by(|p, q| {
 					let pw = p.weight_or(1.0);
 					let qw = q.weight_or(1.0);
 					pw.partial_cmp(&qw).unwrap_or(std::cmp::Ordering::Less)
 				});
-				accepts.iter().find_map(|qmedia| {
+				for qmedia in accepts {
 					if qmedia.is_json() {
-						self.json
+						return self.json;
 					} else if qmedia.is_html() {
-						self.html
-					} else {
-						None
+						return self.html;
 					}
-				})
+				}
+				None
 			})
 			.map(|respond| respond(request))
 			.unwrap_or_else(|| {
@@ -85,5 +86,38 @@ impl<'r> Responder<'r> for View<'r> {
 					.status(Status::NotAcceptable)
 					.finalize())
 			})
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use rocket::http::Status;
+	use rocket::local::Client;
+	use rocket_contrib::templates::Template;
+
+	#[get("/nothing")]
+	fn view_nothing<'r>() -> View<'r> {
+		View::new()
+	}
+
+	fn client() -> Client {
+		Client::new(
+			rocket::ignite()
+				.attach(Template::fairing())
+				.mount("/", routes![view_nothing]),
+		)
+		.unwrap()
+	}
+
+	#[test]
+	fn test_nothing() {
+		let client = client();
+		let mut response = client.get("/nothing").dispatch();
+		assert_eq!(response.status(), Status::NotAcceptable);
+		assert!(response
+			.body_string()
+			.expect("html body")
+			.contains("<h1>Not acceptable</h1>"));
 	}
 }
