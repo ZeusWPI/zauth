@@ -1,3 +1,6 @@
+use rocket::http::Accept;
+use rocket::request::Request;
+use rocket::response::{self, Responder, Response};
 use rocket_contrib::json::Json;
 
 use crate::ephemeral::authorization_token::AuthorizationToken;
@@ -15,8 +18,9 @@ pub fn current_user(
 }
 
 #[get("/users")]
-pub fn list_users(conn: DbConn) -> Json<Vec<User>> {
-	Json(User::all(&conn))
+pub fn list_users<'a>(conn: DbConn) -> impl Responder<'a> {
+	let users = User::all(&conn);
+	Json(users)
 }
 
 #[post("/users", data = "<user>")]
