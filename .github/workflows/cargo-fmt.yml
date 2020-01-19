@@ -13,4 +13,4 @@ jobs:
         rustup default nightly &&
         rustup component add rustfmt
     - name: Check formatting
-      run: cargo fmt -- --check
+      run: rustfmt --version && cargo fmt -- --check
