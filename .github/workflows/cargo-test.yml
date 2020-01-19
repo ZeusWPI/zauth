@@ -1,9 +1,9 @@
-name: cargo test
+name: Rust
 
 on: [push]
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
     services:
@@ -27,3 +27,15 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+
+  lint:
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Rust nightly and rustfmt
+      run: rustup toolchain install nightly &&
+        rustup default nightly &&
+        rustup component add rustfmt
+    - name: Check formatting
+      run: cargo fmt -- --check
