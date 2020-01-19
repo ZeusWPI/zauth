@@ -21,11 +21,11 @@ mod schema {
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
 #[table_name = "user"]
 pub struct User {
-	pub id: i32,
-	pub username: String,
+	pub id:              i32,
+	pub username:        String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password: String,
-	pub admin: bool,
+	pub admin:           bool,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
