@@ -1,0 +1,29 @@
+{% extends "layout" %}
+{% block content %}
+<h1>Users ({{ users | length  }})</h1>
+<table>
+<tr>
+    <th>Username</th>
+    <th>Admin?</th>
+</tr>
+{% for user in users %}
+    <tr>
+    <td>{{ user.username }}</td>
+    {% if user.admin %}
+        <td><b>Yes</b></td>
+    {% else %}
+        <td>No</td>
+    {% endif%}
+    </tr>
+{% endfor %}
+</table>
+
+{% if current_user.admin %}
+<form action="/users" method="post">
+<label for="username">Username</label><input name="username" type="text"></input>
+<label for="password">Password</label><input name="password" type="password"></input>
+<button type="submit">Create</button>
+</form>
+{% endif %}
+
+{% endblock content %}

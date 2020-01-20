@@ -1,10 +1,9 @@
-use rocket::http::Accept;
-use rocket::request::Request;
-use rocket::response::{self, Responder, Response};
+use rocket::response::Responder;
 use rocket_contrib::json::Json;
 
 use crate::ephemeral::authorization_token::AuthorizationToken;
 use crate::ephemeral::from_api::Api;
+use crate::ephemeral::session::UserSession;
 use crate::models::user::*;
 use crate::DbConn;
 
@@ -18,9 +17,20 @@ pub fn current_user(
 }
 
 #[get("/users")]
-pub fn list_users<'a>(conn: DbConn) -> impl Responder<'a> {
+pub fn list_users(
+	session: UserSession,
+	conn: DbConn,
+) -> impl Responder<'static>
+{
 	let users = User::all(&conn);
-	Json(users)
+	view! {
+		html: template!(
+			"users/index";
+			users: Vec<User> = users.clone(),
+			current_user: User = session.user,
+			),
+		json: Json(users)
+	}
 }
 
 #[post("/users", data = "<user>")]
