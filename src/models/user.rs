@@ -4,7 +4,14 @@ use self::schema::user;
 use self::schema::user::dsl::user as users;
 use crate::ConcreteConnection;
 
-use pwhash::sha512_crypt;
+use pwhash::bcrypt::{self, BcryptSetup};
+
+const DEFAULT_COST: u32 = 11;
+const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
+	salt:    None,
+	variant: None,
+	cost:    Some(DEFAULT_COST),
+};
 
 mod schema {
 	table! {
@@ -49,7 +56,7 @@ impl User {
 	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Option<User> {
 		let user = NewUserHashed {
 			username:        user.username,
-			hashed_password: sha512_crypt::hash(user.password).ok()?,
+			hashed_password: hash(&user.password).ok()?,
 		};
 		conn.transaction(|| {
 			// Create a new user
@@ -89,11 +96,19 @@ impl User {
 			.first(conn)
 			.ok()
 			.and_then(|user: User| {
-				if sha512_crypt::verify(password, &user.hashed_password) {
+				if verify(password, &user.hashed_password) {
 					Some(user)
 				} else {
 					None
 				}
 			})
 	}
+}
+
+fn hash(password: &str) -> Result<String, pwhash::error::Error> {
+	bcrypt::hash_with(BCRYPT_SETUP, password)
+}
+
+fn verify(password: &str, hash: &str) -> bool {
+	bcrypt::verify(password, &hash)
 }
