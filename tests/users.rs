@@ -12,6 +12,17 @@ mod common;
 fn get_all_users() {
 	common::as_visitor(|http_client, _db| {
 		let response = http_client.get("/users").dispatch();
+		assert_eq!(response.status(), Status::Unauthorized);
+	});
+
+	common::as_user(|http_client, _db| {
+		let mut response = http_client.get("/users").dispatch();
+		dbg!(response.body_string());
+		assert_eq!(response.status(), Status::Ok);
+	});
+
+	common::as_admin(|http_client, _db| {
+		let response = http_client.get("/users").dispatch();
 
 		assert_eq!(response.status(), Status::Ok);
 	});

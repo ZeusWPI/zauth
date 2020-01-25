@@ -64,6 +64,33 @@ where F: FnOnce(HttpClient, DbConn) -> () {
 	run(client, db);
 }
 
+pub fn as_user<F>(run: F)
+where F: FnOnce(HttpClient, DbConn) -> () {
+	as_visitor(|client, db| {
+		{
+			User::create(
+				NewUser {
+					username: String::from("user"),
+					password: String::from("user"),
+				},
+				&db,
+			)
+			.unwrap();
+		}
+
+		{
+			let response = client
+				.post("/login")
+				.body("username=user&password=user")
+				.header(ContentType::Form)
+				.dispatch();
+			assert_eq!(response.status(), Status::SeeOther, "login failed");
+		}
+
+		run(client, db);
+	});
+}
+
 pub fn as_admin<F>(run: F)
 where F: FnOnce(HttpClient, DbConn) -> () {
 	as_visitor(|client, db| {
