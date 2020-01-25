@@ -5,6 +5,7 @@ use crate::ephemeral::authorization_token::AuthorizationToken;
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::UserSession;
 use crate::models::user::*;
+use crate::views::accepter::Accepter;
 use crate::DbConn;
 
 #[get("/current_user")]
@@ -23,13 +24,13 @@ pub fn list_users(
 ) -> impl Responder<'static>
 {
 	let users = User::all(&conn);
-	view! {
+	Accepter {
 		html: template!(
-			"users/index";
-			users: Vec<User> = users.clone(),
-			current_user: User = session.user,
-			),
-		json: Json(users)
+		"users/index";
+		users: Vec<User> = users.clone(),
+		current_user: User = session.user,
+		),
+		json: Json(users),
 	}
 }
 
