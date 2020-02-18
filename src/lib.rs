@@ -35,7 +35,6 @@ use crate::token_store::TokenStore;
 use rocket::config::Config;
 use rocket::Rocket;
 use rocket_contrib::serve::StaticFiles;
-use rocket_contrib::templates::Template;
 
 use diesel::MysqlConnection;
 use rocket::fairing::AdHoc;
@@ -89,7 +88,6 @@ fn assemble(rocket: Rocket) -> Rocket {
 		.mount("/static/", StaticFiles::from("static/"))
 		.manage(TokenStore::<oauth_controller::UserToken>::new())
 		.attach(DbConn::fairing())
-		.attach(Template::fairing())
 		.attach(AdHoc::on_attach("Database Migrations", |rocket| {
 			let conn = DbConn::get_one(&rocket).expect("database connection");
 			match embedded_migrations::run(&*conn) {

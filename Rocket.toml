@@ -1,6 +1,3 @@
-[global]
-template_dir = "src/views/"
-
 [global.databases.mysql_database]
 url = "mysql://zauth:zauth@localhost/zauth"
 

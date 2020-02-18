@@ -26,7 +26,7 @@ pub fn list_users(
 	let users = User::all(&conn);
 	Accepter {
 		html: template!(
-		"users/index";
+		"users/index.html";
 		users: Vec<User> = users.clone(),
 		current_user: User = session.user,
 		),

@@ -2,30 +2,29 @@
 macro_rules! template {
 	($template_name:literal) => {
 		{
-			use rocket_contrib::templates::Template;
-			#[derive(Serialize)]
+			use askama::Template;
+			#[derive(Template, Debug)]
+			#[template(path = $template_name)]
 			struct TemplateStruct {};
-			Template::render($template_name, TemplateStruct{})
+			TemplateStruct{}
 		}
 	};
 
 	($template_name:literal; $($name:ident: $type:ty = $value:expr),+$(,)?) => {
 		{
-			use rocket_contrib::templates::Template;
-			#[derive(Serialize)]
+			use askama::Template;
+			#[derive(Template, Debug)]
+			#[template(path = $template_name)]
 			struct TemplateStruct {
 				$(
 					$name: $type,
 				)+
 			}
-			Template::render(
-				$template_name,
-				TemplateStruct {
-					$(
-						$name: $value,
-					)+
-				}
-			)
+			TemplateStruct {
+				$(
+					$name: $value,
+				)+
+			}
 		}
 	};
 }

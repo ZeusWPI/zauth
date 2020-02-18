@@ -1,10 +1,10 @@
 use rocket::http::{Cookies, Status};
 use rocket::request::Form;
 use rocket::response::status::Custom;
-use rocket::response::Redirect;
+use rocket::response::{Redirect, Responder};
 use rocket::State;
 use rocket_contrib::json::Json;
-use rocket_contrib::templates::Template;
+use std::fmt::Debug;
 
 use crate::ephemeral::session::{Session, UserSession};
 use crate::errors::*;
@@ -119,11 +119,11 @@ pub struct LoginFormData {
 }
 
 #[get("/oauth/login?<state..>")]
-pub fn login_get(state: Form<AuthState>) -> Template {
+pub fn login_get(state: Form<AuthState>) -> impl Responder<'static> {
 	template! {
-		"session/login";
-		client_name: String = state.client_name.clone(),
-		state:       String = state.encode_b64(),
+		"session/login.html";
+		state:         String = state.encode_b64(),
+		error: Option<String> = None,
 	}
 }
 
@@ -132,7 +132,7 @@ pub fn login_post(
 	mut cookies: Cookies,
 	form: Form<LoginFormData>,
 	conn: DbConn,
-) -> std::result::Result<Redirect, Template>
+) -> std::result::Result<Redirect, impl Debug + Responder<'static>>
 {
 	let data = form.into_inner();
 	let state = AuthState::decode_b64(&data.state).unwrap();
@@ -143,9 +143,9 @@ pub fn login_post(
 		Ok(Redirect::to(uri!(grant_get: state)))
 	} else {
 		Err(template! {
-			"session/login";
-			client_name: String = state.client_name.clone(),
-			state:       String = state.encode_b64(),
+			"session/login.html";
+			state: String = state.encode_b64(),
+			error: Option<String> = None,
 		})
 	}
 }
@@ -154,12 +154,6 @@ pub fn login_post(
 pub struct GrantFormData {
 	state: String,
 	grant: bool,
-}
-
-#[derive(Responder)]
-pub enum GrantResponse {
-	T(Template),
-	R(Redirect),
 }
 
 pub struct UserToken {
@@ -176,17 +170,23 @@ pub fn grant_get<'a>(
 	state: Form<AuthState>,
 	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> std::result::Result<GrantResponse, Custom<String>>
+) -> std::result::Result<
+	std::result::Result<
+		impl Responder<'static>,
+		impl Debug + Responder<'static>,
+	>,
+	Custom<String>,
+>
 {
 	if let Some(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
-			Ok(GrantResponse::T(template! {
-				"oauth/grant";
+			Ok(Ok(template! {
+				"oauth/grant.html";
 				client_name: String = state.client_name.clone(),
 				state:       String = state.encode_b64(),
 			}))
 		} else {
-			Ok(GrantResponse::R(authorization_granted(
+			Ok(Err(authorization_granted(
 				state.into_inner(),
 				session.user,
 				token_store.inner(),

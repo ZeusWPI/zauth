@@ -1,26 +1,25 @@
+use askama::Template;
 use rocket::http::Cookies;
 use rocket::http::Status;
 use rocket::request::Form;
-use rocket::response::status;
-use rocket::response::Redirect;
-use rocket_contrib::templates::Template;
+use rocket::response::{status, Redirect, Responder};
 
 use crate::ephemeral::session::Session;
 use crate::models::user::User;
 use crate::DbConn;
 
 #[get("/login?<state>")]
-pub fn new_session(state: Option<String>) -> Template {
+pub fn new_session(state: Option<String>) -> impl Responder<'static> {
 	template! {
-		"session/login";
-		state: Option<String> = state,
+		"session/login.html";
+		state: String = state.unwrap_or_default(),
 		error: Option<String> = None
 	}
 }
 
 #[get("/logout")]
-pub fn delete_session() -> Template {
-	template! {"session/logout"}
+pub fn delete_session() -> impl Responder<'static> {
+	template! {"session/logout.html"}
 }
 
 #[derive(FromForm, Debug)]
@@ -35,7 +34,7 @@ pub fn create_session(
 	form: Form<LoginFormData>,
 	mut cookies: Cookies,
 	conn: DbConn,
-) -> Result<Redirect, status::Custom<Template>>
+) -> impl Responder<'static>
 {
 	let form = form.into_inner();
 	let user =
@@ -47,8 +46,8 @@ pub fn create_session(
 		Err(status::Custom(
 			Status::Unauthorized,
 			template! {
-			"session/login";
-			state: Option<String> = form.state,
+			"session/login.html";
+			state: String = form.state.unwrap_or_default(),
 			error: Option<String> =
 				Some(String::from("Incorrect username or password")),
 			},

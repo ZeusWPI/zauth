@@ -2,15 +2,14 @@ use rocket::http::{MediaType, QMediaType, Status};
 use rocket::request::Request;
 use rocket::response::status::Custom;
 use rocket::response::{self, Responder};
-use rocket_contrib::templates::Template;
 
 pub struct Accepter<H, J> {
 	pub html: H,
 	pub json: J,
 }
 
-fn not_acceptable() -> Custom<Template> {
-	Custom(Status::NotAcceptable, template!("errors/406"))
+fn not_acceptable() -> impl Responder<'static> {
+	Custom(Status::NotAcceptable, template!("errors/406.html"))
 }
 
 fn preferred_media<'r>(request: &'r Request) -> Vec<&'r MediaType> {
@@ -65,10 +64,8 @@ mod test {
 	use rocket::http::{Accept, Header, Status};
 	use rocket::local::Client;
 	use rocket::response::content::Html;
-	use rocket::response::status::Custom;
 	use rocket::response::Redirect;
 	use rocket_contrib::json::Json;
-	use rocket_contrib::templates::Template;
 
 	#[get("/simple")]
 	fn test_simple<'r>() -> impl Responder<'static> {
@@ -88,9 +85,7 @@ mod test {
 
 	fn client() -> Client {
 		Client::new(
-			rocket::ignite()
-				.attach(Template::fairing())
-				.mount("/", routes![test_simple, test_redirect]),
+			rocket::ignite().mount("/", routes![test_simple, test_redirect]),
 		)
 		.unwrap()
 	}
