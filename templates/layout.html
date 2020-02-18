@@ -7,11 +7,12 @@
           Zauth
       {% endblock title %}
     </title>
-    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <!--<link rel="stylesheet" type="text/css" href="/static/style.css">-->
     {% block head %}
     {% endblock head %}
 </head>
 <body>
+    {% include "navbar.html" %}
     {% block content %}{% endblock content %}
 </body>
 </html>
