@@ -51,6 +51,7 @@ fn show_user() {
 
 		let mut response =
 			http_client.get(format!("/users/{}", other.id)).dispatch();
+		dbg!(response.body_string());
 
 		assert_eq!(
 			response.status(),
@@ -60,6 +61,7 @@ fn show_user() {
 
 		let mut response =
 			http_client.get(format!("/users/{}", user.id)).dispatch();
+		dbg!(response.body_string());
 
 		assert_eq!(
 			response.status(),
