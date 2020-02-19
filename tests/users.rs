@@ -1,8 +1,7 @@
 extern crate diesel;
 extern crate rocket;
 
-use rocket::http::ContentType;
-use rocket::http::Status;
+use rocket::http::{Accept, ContentType, Status};
 
 use zauth::models::user::*;
 
@@ -29,7 +28,7 @@ fn get_all_users() {
 }
 
 #[test]
-fn show_user() {
+fn show_user_as_visitor() {
 	common::as_visitor(|http_client, _db| {
 		let response = http_client.get("/users/1").dispatch();
 		assert_eq!(
@@ -38,7 +37,10 @@ fn show_user() {
 			"visitor should get unauthrorized"
 		);
 	});
+}
 
+#[test]
+fn show_user_as_user() {
 	common::as_user(|http_client, db, user| {
 		let other = User::create(
 			NewUser {
@@ -69,7 +71,10 @@ fn show_user() {
 			"should be able to see own profile"
 		);
 	});
+}
 
+#[test]
+fn show_user_as_admin() {
 	common::as_admin(|http_client, db, admin| {
 		let other = User::create(
 			NewUser {
@@ -108,6 +113,7 @@ fn create_user_form() {
 		let response = http_client
 			.post("/users")
 			.header(ContentType::Form)
+			.header(Accept::JSON)
 			.body("username=testuser&password=testpassword")
 			.dispatch();
 
@@ -128,6 +134,7 @@ fn create_user_json() {
 		let response = http_client
 			.post("/users")
 			.header(ContentType::JSON)
+			.header(Accept::JSON)
 			.body(
 				"{\"username\": \"testuser\", \"password\": \"testpassword\"}",
 			)
