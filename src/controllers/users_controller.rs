@@ -17,6 +17,21 @@ pub fn current_user(
 	Json(token)
 }
 
+#[get("/users/<id>")]
+pub fn show_user(
+	session: UserSession,
+	conn: DbConn,
+	id: i32,
+) -> Option<impl Responder<'static>>
+{
+	if let Some(user) = User::find(id, &conn) {
+		if session.user.admin || session.user.id == user.id {
+			return Some(template!("users/show.html"; user: User = user));
+		}
+	}
+	None
+}
+
 #[get("/users")]
 pub fn list_users(
 	session: UserSession,

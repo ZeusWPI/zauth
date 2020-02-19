@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>{{ user.username }}</h1>
+{% if user.admin %}
+  <p> This user is an admin.
+{% else %}
+  <p> This is a normal user.
+{% endif %}
+{% endblock content %}

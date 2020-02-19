@@ -8,7 +8,7 @@
 </tr>
 {% for user in users %}
     <tr>
-    <td>{{ user.username }}</td>
+        <td><a href="/users/{{ user.id }}">{{ user.username }}</a></td>
     {% if user.admin %}
         <td><b>Yes</b></td>
     {% else %}

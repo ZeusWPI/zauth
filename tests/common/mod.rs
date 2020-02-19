@@ -65,18 +65,16 @@ where F: FnOnce(HttpClient, DbConn) -> () {
 }
 
 pub fn as_user<F>(run: F)
-where F: FnOnce(HttpClient, DbConn) -> () {
+where F: FnOnce(HttpClient, DbConn, User) -> () {
 	as_visitor(|client, db| {
-		{
-			User::create(
-				NewUser {
-					username: String::from("user"),
-					password: String::from("user"),
-				},
-				&db,
-			)
-			.unwrap();
-		}
+		let user = User::create(
+			NewUser {
+				username: String::from("user"),
+				password: String::from("user"),
+			},
+			&db,
+		)
+		.unwrap();
 
 		{
 			let response = client
@@ -87,25 +85,24 @@ where F: FnOnce(HttpClient, DbConn) -> () {
 			assert_eq!(response.status(), Status::SeeOther, "login failed");
 		}
 
-		run(client, db);
+		run(client, db, user);
 	});
 }
 
 pub fn as_admin<F>(run: F)
-where F: FnOnce(HttpClient, DbConn) -> () {
+where F: FnOnce(HttpClient, DbConn, User) -> () {
 	as_visitor(|client, db| {
-		{
-			let mut user = User::create(
-				NewUser {
-					username: String::from("admin"),
-					password: String::from("admin"),
-				},
-				&db,
-			)
-			.unwrap();
-			user.admin = true;
-			user.update(&db);
-		}
+		let mut user = User::create(
+			NewUser {
+				username: String::from("admin"),
+				password: String::from("admin"),
+			},
+			&db,
+		)
+		.unwrap();
+
+		user.admin = true;
+		user.update(&db);
 
 		{
 			let response = client
@@ -116,6 +113,6 @@ where F: FnOnce(HttpClient, DbConn) -> () {
 			assert_eq!(response.status(), Status::SeeOther, "login failed");
 		}
 
-		run(client, db);
+		run(client, db, user);
 	});
 }

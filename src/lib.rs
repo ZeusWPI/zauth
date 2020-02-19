@@ -82,6 +82,7 @@ fn assemble(rocket: Rocket) -> Rocket {
 				sessions_controller::destroy_session,
 				users_controller::create_user,
 				users_controller::current_user,
+				users_controller::show_user,
 				users_controller::list_users,
 			],
 		)

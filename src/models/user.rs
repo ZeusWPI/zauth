@@ -69,9 +69,9 @@ impl User {
 		.ok()
 	}
 
-	pub fn update(self, conn: &ConcreteConnection) -> Option<()> {
+	pub fn update(&self, conn: &ConcreteConnection) -> Option<()> {
 		diesel::update(user::table)
-			.set(&self)
+			.set(self)
 			.execute(conn)
 			.map(|_| ())
 			.ok()
