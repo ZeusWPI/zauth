@@ -1,3 +1,3 @@
 #[macro_use]
-pub mod view;
+pub mod template;
 pub mod accepter;
