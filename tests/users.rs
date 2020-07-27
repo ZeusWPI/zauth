@@ -106,6 +106,133 @@ fn show_user_as_admin() {
 }
 
 #[test]
+fn update_self() {
+	common::as_user(|http_client, db, user| {
+		let response = http_client
+			.put(format!("/users/{}", user.id))
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.body("username=newusername")
+			.dispatch();
+
+		assert_eq!(
+			response.status(),
+			Status::NoContent,
+			"user should be able to edit themself"
+		);
+
+		let updated = User::find(user.id, &db).unwrap();
+
+		assert_eq!("newusername", updated.username);
+
+		let other = User::create(
+			NewUser {
+				username: String::from("somebody"),
+				password: String::from("else"),
+			},
+			&db,
+		)
+		.unwrap();
+
+		let response = http_client
+			.put(format!("/users/{}", other.id))
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.body("username=newusername")
+			.dispatch();
+
+		assert_eq!(
+			response.status(),
+			Status::Forbidden,
+			"user should not be able to edit others"
+		);
+	});
+}
+
+#[test]
+fn change_password() {
+	common::as_user(|http_client, db, user| {
+		let response = http_client
+			.put(format!("/users/{}", user.id))
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.body("password=newpassword")
+			.dispatch();
+
+		assert_eq!(
+			response.status(),
+			Status::NoContent,
+			"user should be able to change password"
+		);
+
+		let updated = User::find(user.id, &db).unwrap();
+
+		assert!(
+			user.hashed_password != updated.hashed_password,
+			"password should have changed"
+		);
+	});
+}
+
+#[test]
+fn make_admin() {
+	common::as_admin(|http_client, db, _admin| {
+		let other = User::create(
+			NewUser {
+				username: String::from("padawan"),
+				password: String::from(""),
+			},
+			&db,
+		)
+		.unwrap();
+
+		let response = http_client
+			.post(format!("/users/{}/admin", other.id))
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.body("admin=true")
+			.dispatch();
+
+		assert_eq!(
+			response.status(),
+			Status::NoContent,
+			"admin should be able to make other admin"
+		);
+
+		let updated = User::find(other.id, &db).unwrap();
+
+		assert!(updated.admin, "other user should be admin now");
+	});
+}
+
+#[test]
+fn try_make_admin() {
+	common::as_user(|http_client, db, _user| {
+		let other = User::create(
+			NewUser {
+				username: String::from("acccomplice"),
+				password: String::from("not_an_admin"),
+			},
+			&db,
+		)
+		.unwrap();
+
+		let response = http_client
+			.post(format!("/users/{}/admin", other.id))
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.body("admin=true")
+			.dispatch();
+
+		assert_eq!(
+			response.status(),
+			Status::Forbidden,
+			"user should not be able to make other admin"
+		);
+	});
+}
+
+#[test]
 fn create_user_form() {
 	common::as_admin(|http_client, db, _admin| {
 		let user_count = User::all(&db).len();

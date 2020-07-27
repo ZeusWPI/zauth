@@ -102,7 +102,7 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 		.unwrap();
 
 		user.admin = true;
-		user.update(&db);
+		let user = user.update(&db).unwrap();
 
 		{
 			let response = client

@@ -4,6 +4,7 @@ use rocket::request::Form;
 use rocket::{Data, Request};
 use rocket_contrib::json::Json;
 
+#[derive(Debug)]
 pub struct Api<T> {
 	inner: T,
 }

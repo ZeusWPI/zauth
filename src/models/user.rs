@@ -48,6 +48,17 @@ struct NewUserHashed {
 	hashed_password: String,
 }
 
+#[derive(FromForm, Deserialize, Debug, Clone)]
+pub struct UserChange {
+	username: Option<String>,
+	password: Option<String>,
+}
+
+#[derive(FromForm, Deserialize, Debug, Clone)]
+pub struct ChangeAdmin {
+	pub admin: bool,
+}
+
 impl User {
 	pub fn all(conn: &ConcreteConnection) -> Vec<User> {
 		users.load::<User>(conn).unwrap()
@@ -69,12 +80,30 @@ impl User {
 		.ok()
 	}
 
-	pub fn update(&self, conn: &ConcreteConnection) -> Option<()> {
-		diesel::update(user::table)
-			.set(self)
-			.execute(conn)
-			.map(|_| ())
-			.ok()
+	pub fn change_with(&mut self, change: UserChange) -> Option<()> {
+		if let Some(username) = change.username {
+			self.username = username;
+		}
+		if let Some(password) = change.password {
+			self.hashed_password = hash(&password).ok()?;
+		}
+		Some(())
+	}
+
+	pub fn update(self, conn: &ConcreteConnection) -> Option<Self> {
+		let id = self.id;
+		Some(
+			conn.transaction(|| {
+				// Create a new user
+				diesel::update(users.find(id))
+					.set(self)
+					.execute(conn)
+					.map(|_| ())?;
+				// Fetch the updated record
+				users.find(id).first(conn)
+			})
+			.unwrap(),
+		)
 	}
 
 	pub fn find(id: i32, conn: &ConcreteConnection) -> Option<User> {
