@@ -68,11 +68,11 @@ pub fn as_user<F>(run: F)
 where F: FnOnce(HttpClient, DbConn, User) -> () {
 	as_visitor(|client, db| {
 		let user = User::create(
+			&db,
 			NewUser {
 				username: String::from("user"),
 				password: String::from("user"),
 			},
-			&db,
 		)
 		.unwrap();
 
@@ -93,11 +93,11 @@ pub fn as_admin<F>(run: F)
 where F: FnOnce(HttpClient, DbConn, User) -> () {
 	as_visitor(|client, db| {
 		let mut user = User::create(
+			&db,
 			NewUser {
 				username: String::from("admin"),
 				password: String::from("admin"),
 			},
-			&db,
 		)
 		.unwrap();
 

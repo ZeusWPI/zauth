@@ -38,11 +38,11 @@ fn normal_flow() {
 
 		let client = {
 			User::create(
+				&db,
 				NewUser {
 					username: String::from(user_username),
 					password: String::from(user_password),
 				},
-				&db,
 			);
 			Client::create(
 				NewClient {

@@ -57,7 +57,7 @@ pub fn create_user(
 	conn: DbConn,
 ) -> Option<impl Responder<'static>>
 {
-	let user = User::create(user.into_inner(), &conn)?;
+	let user = User::create(&conn, user.into_inner())?;
 	Some(Accepter {
 		html: Redirect::to(uri!(show_user: user.id)),
 		json: Json(user),

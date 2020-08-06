@@ -31,6 +31,7 @@ pub mod models;
 pub mod token_store;
 
 use crate::controllers::*;
+use crate::models::user::*;
 use crate::token_store::TokenStore;
 use rocket::config::Config;
 use rocket::Rocket;
@@ -93,12 +94,42 @@ fn assemble(rocket: Rocket) -> Rocket {
 		.attach(DbConn::fairing())
 		.attach(AdHoc::on_attach("Database Migrations", |rocket| {
 			let conn = DbConn::get_one(&rocket).expect("database connection");
-			match embedded_migrations::run(&*conn) {
+			let rocket = match embedded_migrations::run(&*conn) {
 				Ok(()) => Ok(rocket),
 				Err(e) => {
 					eprintln!("Failed to run database migrations: {:?}", e);
 					Err(rocket)
 				},
+			}?;
+
+			if rocket.config().environment.is_dev() {
+				if let Ok(pw) = std::env::var("ZAUTH_ADMIN_PASSWORD") {
+					let admin = User::find_by_username(&conn, "admin")
+						.or_else(|| {
+							User::create(
+								&conn,
+								NewUser {
+									username: String::from("admin"),
+									password: String::from(&pw),
+								},
+							)
+						})
+						.map(|mut user| {
+							user.change_with(UserChange {
+								username: None,
+								password: Some(pw),
+							});
+							user.admin = true;
+							user.update(&conn)
+						});
+					match admin {
+						Some(admin) => {
+							dbg!(admin);
+						},
+						None => return Err(rocket),
+					}
+				}
 			}
+			Ok(rocket)
 		}))
 }

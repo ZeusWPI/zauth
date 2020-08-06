@@ -23,7 +23,13 @@ GRANT ALL PRIVILEGES ON zauth_test . * TO 'zauth'@'localhost';
   `diesel database reset --database-url "mysql://zauth:zauth@localhost/zauth_test"`.
   This will also run the migrations.
 
-5. You can start the server with `cargo run`, it should run on
-  [localhost:8000](http://localhost:8000).
+5. You can start the server with `cargo run`.
+   If you want to create an admin user you can start it with the
+   `ZAUTH_ADMIN_PASSWORD` environment variable:
+    ```
+    ZAUTH_ADMIN_PASSWORD=admin cargo run
+    ```
+   The server should then run on[localhost:8000](http://localhost:8000) and create
+   an admin user with password 'admin'.
 
 You can now start developing! A good way to start is too look at the routes defined in the [controllers](./src/controllers/).

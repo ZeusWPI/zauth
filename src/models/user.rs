@@ -50,8 +50,8 @@ struct NewUserHashed {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct UserChange {
-	username: Option<String>,
-	password: Option<String>,
+	pub username: Option<String>,
+	pub password: Option<String>,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -64,7 +64,15 @@ impl User {
 		users.load::<User>(conn).unwrap()
 	}
 
-	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Option<User> {
+	pub fn find_by_username(
+		conn: &ConcreteConnection,
+		username: &str,
+	) -> Option<User>
+	{
+		users.filter(user::username.eq(username)).first(conn).ok()
+	}
+
+	pub fn create(conn: &ConcreteConnection, user: NewUser) -> Option<User> {
 		let user = NewUserHashed {
 			username:        user.username,
 			hashed_password: hash(&user.password).ok()?,
@@ -120,17 +128,13 @@ impl User {
 		conn: &ConcreteConnection,
 	) -> Option<User>
 	{
-		users
-			.filter(user::username.eq(username))
-			.first(conn)
-			.ok()
-			.and_then(|user: User| {
-				if verify(password, &user.hashed_password) {
-					Some(user)
-				} else {
-					None
-				}
-			})
+		Self::find_by_username(conn, username).and_then(|user: User| {
+			if verify(password, &user.hashed_password) {
+				Some(user)
+			} else {
+				None
+			}
+		})
 	}
 }
 
