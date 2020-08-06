@@ -31,8 +31,8 @@ pub fn url(content: &str) -> String {
 }
 
 fn reset_db(db: &DbConn) {
-	assert!(sql_query("TRUNCATE TABLE user").execute(&db.0).is_ok());
-	assert!(sql_query("TRUNCATE TABLE client").execute(&db.0).is_ok());
+	assert!(sql_query("TRUNCATE TABLE users").execute(&db.0).is_ok());
+	assert!(sql_query("TRUNCATE TABLE clients").execute(&db.0).is_ok());
 }
 
 /// Creates a rocket::local::Client for testing purposes. The rocket instance
@@ -44,8 +44,8 @@ pub fn as_visitor<F>(run: F)
 where F: FnOnce(HttpClient, DbConn) -> () {
 	// Prepare config
 	let mut cfg = HashMap::new();
-	let db_url = "mysql://zauth:zauth@localhost/zauth_test";
-	let cfg_str = format!("mysql_database = {{ url = \"{}\" }}", db_url);
+	let db_url = "postgresql://zauth:zauth@localhost/zauth_test";
+	let cfg_str = format!("postgresql_database = {{ url = \"{}\" }}", db_url);
 	let databases: Value = Value::from_str(&cfg_str).unwrap();
 	cfg.insert("databases".into(), databases);
 	cfg.insert("template_dir".into(), "src/views/".into());

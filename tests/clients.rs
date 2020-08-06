@@ -1,8 +1,8 @@
 extern crate diesel;
 extern crate rocket;
 
-use rocket::http::ContentType;
 use rocket::http::Accept;
+use rocket::http::ContentType;
 use rocket::http::Status;
 
 mod common;

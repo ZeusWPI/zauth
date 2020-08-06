@@ -10,7 +10,11 @@ use crate::views::accepter::Accepter;
 use crate::DbConn;
 
 #[get("/clients")]
-pub fn list_clients(conn: DbConn, session: AdminSession) -> impl Responder<'static> {
+pub fn list_clients(
+	conn: DbConn,
+	session: AdminSession,
+) -> impl Responder<'static>
+{
 	let clients = Client::all(&conn);
 	Accepter {
 		html: template! {
@@ -30,7 +34,7 @@ pub fn create_client(
 ) -> Option<impl Responder<'static>>
 {
 	let client = Client::create(client.into_inner(), &conn)?;
-	Some(Accepter{
+	Some(Accepter {
 		html: Redirect::to(uri!(list_clients)),
 		json: status::Created(String::from("/client"), Some(Json(client))),
 	})

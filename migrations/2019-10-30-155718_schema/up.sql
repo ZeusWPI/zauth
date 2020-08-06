@@ -1,14 +1,14 @@
-CREATE TABLE user (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(127) NOT NULL UNIQUE,
-    password VARCHAR(127) NOT NULL,
-    admin    BOOLEAN NOT NULL DEFAULT 0
+CREATE TABLE users (
+    id       SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    admin    BOOLEAN NOT NULL DEFAULT false
 );
 
-CREATE TABLE client (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(127) NOT NULL UNIQUE,
-    secret VARCHAR(127) NOT NULL,
-    needs_grant BOOLEAN NOT NULL DEFAULT 0,
-    redirect_uri_list VARCHAR(127) NOT NULL DEFAULT ""
+CREATE TABLE clients (
+    id                  SERIAL PRIMARY KEY,
+    name                VARCHAR(255) NOT NULL UNIQUE,
+    secret              VARCHAR(255) NOT NULL,
+    needs_grant         BOOLEAN NOT NULL DEFAULT false,
+    redirect_uri_list   TEXT NOT NULL DEFAULT ''
 );
