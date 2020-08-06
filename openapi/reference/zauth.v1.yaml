@@ -38,11 +38,11 @@ paths:
         description: ''
   /clients:
     get:
-      summary: Your GET endpoint
+      summary: List clients
       tags: []
       responses: {}
       operationId: get-clients
-      description: List clients
+      description: ''
       requestBody:
         content:
           application/json:
@@ -53,7 +53,7 @@ paths:
       security:
         - Admin login: []
     post:
-      summary: ''
+      summary: Create a client
       operationId: post-clients
       responses:
         '201':
@@ -62,12 +62,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Client'
-      description: Create a client
+      description: ''
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewUser'
+              $ref: '#/components/schemas/NewClient'
       security:
         - Admin login: []
   /oauth/authorize:
@@ -153,7 +153,7 @@ paths:
             examples: {}
   /oauth/login:
     get:
-      summary: Your GET endpoint
+      summary: Login in the oauth flow
       tags: []
       responses:
         '200':
@@ -183,7 +183,7 @@ paths:
             type: string
           in: query
           name: client_state
-      description: Login in the oauth flow
+      description: ''
     post:
       summary: ''
       operationId: post-oauth-login
@@ -211,7 +211,7 @@ paths:
               $ref: '#/components/schemas/TokenFormData'
   /login:
     post:
-      summary: ''
+      summary: Login to the zauth application
       operationId: post-login
       responses:
         '307':
@@ -223,9 +223,9 @@ paths:
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/LoginFormData'
-      description: Login to the zauth application
+      description: ''
     get:
-      summary: ''
+      summary: Get the login page
       operationId: get-login
       responses:
         '200':
@@ -237,21 +237,21 @@ paths:
           name: state
   /logout:
     get:
-      summary: Your GET endpoint
+      summary: Delete the session
       tags: []
       responses:
         '200':
           description: OK
       operationId: get-logout
-      description: Delete the session
+      description: ''
     post:
-      summary: ''
+      summary: Destroy the session
       operationId: post-logout
       responses:
         '307':
           description: Temporary Redirect
           headers: {}
-      description: Destroy the session
+      description: ''
   /current_user:
     get:
       summary: Current user
@@ -357,8 +357,13 @@ components:
       title: NewUser
       type: object
       properties:
-        id:
+        username:
           type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
     GrantFormData:
       title: GrantFormData
       type: object
