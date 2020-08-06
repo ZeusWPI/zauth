@@ -1,0 +1,426 @@
+openapi: 3.0.0
+info:
+  title: zauth
+  version: '1.0'
+servers:
+  - url: 'http://localhost:8000'
+paths:
+  /users:
+    get:
+      summary: List users
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      operationId: get-users
+      description: ''
+    post:
+      summary: Create user
+      operationId: post-users
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+        description: ''
+  /clients:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-clients
+      description: List clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Client'
+      security:
+        - Admin login: []
+    post:
+      summary: ''
+      operationId: post-clients
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+      description: Create a client
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+      security:
+        - Admin login: []
+  /oauth/authorize:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '307':
+          description: Temporary Redirect
+        '401':
+          description: Unauthorized
+      operationId: get-oauth-authorize
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: response_type
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: client_id
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: redirect_uri
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: scope
+        - schema:
+            type: string
+          in: query
+          name: state
+  /oauth/grant:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Client not found
+      operationId: get-oauth-grant
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: client_id
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: client_name
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: redirect_uri
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: scope
+          description: ''
+        - schema:
+            type: string
+          in: query
+          name: client_state
+    post:
+      summary: ''
+      operationId: post-oauth-grant
+      responses:
+        '307':
+          description: Temporary Redirect
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GrantFormData'
+            examples: {}
+  /oauth/login:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+      operationId: get-oauth-login
+      parameters:
+        - schema:
+            type: number
+          in: query
+          name: client_id
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: client_name
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: redirect_uri
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: scope
+        - schema:
+            type: string
+          in: query
+          name: client_state
+      description: Login in the oauth flow
+    post:
+      summary: ''
+      operationId: post-oauth-login
+      responses:
+        '307':
+          description: Temporary Redirect
+      description: ''
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginFormData'
+        description: ''
+  /oauth/token:
+    post:
+      summary: ''
+      operationId: post-oauth-token
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenFormData'
+  /login:
+    post:
+      summary: ''
+      operationId: post-login
+      responses:
+        '307':
+          description: Temporary Redirect
+        '401':
+          description: 'Unauthorized: Incorrect username or password'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginFormData'
+      description: Login to the zauth application
+    get:
+      summary: ''
+      operationId: get-login
+      responses:
+        '200':
+          description: OK
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: state
+  /logout:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+      operationId: get-logout
+      description: Delete the session
+    post:
+      summary: ''
+      operationId: post-logout
+      responses:
+        '307':
+          description: Temporary Redirect
+          headers: {}
+      description: Destroy the session
+  /current_user:
+    get:
+      summary: Current user
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      operationId: get-current_user
+  '/users/{id}':
+    get:
+      summary: Show user
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      operationId: get-users-id
+    parameters:
+      - schema:
+          type: number
+        name: id
+        in: path
+        required: true
+    put:
+      summary: Update user
+      operationId: put-users-id
+      responses:
+        '204':
+          description: No Content
+        '403':
+          description: Forbidden
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserChange'
+  '/users/{id}/admin':
+    parameters:
+      - schema:
+          type: number
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Set admin
+      operationId: post-users-id-admin
+      responses:
+        '204':
+          description: No Content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeAdmin'
+components:
+  schemas:
+    NewClient:
+      title: NewClient
+      type: object
+      properties:
+        name:
+          type: string
+        needs_grant:
+          type: string
+        redirect_uri_list:
+          type: string
+      required:
+        - name
+        - needs_grant
+        - redirect_uri_list
+    User:
+      title: User
+      type: object
+      properties:
+        id:
+          type: string
+    Client:
+      title: Client
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        secret:
+          type: string
+        needs_grant:
+          type: boolean
+        redirect_uri_list:
+          type: string
+    NewUser:
+      title: NewUser
+      type: object
+      properties:
+        id:
+          type: string
+    GrantFormData:
+      title: GrantFormData
+      type: object
+      properties:
+        state:
+          type: string
+        grant:
+          type: boolean
+    OauthLoginFormData:
+      title: OauthLoginFormData
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        remember_me:
+          type: boolean
+        state:
+          type: string
+    TokenFormData:
+      title: TokenFormData
+      type: object
+      properties:
+        grant_type:
+          type: string
+        code:
+          type: string
+        redirect_uri:
+          type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
+      required:
+        - grant_type
+        - code
+    LoginFormData:
+      title: LoginFormData
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        state:
+          type: string
+      required:
+        - username
+        - password
+    UserChange:
+      title: UserChange
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    ChangeAdmin:
+      title: ChangeAdmin
+      type: object
+      properties:
+        admin:
+          type: boolean
+  securitySchemes:
+    Admin login:
+      type: http
+      scheme: basic
+      description: ''
