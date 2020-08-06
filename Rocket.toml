@@ -1,8 +1,5 @@
-[global.databases.mysql_database]
+[development.databases.mysql_database]
 url = "mysql://zauth:zauth@localhost/zauth"
-
-[global.databases.sqlite_database]
-url = "db/db.sqlite"
 
 [development]
 secret_key = "1vwCFFPSdQya895gNiO556SzmfShG6MokstgttLvwjw="
