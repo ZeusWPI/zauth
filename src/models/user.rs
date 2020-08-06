@@ -1,7 +1,6 @@
 use diesel::{self, prelude::*};
 
-use self::schema::user;
-use self::schema::user::dsl::user as users;
+use self::schema::users;
 use crate::ConcreteConnection;
 
 use pwhash::bcrypt::{self, BcryptSetup};
@@ -15,7 +14,7 @@ const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
 
 mod schema {
 	table! {
-		user {
+		users {
 			id -> Integer,
 			username -> Text,
 			#[sql_name = "password"]
@@ -26,7 +25,7 @@ mod schema {
 }
 
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
-#[table_name = "user"]
+#[table_name = "users"]
 pub struct User {
 	pub id:              i32,
 	pub username:        String,
@@ -41,7 +40,7 @@ pub struct NewUser {
 	pub password: String,
 }
 
-#[table_name = "user"]
+#[table_name = "users"]
 #[derive(Serialize, Insertable, Debug, Clone)]
 struct NewUserHashed {
 	username:        String,
@@ -61,7 +60,7 @@ pub struct ChangeAdmin {
 
 impl User {
 	pub fn all(conn: &ConcreteConnection) -> Vec<User> {
-		users.load::<User>(conn).unwrap()
+		users::table.load::<User>(conn).expect("fetch all failed")
 	}
 
 	pub fn find_by_username(
@@ -69,7 +68,10 @@ impl User {
 		username: &str,
 	) -> Option<User>
 	{
-		users.filter(user::username.eq(username)).first(conn).ok()
+		users::table
+			.filter(users::username.eq(username))
+			.first(conn)
+			.ok()
 	}
 
 	pub fn create(conn: &ConcreteConnection, user: NewUser) -> Option<User> {
@@ -79,11 +81,11 @@ impl User {
 		};
 		conn.transaction(|| {
 			// Create a new user
-			diesel::insert_into(user::table)
+			diesel::insert_into(users::table)
 				.values(&user)
 				.execute(conn)?;
 			// Fetch the last created user
-			users.order(user::id.desc()).first(conn)
+			users::table.order(users::id.desc()).first(conn)
 		})
 		.ok()
 	}
@@ -103,23 +105,23 @@ impl User {
 		Some(
 			conn.transaction(|| {
 				// Create a new user
-				diesel::update(users.find(id))
+				diesel::update(users::table.find(id))
 					.set(self)
 					.execute(conn)
 					.map(|_| ())?;
 				// Fetch the updated record
-				users.find(id).first(conn)
+				users::table.find(id).first(conn)
 			})
-			.unwrap(),
+			.expect("update failed"),
 		)
 	}
 
 	pub fn find(id: i32, conn: &ConcreteConnection) -> Option<User> {
-		users.find(id).first(conn).ok()
+		users::table.find(id).first(conn).ok()
 	}
 
 	pub fn last(conn: &ConcreteConnection) -> Option<User> {
-		users.order(user::id.desc()).first(conn).ok()
+		users::table.order(users::id.desc()).first(conn).ok()
 	}
 
 	pub fn find_and_authenticate(

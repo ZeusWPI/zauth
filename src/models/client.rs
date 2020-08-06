@@ -4,14 +4,13 @@ use rand::{thread_rng, Rng};
 
 use crate::ConcreteConnection;
 
-use self::schema::client;
-use self::schema::client::dsl::client as clients;
+use self::schema::clients;
 
 const SECRET_LENGTH: usize = 64;
 
 mod schema {
 	table! {
-		client {
+		clients {
 			id -> Integer,
 			name -> Text,
 			secret -> Text,
@@ -37,7 +36,7 @@ pub struct NewClient {
 	pub redirect_uri_list: String,
 }
 
-#[table_name = "client"]
+#[table_name = "clients"]
 #[derive(Insertable, Debug, Clone)]
 pub struct NewClientWithSecret {
 	pub name:              String,
@@ -48,7 +47,7 @@ pub struct NewClientWithSecret {
 
 impl Client {
 	pub fn all(conn: &ConcreteConnection) -> Vec<Client> {
-		clients.load::<Client>(conn).unwrap()
+		clients::table.load::<Client>(conn).unwrap()
 	}
 
 	fn generate_random_secret() -> String {
@@ -73,11 +72,11 @@ impl Client {
 		let client = conn
 			.transaction(|| {
 				// Create a new user
-				diesel::insert_into(client::table)
+				diesel::insert_into(clients::table)
 					.values(&client)
 					.execute(conn)?;
 				// Fetch the last created user
-				clients.order(client::id.desc()).first(conn)
+				clients::table.order(clients::id.desc()).first(conn)
 			})
 			.ok();
 		dbg!(&client);
@@ -89,11 +88,14 @@ impl Client {
 		conn: &ConcreteConnection,
 	) -> Option<Client>
 	{
-		clients.filter(client::name.eq(name)).first(conn).ok()
+		clients::table
+			.filter(clients::name.eq(name))
+			.first(conn)
+			.ok()
 	}
 
 	pub fn find(id: i32, conn: &ConcreteConnection) -> Option<Client> {
-		clients.find(id).first(conn).ok()
+		clients::table.find(id).first(conn).ok()
 	}
 
 	pub fn redirect_uri_acceptable(&self, redirect_uri: &str) -> bool {

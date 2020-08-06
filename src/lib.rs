@@ -37,15 +37,15 @@ use rocket::config::Config;
 use rocket::Rocket;
 use rocket_contrib::serve::StaticFiles;
 
-use diesel::MysqlConnection;
+use diesel::PgConnection;
 use rocket::fairing::AdHoc;
 
 // Embed diesel migrations (provides embedded_migrations::run())
 embed_migrations!();
 
-#[database("mysql_database")]
-pub struct DbConn(MysqlConnection);
-pub type ConcreteConnection = MysqlConnection;
+#[database("postgresql_database")]
+pub struct DbConn(PgConnection);
+pub type ConcreteConnection = PgConnection;
 
 #[get("/favicon.ico")]
 pub fn favicon() -> &'static str {
@@ -63,7 +63,7 @@ pub fn prepare() -> Rocket {
 /// Setup of the given rocket instance. Mount routes, add managed state, and
 /// attach fairings.
 fn assemble(rocket: Rocket) -> Rocket {
-	rocket
+	let mut rocket = rocket
 		.mount(
 			"/",
 			routes![
@@ -94,15 +94,19 @@ fn assemble(rocket: Rocket) -> Rocket {
 		.attach(DbConn::fairing())
 		.attach(AdHoc::on_attach("Database Migrations", |rocket| {
 			let conn = DbConn::get_one(&rocket).expect("database connection");
-			let rocket = match embedded_migrations::run(&*conn) {
+			match embedded_migrations::run(&*conn) {
 				Ok(()) => Ok(rocket),
 				Err(e) => {
 					eprintln!("Failed to run database migrations: {:?}", e);
 					Err(rocket)
 				},
-			}?;
-
-			if rocket.config().environment.is_dev() {
+			}
+		}));
+	if rocket.config().environment.is_dev() {
+		rocket =
+			rocket.attach(AdHoc::on_attach("Create admin user", |rocket| {
+				let conn =
+					DbConn::get_one(&rocket).expect("database connection");
 				if let Ok(pw) = std::env::var("ZAUTH_ADMIN_PASSWORD") {
 					let admin = User::find_by_username(&conn, "admin")
 						.or_else(|| {
@@ -129,7 +133,8 @@ fn assemble(rocket: Rocket) -> Rocket {
 						None => return Err(rocket),
 					}
 				}
-			}
-			Ok(rocket)
-		}))
+				Ok(rocket)
+			}))
+	}
+	rocket
 }
