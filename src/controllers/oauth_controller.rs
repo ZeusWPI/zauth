@@ -86,7 +86,9 @@ pub fn authorize(
 			"only response_type=code is supported",
 		)));
 	}
-	if let Some(client) = Client::find_by_name(&req.client_id, &conn) {
+
+	// TODO: actually do something with the errors
+	if let Ok(client) = Client::find_by_name(&req.client_id, &conn) {
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
 			let state = AuthState::from_req(client, req);
 			Ok(Redirect::to(uri!(login_get: state)))
@@ -127,12 +129,14 @@ pub fn login_post(
 	mut cookies: Cookies,
 	form: Form<LoginFormData>,
 	conn: DbConn,
-) -> Result<Either<Redirect, impl Responder<'_>>> {
+) -> Result<Either<Redirect, impl Responder<'static>>> {
 	let data = form.into_inner();
 	let state = AuthState::decode_b64(&data.state)?;
 	let user =
 		User::find_and_authenticate(&data.username, &data.password, &conn);
-	if let Some(user) = user {
+
+	// TODO: handle failed user better
+	if let Ok(user) = user {
 		Session::add_to_cookies(user, &mut cookies);
 		Ok(Either::Left(Redirect::to(uri!(grant_get: state))))
 	} else {
@@ -165,7 +169,7 @@ pub fn grant_get<'a>(
 	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
 ) -> Result<Either<impl Responder<'static>, impl Responder<'static>>> {
-	if let Some(client) = Client::find(state.client_id, &conn) {
+	if let Ok(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
 			Ok(Left(template! {
 				"oauth/grant.html";
@@ -287,7 +291,7 @@ pub fn token(
 	form: Form<TokenFormData>,
 	token_state: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> std::result::Result<Json<TokenSuccess>, Json<TokenError>> {
+) -> Result<Json<TokenSuccess>> {
 	let data = form.into_inner();
 	let token = data.code.clone();
 	let token_store = token_state.inner();
@@ -295,12 +299,19 @@ pub fn token(
 	let client = auth
 		.map(|auth| (auth.user, auth.password))
 		.or_else(|| Some((data.client_id?, data.client_secret?)))
-		.and_then(|auth| Client::find_and_authenticate(&auth.0, &auth.1, &conn))
-		.ok_or(TokenError::json("unauthorized_client"))?;
+		.ok_or(ZauthError::TokenError(TokenError::json(
+			"unauthorized_client",
+		)))
+		.and_then(|auth| {
+			Client::find_and_authenticate(&auth.0, &auth.1, &conn)
+		})?;
 
 	let token = token_store
 		.fetch_token(token)
-		.ok_or(TokenError::json_extra("invalid_grant", "incorrect token"))?
+		.ok_or(ZauthError::TokenError(TokenError::json(
+			"unauthorized_client",
+		)))
+		.or(TokenError::json_extra("invalid_grant", "incorrect token").into())?
 		.item;
 
 	if client.id == token.client_id {
@@ -310,6 +321,7 @@ pub fn token(
 		Err(TokenError::json_extra(
 			"invalid grant",
 			"token was not authorized to this client",
-		))
+		)
+		.into())
 	}
 }

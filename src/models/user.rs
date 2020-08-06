@@ -2,15 +2,16 @@ use diesel::{self, prelude::*};
 
 use self::schema::user;
 use self::schema::user::dsl::user as users;
+use crate::errors::{Result, ZauthError};
 use crate::ConcreteConnection;
 
 use pwhash::bcrypt::{self, BcryptSetup};
 
 const DEFAULT_COST: u32 = 11;
 const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
-	salt:    None,
+	salt: None,
 	variant: None,
-	cost:    Some(DEFAULT_COST),
+	cost: Some(DEFAULT_COST),
 };
 
 mod schema {
@@ -28,11 +29,11 @@ mod schema {
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
 #[table_name = "user"]
 pub struct User {
-	pub id:              i32,
-	pub username:        String,
+	pub id: i32,
+	pub username: String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password: String,
-	pub admin:           bool,
+	pub admin: bool,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -44,7 +45,7 @@ pub struct NewUser {
 #[table_name = "user"]
 #[derive(Serialize, Insertable, Debug, Clone)]
 struct NewUserHashed {
-	username:        String,
+	username: String,
 	hashed_password: String,
 }
 
@@ -64,10 +65,10 @@ impl User {
 		users.load::<User>(conn).unwrap()
 	}
 
-	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Option<User> {
+	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Result<User> {
 		let user = NewUserHashed {
-			username:        user.username,
-			hashed_password: hash(&user.password).ok()?,
+			username: user.username,
+			hashed_password: hash(&user.password)?,
 		};
 		conn.transaction(|| {
 			// Create a new user
@@ -75,67 +76,69 @@ impl User {
 				.values(&user)
 				.execute(conn)?;
 			// Fetch the last created user
-			users.order(user::id.desc()).first(conn)
+			users
+				.order(user::id.desc())
+				.first(conn)
+				.map_err(|e| e.into())
 		})
-		.ok()
 	}
 
-	pub fn change_with(&mut self, change: UserChange) -> Option<()> {
+	pub fn change_with(&mut self, change: UserChange) -> Result<()> {
 		if let Some(username) = change.username {
 			self.username = username;
 		}
 		if let Some(password) = change.password {
-			self.hashed_password = hash(&password).ok()?;
+			self.hashed_password = hash(&password)?;
 		}
-		Some(())
+		Ok(())
 	}
 
-	pub fn update(self, conn: &ConcreteConnection) -> Option<Self> {
+	pub fn update(self, conn: &ConcreteConnection) -> Result<Self> {
 		let id = self.id;
-		Some(
-			conn.transaction(|| {
-				// Create a new user
-				diesel::update(users.find(id))
-					.set(self)
-					.execute(conn)
-					.map(|_| ())?;
-				// Fetch the updated record
-				users.find(id).first(conn)
-			})
-			.unwrap(),
-		)
+		conn.transaction(|| {
+			// Create a new user
+			diesel::update(users.find(id))
+				.set(self)
+				.execute(conn)
+				.map(|_| ())?;
+			// Fetch the updated record
+			users.find(id).first(conn)
+		})
+		.map_err(|e| e.into())
 	}
 
-	pub fn find(id: i32, conn: &ConcreteConnection) -> Option<User> {
-		users.find(id).first(conn).ok()
+	pub fn find(id: i32, conn: &ConcreteConnection) -> Result<User> {
+		users.find(id).first(conn).map_err(|e| e.into())
 	}
 
-	pub fn last(conn: &ConcreteConnection) -> Option<User> {
-		users.order(user::id.desc()).first(conn).ok()
+	pub fn last(conn: &ConcreteConnection) -> Result<User> {
+		users
+			.order(user::id.desc())
+			.first(conn)
+			.map_err(|e| e.into())
 	}
 
 	pub fn find_and_authenticate(
 		username: &str,
 		password: &str,
 		conn: &ConcreteConnection,
-	) -> Option<User>
-	{
+	) -> Result<User> {
 		users
 			.filter(user::username.eq(username))
 			.first(conn)
-			.ok()
+			.map_err(|e| e.into())
 			.and_then(|user: User| {
 				if verify(password, &user.hashed_password) {
-					Some(user)
+					Ok(user)
 				} else {
-					None
+					Err(ZauthError::AuthFailed)
 				}
 			})
 	}
 }
 
-fn hash(password: &str) -> Result<String, pwhash::error::Error> {
-	bcrypt::hash_with(BCRYPT_SETUP, password)
+fn hash(password: &str) -> Result<String> {
+	bcrypt::hash_with(BCRYPT_SETUP, password).map_err(|e| e.into())
 }
 
 fn verify(password: &str, hash: &str) -> bool {

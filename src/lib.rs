@@ -108,7 +108,6 @@ fn assemble(rocket: Rocket) -> Rocket {
 
 use rocket::response::Responder;
 use rocket::Request;
-use std::fmt::Debug;
 pub enum Either<R, E> {
 	Left(R),
 	Right(E),
@@ -116,8 +115,8 @@ pub enum Either<R, E> {
 
 impl<'r, R, E> Responder<'r> for Either<R, E>
 where
-	R: Responder<'r> + Debug,
-	E: Responder<'r> + Debug,
+	R: Responder<'r>,
+	E: Responder<'r>,
 {
 	fn respond_to(self, req: &Request) -> rocket::response::Result<'r> {
 		match self {

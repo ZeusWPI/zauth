@@ -26,7 +26,7 @@ pub fn delete_session() -> impl Responder<'static> {
 pub struct LoginFormData {
 	username: String,
 	password: String,
-	state:    Option<String>,
+	state: Option<String>,
 }
 
 #[post("/login", data = "<form>")]
@@ -34,12 +34,13 @@ pub fn create_session(
 	form: Form<LoginFormData>,
 	mut cookies: Cookies,
 	conn: DbConn,
-) -> impl Responder<'static>
-{
+) -> impl Responder<'static> {
 	let form = form.into_inner();
 	let user =
 		User::find_and_authenticate(&form.username, &form.password, &conn);
-	if let Some(user) = user {
+
+	// TODO: handle error value better
+	if let Ok(user) = user {
 		Session::add_to_cookies(user, &mut cookies);
 		Ok(Redirect::to("/"))
 	} else {
