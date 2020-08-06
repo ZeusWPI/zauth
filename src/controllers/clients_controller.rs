@@ -32,6 +32,6 @@ pub fn create_client(
 	let client = Client::create(client.into_inner(), &conn)?;
 	Some(Accepter{
 		html: Redirect::to(uri!(list_clients)),
-		json: Json(client),
+		json: status::Created(String::from("/client"), Some(Json(client))),
 	})
 }
