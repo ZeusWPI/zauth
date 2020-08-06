@@ -10,8 +10,8 @@ The name is open for discussion.
 2. Next, you'll have to create a user:
 ```sql
 CREATE USER 'zauth'@'localhost' IDENTIFIED BY 'zauth';
-CREATE DATABASE 'zauth';
-CREATE DATABASE 'zauth_test';
+CREATE DATABASE zauth;
+CREATE DATABASE zauth_test;
 GRANT ALL PRIVILEGES ON zauth . * TO 'zauth'@'localhost';
 GRANT ALL PRIVILEGES ON zauth_test . * TO 'zauth'@'localhost';
 ```
@@ -26,4 +26,4 @@ GRANT ALL PRIVILEGES ON zauth_test . * TO 'zauth'@'localhost';
 5. You can start the server with `cargo run`, it should run on
   [localhost:8000](http://localhost:8000).
 
-You can now start developing! A good way to start is too look at the routes defined in the [controllers](./src/controllers/).
+You can now start developing! A good way to start is to look at the routes defined in the [controllers](./src/controllers/).
