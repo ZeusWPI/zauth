@@ -29,7 +29,6 @@ pub fn create_client(
 	_admin: AdminSession,
 ) -> Option<impl Responder<'static>>
 {
-	println!("{:?}", client);
 	let client = Client::create(client.into_inner(), &conn)?;
 	Some(Accepter{
 		html: Redirect::to(uri!(list_clients)),
