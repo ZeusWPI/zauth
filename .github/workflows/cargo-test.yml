@@ -16,13 +16,16 @@ jobs:
           MYSQL_RANDOM_ROOT_PASSWORD: true
           MYSQL_HOST: "localhost"
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
     - name: Install system dependencies
       run: sudo apt install libsqlite3-dev libmysqlclient-dev
-    - name: Install Rust nightly and diesel-cli
-      run: rustup toolchain install nightly &&
-        rustup default nightly &&
-        cargo install diesel_cli
+    - name: Install diesel-cli
+      run: cargo install diesel_cli
     - name: Build Zauth
       run: cargo build --verbose
     - name: Run tests
@@ -32,11 +35,12 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: Install Rust nightly and rustfmt
-      run:
-        rustup toolchain install nightly --component complete &&
-        rustup default nightly &&
-        rustup component add rustfmt --toolchain nightly
+    - uses: actions/checkout@v2
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+        components: rustfmt
     - name: Check formatting
       run: cargo fmt -- --check
