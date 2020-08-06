@@ -10,5 +10,5 @@ pkgs.mkShell {
     pkgs.mariadb
   ];
   LD_PRELOAD =
-    "/nix/store/2d83pqzzi4qxsg1nfppp1qrkr6hn323g-mariadb-server-10.4.13/lib/libmariadb.so";
+    "${pkgs.mariadb}/lib/libmariadb.so";
 }
