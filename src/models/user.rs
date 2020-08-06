@@ -24,7 +24,7 @@ mod schema {
 		lastname -> Varchar,
 		email -> Varchar,
 		ssh_key -> Nullable<Text>,
-		last_accessed_at -> Datetime,
+		last_seen -> Datetime,
 		created_at -> Datetime,
 		}
 	}
@@ -40,12 +40,12 @@ pub struct User {
 	pub hashed_password: String,
 	pub admin:           bool,
 
-	pub firstname:        String,
-	pub lastname:         String,
-	pub email:            String,
-	pub ssh_key:          Option<String>,
-	pub last_accessed_at: NaiveDateTime,
-	pub created_at:       NaiveDateTime,
+	pub firstname:  String,
+	pub lastname:   String,
+	pub email:      String,
+	pub ssh_key:    Option<String>,
+	pub last_seen:  NaiveDateTime,
+	pub created_at: NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -61,12 +61,12 @@ pub struct NewUser {
 #[table_name = "users"]
 #[derive(Serialize, Insertable, Debug, Clone)]
 struct NewUserHashed {
-	username:         String,
-	hashed_password:  String,
-	firstname:        String,
-	lastname:         String,
-	email:            String,
-	last_accessed_at: NaiveDateTime,
+	username:        String,
+	hashed_password: String,
+	firstname:       String,
+	lastname:        String,
+	email:           String,
+	last_seen:       NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -103,12 +103,12 @@ impl User {
 
 	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Result<User> {
 		let user = NewUserHashed {
-			username:         user.username,
-			hashed_password:  hash(&user.password).ok()?,
-			firstname:        user.firstname,
-			lastname:         user.lastname,
-			email:            user.email,
-			last_accessed_at: Utc::now().naive_utc(),
+			username:        user.username,
+			hashed_password: hash(&user.password).ok()?,
+			firstname:       user.firstname,
+			lastname:        user.lastname,
+			email:           user.email,
+			last_seen:       Utc::now().naive_utc(),
 		};
 		conn.transaction(|| {
 			// Create a new user
