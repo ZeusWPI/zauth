@@ -10,13 +10,13 @@ use crate::views::accepter::Accepter;
 use crate::DbConn;
 
 #[get("/clients")]
-pub fn list_clients(session: UserSession, conn: DbConn, _admin: AdminSession) -> impl Responder<'static> {
+pub fn list_clients(conn: DbConn, session: AdminSession) -> impl Responder<'static> {
 	let clients = Client::all(&conn);
 	Accepter {
 		html: template! {
 			"clients/index.html";
 			clients: Vec<Client> = clients.clone(),
-			current_user: User = session.user
+			current_user: User = session.admin,
 		},
 		json: Json(clients),
 	}
