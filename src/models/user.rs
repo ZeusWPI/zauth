@@ -3,6 +3,7 @@ use crate::errors::{Result, ZauthError};
 use crate::ConcreteConnection;
 use diesel::{self, prelude::*};
 
+use chrono::NaiveDateTime;
 use pwhash::bcrypt::{self, BcryptSetup};
 
 const DEFAULT_COST: u32 = 11;
@@ -15,11 +16,16 @@ const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
 mod schema {
 	table! {
 		users {
-			id -> Integer,
-			username -> Text,
-			#[sql_name = "password"]
-			hashed_password -> Text,
-			admin -> Bool,
+		id -> Integer,
+		username -> Varchar,
+		hashed_password -> Varchar,
+		admin -> Bool,
+		firstname -> Varchar,
+		lastname -> Varchar,
+		email -> Varchar,
+		ssh_key -> Nullable<Text>,
+		last_accessed_at -> Datetime,
+		created_at -> Datetime,
 		}
 	}
 }
@@ -28,10 +34,18 @@ mod schema {
 #[table_name = "users"]
 pub struct User {
 	pub id:              i32,
+	// validate to have at least 3 chars
 	pub username:        String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password: String,
 	pub admin:           bool,
+
+	pub firstname:        String,
+	pub lastname:         String,
+	pub email:            String,
+	pub ssh_key:          Option<String>,
+	pub last_accessed_at: NaiveDateTime,
+	pub created_at:       NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -103,11 +117,13 @@ impl User {
 
 	pub fn update(self, conn: &ConcreteConnection) -> Result<Self> {
 		let id = self.id;
+
 		conn.transaction(|| {
 			// Create a new user
 			diesel::update(users::table.find(id))
 				.set(self)
 				.execute(conn)?;
+
 			// Fetch the updated record
 			users::table.find(id).first(conn)
 		})

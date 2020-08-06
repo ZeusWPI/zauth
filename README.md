@@ -27,7 +27,7 @@ The name is open for discussion.
     ```
     ZAUTH_ADMIN_PASSWORD=admin cargo run
     ```
-   The server should then run on[localhost:8000](http://localhost:8000) and create
+   The server should then run on [localhost:8000](http://localhost:8000) and create
    an admin user with password 'admin'.
 
 You can now start developing! A good way to start is to look at the routes defined in the [controllers](./src/controllers/).
