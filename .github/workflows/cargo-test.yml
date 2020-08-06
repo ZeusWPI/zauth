@@ -24,6 +24,14 @@ jobs:
         override: true
     - name: Install system dependencies
       run: sudo apt install libsqlite3-dev libmysqlclient-dev
+    - name: Cache compiled dependencies
+      uses: actions/cache@v2
+      with:
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
     - name: Build Zauth
       run: cargo build --verbose
     - name: Run tests
