@@ -2,22 +2,22 @@
 {% block content %}
 <h1>Welcome to the Zauth debug page</h1>
 {% match current_user %}
-    {% when Some with (user) %}
-        <p>You are logged in as <b>{{ user.username }}</b>.
-        <a href="/logout">Log out here.</a>
+{% when Some with (user) %}
+<p>You are logged in as <b>{{ user.username }}</b>.
+    <a href="/logout">Log out here.</a>
     {% when None %}
-    <p>You are not logged in. <a href="/login">Log in here.</a>
-{% endmatch %}
+<p>You are not logged in. <a href="/login">Log in here.</a>
+    {% endmatch %}
 <h2>Clients ({{ clients.len() }})</h2>
 <ul>
-  {% for client in clients %}
-  <li>{{ client.name }}</li>
-  {% endfor %}
+    {% for client in clients %}
+    <li>{{ client.name }}</li>
+    {% endfor %}
 </ul>
 <h2>Users ({{ users.len() }})</h2>
 <ul>
-  {% for user in users %}
-  <li><a href="/users/{{ user.id }}">{{ user.username }}</a></li>
-  {% endfor %}
+    {% for user in users %}
+    <li><a href="/users/{{ user.id }}">{{ user.username }}</a></li>
+    {% endfor %}
 </ul>
 {% endblock content %}

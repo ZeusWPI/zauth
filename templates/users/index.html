@@ -5,6 +5,12 @@
     <tr>
         <th>Username</th>
         <th>Admin?</th>
+        <th>Firstname</th>
+        <th>Lastname</th>
+        <th>Email</th>
+        <th>ssh key</th>
+        <th>Last accessed at</th>
+        <th>Created at</th>
     </tr>
     {% for user in users %}
     <tr>
@@ -14,6 +20,19 @@
         {% else %}
         <td>No</td>
         {% endif%}
+        <td>{{ user.firstname }}</td>
+        <td>{{ user.lastname }}</td>
+        <td>{{ user.email }}</td>
+        <td>
+            {% match user.ssh_key %}
+                {% when Some with (val) %}
+                    Found {{ val }}
+                {% when None %}
+                    Not configured
+            {% endmatch %}
+        </td>
+        <td>{{ user.last_accessed_at }}</td>
+        <td>{{ user.created_at }}</td>
     </tr>
     {% endfor %}
 </table>
@@ -22,8 +41,22 @@
 <form action="/users" method="post">
     <label for="username">Username</label>
     <input id="username" name="username" type="text"/>
+
     <label for="password">Password</label>
     <input id="password" name="password" type="password"/>
+
+    <label for="firstname">Firstname</label>
+    <input id="firstname" name="firstname" type="text"/>
+
+    <label for="lastname">Lastname</label>
+    <input id="lastname" name="lastname" type="text"/>
+
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email"/>
+
+    <label for="ssh_key">ssh key</label>
+    <input id="ssh_key" name="ssh_key" type="text"/>
+
     <button type="submit">Create</button>
 </form>
 {% endif %}

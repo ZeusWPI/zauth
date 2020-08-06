@@ -3,7 +3,7 @@ use crate::errors::{Result, ZauthError};
 use crate::ConcreteConnection;
 use diesel::{self, prelude::*};
 
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use pwhash::bcrypt::{self, BcryptSetup};
 
 const DEFAULT_COST: u32 = 11;
@@ -50,21 +50,33 @@ pub struct User {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
-	pub username: String,
-	pub password: String,
+	pub username:  String,
+	pub password:  String,
+	pub firstname: String,
+	pub lastname:  String,
+	pub email:     String,
+	pub ssh_key:   Option<String>,
 }
 
 #[table_name = "users"]
 #[derive(Serialize, Insertable, Debug, Clone)]
 struct NewUserHashed {
-	username:        String,
-	hashed_password: String,
+	username:         String,
+	hashed_password:  String,
+	firstname:        String,
+	lastname:         String,
+	email:            String,
+	last_accessed_at: NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct UserChange {
-	pub username: Option<String>,
-	pub password: Option<String>,
+	pub username:  Option<String>,
+	pub password:  Option<String>,
+	pub firstname: Option<String>,
+	pub lastname:  Option<String>,
+	pub email:     Option<String>,
+	pub ssh_key:   Option<String>,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -91,18 +103,22 @@ impl User {
 
 	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Result<User> {
 		let user = NewUserHashed {
-			username:        user.username,
-			hashed_password: hash(&user.password)?,
+			username:         user.username,
+			hashed_password:  hash(&user.password).ok()?,
+			firstname:        user.firstname,
+			lastname:         user.lastname,
+			email:            user.email,
+			last_accessed_at: Utc::now().naive_utc(),
 		};
 		conn.transaction(|| {
 			// Create a new user
-			diesel::insert_into(users::table)
+			diesel::insert_into(user::table)
 				.values(&user)
 				.execute(conn)?;
 			// Fetch the last created user
-			let user = users::table.order(users::id.desc()).first(conn)?;
-			Ok(user)
+			users.order(user::id.desc()).first(conn)
 		})
+		.ok()
 	}
 
 	pub fn change_with(&mut self, change: UserChange) -> Result<()> {
@@ -111,6 +127,18 @@ impl User {
 		}
 		if let Some(password) = change.password {
 			self.hashed_password = hash(&password)?;
+		}
+		if let Some(firstname) = change.firstname {
+			self.firstname = firstname;
+		}
+		if let Some(lastname) = change.lastname {
+			self.lastname = lastname;
+		}
+		if let Some(email) = change.email {
+			self.email = email;
+		}
+		if let Some(ssh_key) = change.ssh_key {
+			self.ssh_key = Some(ssh_key);
 		}
 		Ok(())
 	}
