@@ -7,14 +7,14 @@ jobs:
 
     runs-on: ubuntu-latest
     services:
-      mysql:
-        image: mariadb
+      postgres:
+        image: postgres
         env:
-          MYSQL_DATABASE: "zauth_test"
-          MYSQL_USER: "zauth"
-          MYSQL_PASSWORD: "zauth"
-          MYSQL_RANDOM_ROOT_PASSWORD: true
-          MYSQL_HOST: "localhost"
+          POSTGRES_DB: "zauth_test"
+          POSTGRES_USER: "zauth"
+          POSTGRES_PASSWORD: "zauth"
+        ports:
+          - 5432:5432
     steps:
     - uses: actions/checkout@v2
     - name: Install latest nightly
