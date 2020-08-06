@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: zauth
+  title: Zauth
   version: '1.0'
 servers:
   - url: 'http://localhost:8000'
@@ -334,7 +334,11 @@ components:
       type: object
       properties:
         id:
+          type: integer
+        username:
           type: string
+        admin:
+          type: boolean
     Client:
       title: Client
       type: object
