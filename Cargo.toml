@@ -24,7 +24,7 @@ diesel = { version = "1.4", features = ["postgres", "r2d2"] }
 diesel_migrations = "1.4"
 tempfile = "3.1"
 maplit = "1.0"
-parking_lot = { version = "0.10", features = ["nightly"] }
+parking_lot = { version = "0.11", features = ["nightly"] }
 
 [dependencies.rocket_contrib]
 version="0.4.2"
