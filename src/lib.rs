@@ -7,7 +7,10 @@ extern crate rand;
 extern crate regex;
 
 #[macro_use]
-extern crate error_chain;
+extern crate anyhow;
+#[macro_use]
+extern crate thiserror;
+
 #[macro_use]
 extern crate rocket_contrib;
 #[macro_use]
@@ -98,7 +101,28 @@ fn assemble(rocket: Rocket) -> Rocket {
 				Err(e) => {
 					eprintln!("Failed to run database migrations: {:?}", e);
 					Err(rocket)
-				},
+				}
 			}
 		}))
+}
+
+use rocket::response::Responder;
+use rocket::Request;
+use std::fmt::Debug;
+pub enum Either<R, E> {
+	Left(R),
+	Right(E),
+}
+
+impl<'r, R, E> Responder<'r> for Either<R, E>
+where
+	R: Responder<'r> + Debug,
+	E: Responder<'r> + Debug,
+{
+	fn respond_to(self, req: &Request) -> rocket::response::Result<'r> {
+		match self {
+			Self::Left(left) => left.respond_to(req),
+			Self::Right(right) => right.respond_to(req),
+		}
+	}
 }

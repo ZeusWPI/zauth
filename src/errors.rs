@@ -1,40 +1,32 @@
 use rocket::http::Status;
-use rocket::request::Request;
-use rocket::response::{self, Responder, Response};
+use rocket::response::{self, Responder};
+use rocket::Request;
+use thiserror::Error;
 
-error_chain! {
-	foreign_links {
-		SerdeUrlencode(serde_urlencoded::ser::Error);
-	}
-	errors {
-		NotImplemented(message: String) {
-			description("not implemented")
-			display("Not implemented: '{}'", message)
-		}
-		Unauthorized(message: String) {
-			description("not authorized")
-			display("Not authorized: '{}'", message)
-		}
+#[derive(Error, Debug)]
+pub enum ZauthError {
+	#[error("bindecode error")]
+	BinDecodeError(#[from] Box<bincode::ErrorKind>),
+	#[error("base64 decode error")]
+	DecodeError(#[from] base64::DecodeError),
+	#[error("database error")] // Not used yet
+	DatabaseError(#[from] std::io::Error),
+	#[error("Not authorized: '{0}'")]
+	Unauthorized(String),
+	#[error("invalid header (expected {expected:?}, found {found:?})")]
+	InvalidHeader { expected: String, found: String },
+	#[error("unknown data store error")]
+	Unknown(String),
+	#[error("Not implemented: '{0}'")]
+	NotImplemented(String),
+	#[error("{0}")]
+	Custom(Status, String),
+}
+
+impl Responder<'static> for ZauthError {
+	fn respond_to(self, _: &Request) -> response::Result<'static> {
+		Err(Status::ImATeapot)
 	}
 }
 
-impl ErrorKind {
-	fn status(&self) -> Status {
-		match self {
-			ErrorKind::NotImplemented(_) => Status::NotImplemented,
-			ErrorKind::Unauthorized(_) => Status::Unauthorized,
-			_ => Status::InternalServerError,
-		}
-	}
-
-	fn default_response<'r>(self, req: &Request) -> response::Result<'r> {
-		let message = format!("An error occured! {}", self).respond_to(req)?;
-		Response::build_from(message).status(self.status()).ok()
-	}
-}
-
-impl<'r> Responder<'r> for Error {
-	fn respond_to(self, req: &Request) -> response::Result<'r> {
-		self.0.default_response(req)
-	}
-}
+pub type Result<T> = std::result::Result<T, ZauthError>;

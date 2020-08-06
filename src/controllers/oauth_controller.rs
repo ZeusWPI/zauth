@@ -11,16 +11,17 @@ use crate::errors::*;
 use crate::models::client::*;
 use crate::models::user::*;
 use crate::DbConn;
+use crate::Either::{self, Left, Right};
 
 use crate::http_authentication::BasicAuthentication;
 use crate::token_store::TokenStore;
 
 #[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
 pub struct AuthState {
-	pub client_id:    i32,
-	pub client_name:  String,
+	pub client_id: i32,
+	pub client_name: String,
 	pub redirect_uri: String,
-	pub scope:        Option<String>,
+	pub scope: Option<String>,
 	pub client_state: Option<String>,
 }
 
@@ -36,13 +37,12 @@ impl AuthState {
 	pub fn from_req(
 		client: Client,
 		auth_req: AuthorizationRequest,
-	) -> AuthState
-	{
+	) -> AuthState {
 		AuthState {
-			client_id:    client.id,
-			client_name:  client.name,
+			client_id: client.id,
+			client_name: client.name,
 			redirect_uri: auth_req.redirect_uri,
-			scope:        auth_req.scope,
+			scope: auth_req.scope,
 			client_state: auth_req.state,
 		}
 	}
@@ -51,80 +51,75 @@ impl AuthState {
 		serde_urlencoded::to_string(self).unwrap()
 	}
 
-	pub fn encode_b64(&self) -> String {
-		base64::encode_config(
-			&bincode::serialize(self).unwrap(),
+	pub fn encode_b64(&self) -> Result<String> {
+		Ok(base64::encode_config(
+			&bincode::serialize(self)?,
 			base64::URL_SAFE_NO_PAD,
-		)
+		))
 	}
 
-	pub fn decode_b64(state_str: &str) -> Option<AuthState> {
-		bincode::deserialize(
-			&base64::decode_config(state_str, base64::URL_SAFE_NO_PAD)
-				.ok()
-				.unwrap(),
-		)
-		.ok()
+	pub fn decode_b64(state_str: &str) -> Result<AuthState> {
+		Ok(bincode::deserialize(&base64::decode_config(
+			state_str,
+			base64::URL_SAFE_NO_PAD,
+		)?)?)
 	}
 }
 
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 pub struct AuthorizationRequest {
 	pub response_type: String,
-	pub client_id:     String,
-	pub redirect_uri:  String,
-	pub scope:         Option<String>,
-	pub state:         Option<String>,
+	pub client_id: String,
+	pub redirect_uri: String,
+	pub scope: Option<String>,
+	pub state: Option<String>,
 }
 
 #[get("/oauth/authorize?<req..>")]
 pub fn authorize(
 	req: Form<AuthorizationRequest>,
 	conn: DbConn,
-) -> Result<Redirect>
-{
+) -> Result<Redirect> {
 	let req = req.into_inner();
 	if !req.response_type.eq("code") {
-		return Err(ErrorKind::NotImplemented(String::from(
+		return Err(ZauthError::NotImplemented(String::from(
 			"only response_type=code is supported",
-		))
-		.into());
+		)));
 	}
 	if let Some(client) = Client::find_by_name(&req.client_id, &conn) {
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
 			let state = AuthState::from_req(client, req);
 			Ok(Redirect::to(uri!(login_get: state)))
 		} else {
-			Err(ErrorKind::Unauthorized(format!(
+			Err(ZauthError::Unauthorized(format!(
 				"client with id {} is not authorized to useredirect_uri '{}'",
 				req.client_id, req.redirect_uri
-			))
-			.into())
+			)))
 		}
 	} else {
-		Err(ErrorKind::Unauthorized(format!(
+		Err(ZauthError::Unauthorized(format!(
 			"client with id {} is not authorized on this server",
 			req.client_id
-		))
-		.into())
+		)))
 	}
 }
 
 #[derive(FromForm, Debug)]
 pub struct LoginFormData {
-	username:    String,
-	password:    String,
+	username: String,
+	password: String,
 	remember_me: bool,
-	state:       String,
+	state: String,
 }
 
 #[get("/oauth/login?<state..>")]
-pub fn login_get(state: Form<AuthState>) -> impl Responder<'static> {
-	template! {
+pub fn login_get(state: Form<AuthState>) -> Result<impl Responder<'static>> {
+	let state = state.encode_b64()?;
+	Ok(template! {
 		"session/login.html";
-		state:         String = state.encode_b64(),
+		state:         String = state,
 		error: Option<String> = None,
-	}
+	})
 }
 
 #[post("/oauth/login", data = "<form>")]
@@ -132,21 +127,20 @@ pub fn login_post(
 	mut cookies: Cookies,
 	form: Form<LoginFormData>,
 	conn: DbConn,
-) -> std::result::Result<Redirect, impl Debug + Responder<'static>>
-{
+) -> Result<Either<Redirect, impl Responder<'_>>> {
 	let data = form.into_inner();
-	let state = AuthState::decode_b64(&data.state).unwrap();
+	let state = AuthState::decode_b64(&data.state)?;
 	let user =
 		User::find_and_authenticate(&data.username, &data.password, &conn);
 	if let Some(user) = user {
 		Session::add_to_cookies(user, &mut cookies);
-		Ok(Redirect::to(uri!(grant_get: state)))
+		Ok(Either::Left(Redirect::to(uri!(grant_get: state))))
 	} else {
-		Err(template! {
+		Ok(Either::Right(template! {
 			"session/login.html";
-			state: String = state.encode_b64(),
+			state: String = state.encode_b64()?,
 			error: Option<String> = None,
-		})
+		}))
 	}
 }
 
@@ -157,10 +151,10 @@ pub struct GrantFormData {
 }
 
 pub struct UserToken {
-	pub user_id:      i32,
-	pub username:     String,
-	pub client_id:    i32,
-	pub client_name:  String,
+	pub user_id: i32,
+	pub username: String,
+	pub client_id: i32,
+	pub client_name: String,
 	pub redirect_uri: String,
 }
 
@@ -170,30 +164,26 @@ pub fn grant_get<'a>(
 	state: Form<AuthState>,
 	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> std::result::Result<
-	std::result::Result<
-		impl Responder<'static>,
-		impl Debug + Responder<'static>,
-	>,
-	Custom<String>,
->
-{
+) -> Result<Either<impl Responder<'static>, impl Responder<'static>>> {
 	if let Some(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
-			Ok(Ok(template! {
+			Ok(Left(template! {
 				"oauth/grant.html";
 				client_name: String = state.client_name.clone(),
-				state:       String = state.encode_b64(),
+				state:       String = state.encode_b64()?,
 			}))
 		} else {
-			Ok(Err(authorization_granted(
+			Ok(Right(authorization_granted(
 				state.into_inner(),
 				session.user,
 				token_store.inner(),
 			)))
 		}
 	} else {
-		Err(Custom(Status::NotFound, String::from("client not found")))
+		Err(ZauthError::Custom(
+			Status::NotFound,
+			String::from("client not found"),
+		))
 	}
 }
 
@@ -202,10 +192,9 @@ pub fn grant_post(
 	session: UserSession,
 	form: Form<GrantFormData>,
 	token_store: State<TokenStore<UserToken>>,
-) -> std::result::Result<Redirect, Custom<&'static str>>
-{
+) -> Result<Redirect> {
 	let data = form.into_inner();
-	let state = AuthState::decode_b64(&data.state).unwrap();
+	let state = AuthState::decode_b64(&data.state)?;
 	if data.grant {
 		Ok(authorization_granted(
 			state,
@@ -221,13 +210,12 @@ fn authorization_granted(
 	state: AuthState,
 	user: User,
 	token_store: &TokenStore<UserToken>,
-) -> Redirect
-{
+) -> Redirect {
 	let authorization_code = token_store.create_token(UserToken {
-		user_id:      user.id,
-		username:     user.username.clone(),
-		client_id:    state.client_id.clone(),
-		client_name:  state.client_name.clone(),
+		user_id: user.id,
+		username: user.username.clone(),
+		client_id: state.client_id.clone(),
+		client_name: state.client_name.clone(),
 		redirect_uri: state.redirect_uri.clone(),
 	});
 	let uri = format!(
@@ -247,21 +235,21 @@ fn authorization_denied(state: AuthState) -> Redirect {
 
 #[derive(Serialize, Debug)]
 pub struct TokenError {
-	error:             String,
+	error: String,
 	error_description: Option<String>,
 }
 
 impl TokenError {
 	fn json(msg: &str) -> Json<TokenError> {
 		Json(TokenError {
-			error:             String::from(msg),
+			error: String::from(msg),
 			error_description: None,
 		})
 	}
 
 	fn json_extra(msg: &str, extra: &str) -> Json<TokenError> {
 		Json(TokenError {
-			error:             String::from(msg),
+			error: String::from(msg),
 			error_description: Some(String::from(extra)),
 		})
 	}
@@ -270,26 +258,26 @@ impl TokenError {
 #[derive(Serialize, Debug)]
 pub struct TokenSuccess {
 	access_token: String,
-	token_type:   String,
-	expires_in:   u64,
+	token_type: String,
+	expires_in: u64,
 }
 
 impl TokenSuccess {
 	fn json(username: String) -> Json<TokenSuccess> {
 		Json(TokenSuccess {
 			access_token: username.clone(),
-			token_type:   String::from("???"),
-			expires_in:   1,
+			token_type: String::from("???"),
+			expires_in: 1,
 		})
 	}
 }
 
 #[derive(FromForm, Debug)]
 pub struct TokenFormData {
-	grant_type:    String,
-	code:          String,
-	redirect_uri:  Option<String>,
-	client_id:     Option<String>,
+	grant_type: String,
+	code: String,
+	redirect_uri: Option<String>,
+	client_id: Option<String>,
 	client_secret: Option<String>,
 }
 
@@ -299,8 +287,7 @@ pub fn token(
 	form: Form<TokenFormData>,
 	token_state: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> std::result::Result<Json<TokenSuccess>, Json<TokenError>>
-{
+) -> std::result::Result<Json<TokenSuccess>, Json<TokenError>> {
 	let data = form.into_inner();
 	let token = data.code.clone();
 	let token_store = token_state.inner();
