@@ -34,8 +34,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install Rust nightly and rustfmt
-      run: rustup toolchain install nightly &&
-        rustup default nightly &&
-        rustup component add rustfmt --toolchain nightly
+      run:
+        rustup component add rustfmt --toolchain nightly &&
+        rustup toolchain install nightly --component complete &&
+        rustup default nightly
     - name: Check formatting
       run: cargo fmt -- --check
