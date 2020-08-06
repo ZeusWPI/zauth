@@ -36,6 +36,6 @@ jobs:
     - name: Install Rust nightly and rustfmt
       run: rustup toolchain install nightly &&
         rustup default nightly &&
-        rustup component add rustfmt
+        rustup component add rustfmt --toolchain nightly
     - name: Check formatting
       run: cargo fmt -- --check
