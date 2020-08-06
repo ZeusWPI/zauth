@@ -117,7 +117,7 @@ impl User {
 	}
 
 	pub fn find(id: i32, conn: &ConcreteConnection) -> Option<User> {
-		users::table.find(id).first(conn).ok()
+		dbg!(users::table.find(id).first(conn)).ok()
 	}
 
 	pub fn last(conn: &ConcreteConnection) -> Option<User> {
