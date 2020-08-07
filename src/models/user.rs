@@ -24,9 +24,9 @@ mod schema {
 		lastname -> Varchar,
 		email -> Varchar,
 		ssh_key -> Nullable<Text>,
-		last_seen -> Datetime,
-		created_at -> Datetime,
-		}
+		last_seen -> Timestamp,
+		created_at -> Timestamp,
+	}
 	}
 }
 
