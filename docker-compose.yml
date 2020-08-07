@@ -1,4 +1,4 @@
-version: '3'
+version: '3.5'
 services:
   zauth:
     build: .
@@ -26,5 +26,6 @@ services:
 
 networks:
   zauth-internal:
+    name: 'zauth-internal'
 volumes:
   zauth-database:
