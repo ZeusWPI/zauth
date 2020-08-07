@@ -3,3 +3,6 @@ url = "postgresql://zauth:zauth@localhost/zauth"
 
 [development]
 secret_key = "1vwCFFPSdQya895gNiO556SzmfShG6MokstgttLvwjw="
+
+[production.databases.postgresql_database]
+url = "postgresql://zauth:zauth@database/zauth"

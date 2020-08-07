@@ -1,0 +1,30 @@
+version: '3'
+services:
+  zauth:
+    build: .
+    ports:
+      - "8000:8000"
+    restart: on-failure
+    depends_on:
+      - database
+    command: >
+      sh -c "./docker_misc/wait_for_service database 5432 && diesel --database-url 'postgresql://zauth:zauth@database/zauth' database setup && ROCKET_ENV=production zauth"
+    networks:
+      - zauth-internal
+
+  database:
+    image: postgres:13-alpine
+    restart: on-failure
+    environment:
+      POSTGRES_USER: zauth
+      POSTGRES_PASSWORD: zauth
+    volumes:
+      - "./docker_misc/pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf"
+      - zauth-database:/var/lib/postgresql/data
+    networks:
+      - zauth-internal
+
+networks:
+  zauth-internal:
+volumes:
+  zauth-database:
