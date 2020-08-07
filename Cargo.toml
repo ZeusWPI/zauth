@@ -7,7 +7,7 @@ authors = ["Rien Maertens <rien.maertens@posteo.be>"]
 [dependencies]
 askama = { version = "0.9.0", features = ["with-rocket", "mime", "mime_guess"] }
 error-chain = "0.12"
-base64 = "0.10"
+base64 = "0.12"
 bincode = "1.0"
 pwhash = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
