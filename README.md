@@ -16,9 +16,10 @@ The name is open for discussion.
   with `cargo install diesel_cli`.
 
 4. Create the development and testing database with
-  `diesel database reset --database-url "postgresql://zauth:zauth@localhost/zauth"`
-  and
-  `diesel database reset --database-url "postgresql://zauth:zauth@localhost/zauth_test"`.
+    ```shell script
+    diesel database reset --database-url "postgresql://zauth:zauth@localhost/zauth"
+    diesel database reset --database-url "postgresql://zauth:zauth@localhost/zauth_test"
+    ```     
   This will also run the migrations.
 
 5. You can start the server with `cargo run`.

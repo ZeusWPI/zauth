@@ -8,8 +8,8 @@ CREATE TABLE users
     lastname        VARCHAR(255) NOT NULL,
     email           VARCHAR(255) NOT NULL, -- TO BE OR NOT TE UNIQUE?
     ssh_key         TEXT,
-    last_seen       DATETIME     NOT NULL,
-    created_at      DATETIME     NOT NULL DEFAULT NOW()
+    last_seen       TIMESTAMP    NOT NULL,
+    created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX ix_user_username ON user (username);
