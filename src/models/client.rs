@@ -4,7 +4,7 @@ use rand::{thread_rng, Rng};
 
 use self::schema::client;
 use self::schema::client::dsl::client as clients;
-use crate::errors::{Result, ZauthError};
+use crate::errors::{AuthenticationError, Result, ZauthError};
 use crate::ConcreteConnection;
 
 const SECRET_LENGTH: usize = 64;
@@ -23,32 +23,33 @@ mod schema {
 
 #[derive(Serialize, Queryable, Debug, Clone)]
 pub struct Client {
-	pub id:                i32,
-	pub name:              String,
-	pub secret:            String,
-	pub needs_grant:       bool,
+	pub id: i32,
+	pub name: String,
+	pub secret: String,
+	pub needs_grant: bool,
 	pub redirect_uri_list: String,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct NewClient {
-	pub name:              String,
-	pub needs_grant:       bool,
+	pub name: String,
+	pub needs_grant: bool,
 	pub redirect_uri_list: String,
 }
 
 #[table_name = "client"]
 #[derive(Insertable, Debug, Clone)]
 pub struct NewClientWithSecret {
-	pub name:              String,
-	pub needs_grant:       bool,
-	pub secret:            String,
+	pub name: String,
+	pub needs_grant: bool,
+	pub secret: String,
 	pub redirect_uri_list: String,
 }
 
 impl Client {
-	pub fn all(conn: &ConcreteConnection) -> Vec<Client> {
-		clients.load::<Client>(conn).unwrap()
+	pub fn all(conn: &ConcreteConnection) -> Result<Vec<Client>> {
+		let all_clients = clients.load::<Client>(conn)?;
+		Ok(all_clients)
 	}
 
 	fn generate_random_secret() -> String {
@@ -61,13 +62,12 @@ impl Client {
 	pub fn create(
 		client: NewClient,
 		conn: &ConcreteConnection,
-	) -> Option<Client>
-	{
+	) -> Option<Client> {
 		let client = NewClientWithSecret {
-			name:              client.name,
-			needs_grant:       client.needs_grant,
+			name: client.name,
+			needs_grant: client.needs_grant,
 			redirect_uri_list: client.redirect_uri_list,
-			secret:            Self::generate_random_secret(),
+			secret: Self::generate_random_secret(),
 		};
 		dbg!(&client);
 		let client = conn
@@ -87,8 +87,7 @@ impl Client {
 	pub fn find_by_name(
 		name: &str,
 		conn: &ConcreteConnection,
-	) -> Result<Client>
-	{
+	) -> Result<Client> {
 		let client = clients.filter(client::name.eq(name)).first(conn)?;
 		Ok(client)
 	}
@@ -108,13 +107,12 @@ impl Client {
 		name: &str,
 		secret: &str,
 		conn: &ConcreteConnection,
-	) -> Result<Client>
-	{
+	) -> Result<Client> {
 		let client = Self::find_by_name(name, conn)?;
 		if client.secret == secret {
 			Ok(client)
 		} else {
-			Err(ZauthError::AuthFailed)
+			Err(ZauthError::from(AuthenticationError::AuthFailed))
 		}
 	}
 }

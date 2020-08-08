@@ -3,7 +3,7 @@ use rocket::http::{Cookie, Cookies, Status};
 use rocket::request::{FromRequest, Outcome, Request};
 use std::str::FromStr;
 
-use crate::errors::Result;
+use crate::errors::{Result, ZauthError};
 use crate::models::user::User;
 use crate::DbConn;
 
@@ -12,14 +12,14 @@ pub const SESSION_VALIDITY_MINUTES: i64 = 59;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Session {
 	user_id: i32,
-	expiry:  DateTime<Local>,
+	expiry: DateTime<Local>,
 }
 
 impl Session {
 	pub fn new(user: User) -> Session {
 		Session {
 			user_id: user.id,
-			expiry:  Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES),
+			expiry: Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES),
 		}
 	}
 
@@ -36,7 +36,7 @@ impl Session {
 
 	pub fn user(&self, conn: &DbConn) -> Result<User> {
 		if Local::now() > self.expiry {
-			Err(anyhow!("Session expired: {:?}", self).into())
+			Err(ZauthError::SessionExpired)
 		} else {
 			User::find(self.user_id, conn)
 		}

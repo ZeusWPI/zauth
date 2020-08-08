@@ -6,8 +6,6 @@ extern crate pwhash;
 extern crate rand;
 extern crate regex;
 
-#[macro_use]
-extern crate anyhow;
 extern crate thiserror;
 
 #[macro_use]
@@ -100,7 +98,7 @@ fn assemble(rocket: Rocket) -> Rocket {
 				Err(e) => {
 					eprintln!("Failed to run database migrations: {:?}", e);
 					Err(rocket)
-				},
+				}
 			}
 		}))
 }

@@ -7,7 +7,7 @@ use std::fmt::Debug;
 
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::{AdminSession, UserSession};
-use crate::errors::{Result, ZauthError};
+use crate::errors::{AuthenticationError, Result, ZauthError};
 use crate::models::user::*;
 use crate::views::accepter::Accepter;
 use crate::DbConn;
@@ -23,8 +23,7 @@ pub fn show_user(
 	session: UserSession,
 	conn: DbConn,
 	id: i32,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let user = User::find(id, &conn)?;
 	if session.user.admin || session.user.id == user.id {
 		Ok(Accepter {
@@ -32,9 +31,8 @@ pub fn show_user(
 			json: Json(user),
 		})
 	} else {
-		Err(ZauthError::Unauthorized(format!(
-			"client with id {} is not authorized on this server",
-			id
+		Err(ZauthError::from(AuthenticationError::Unauthorized(
+			format!("client with id {} is not authorized on this server", id),
 		)))
 	}
 }
@@ -43,25 +41,23 @@ pub fn show_user(
 pub fn list_users(
 	session: UserSession,
 	conn: DbConn,
-) -> impl Responder<'static>
-{
-	let users = User::all(&conn);
-	Accepter {
+) -> Result<impl Responder<'static>> {
+	let users = User::all(&conn)?;
+	Ok(Accepter {
 		html: template! {
 			"users/index.html";
 			users: Vec<User> = users.clone(),
 			current_user: User = session.user,
 		},
 		json: Json(users),
-	}
+	})
 }
 
 #[post("/users", data = "<user>")]
 pub fn create_user(
 	user: Api<NewUser>,
 	conn: DbConn,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let user = User::create(user.into_inner(), &conn)?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user: user.id)),
@@ -77,8 +73,7 @@ pub fn update_user(
 	conn: DbConn,
 ) -> Result<
 	Either<impl Responder<'static>, Custom<impl Debug + Responder<'static>>>,
->
-{
+> {
 	let mut user = User::find(id, &conn)?;
 	if session.user.id == user.id || session.user.admin {
 		user.change_with(change.into_inner())?;
@@ -98,8 +93,7 @@ pub fn set_admin(
 	value: Api<ChangeAdmin>,
 	_session: AdminSession,
 	conn: DbConn,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let mut user = User::find(id, &conn)?;
 	dbg!(&user);
 	dbg!(&value);

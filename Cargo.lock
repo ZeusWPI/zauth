@@ -59,11 +59,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
 name = "askama"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1490,7 +1485,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "zauth"
 version = "0.1.0"
 dependencies = [
- "anyhow 1.0.32 (registry+https://github.com/rust-lang/crates.io-index)",
  "askama 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1526,7 +1520,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum aes-soft 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "cfd7e7ae3f9a1fb5c03b389fc6bb9a51400d0c13053f0dca698c832bfd893a0d"
 "checksum aesni 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2f70a6b5f971e473091ab7cfb5ffac6cde81666c4556751d8d5620ead8abf100"
 "checksum aho-corasick 0.7.13 (registry+https://github.com/rust-lang/crates.io-index)" = "043164d8ba5c4c3035fec9bbee8647c0261d788f3474306f93bb65901cae0e86"
-"checksum anyhow 1.0.32 (registry+https://github.com/rust-lang/crates.io-index)" = "6b602bfe940d21c130f3895acd65221e8a61270debe89d628b9cb4e3ccb8569b"
 "checksum askama 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "10a1fb9e41eb366cbcd267da2094be5b7e62fdbca9f82091e7503e80f885050d"
 "checksum askama_derive 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e1012c270085fa35ece6a48a569544fde85b6d9ee41074c7b706cc912a03f939"
 "checksum askama_escape 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7a577aeba5fec1aafb9f195d98cfcc38a78b588e4ebf9b15f62ca1c7aa33795a"
