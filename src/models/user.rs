@@ -9,9 +9,9 @@ use pwhash::bcrypt::{self, BcryptSetup};
 
 const DEFAULT_COST: u32 = 11;
 const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
-	salt: None,
+	salt:    None,
 	variant: None,
-	cost: Some(DEFAULT_COST),
+	cost:    Some(DEFAULT_COST),
 };
 
 mod schema {
@@ -29,11 +29,11 @@ mod schema {
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
 #[table_name = "user"]
 pub struct User {
-	pub id: i32,
-	pub username: String,
+	pub id:              i32,
+	pub username:        String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password: String,
-	pub admin: bool,
+	pub admin:           bool,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -45,7 +45,7 @@ pub struct NewUser {
 #[table_name = "user"]
 #[derive(Serialize, Insertable, Debug, Clone)]
 struct NewUserHashed {
-	username: String,
+	username:        String,
 	hashed_password: String,
 }
 
@@ -67,7 +67,7 @@ impl User {
 
 	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Result<User> {
 		let user = NewUserHashed {
-			username: user.username,
+			username:        user.username,
 			hashed_password: hash(&user.password)?,
 		};
 		conn.transaction(|| {
@@ -122,7 +122,8 @@ impl User {
 		username: &str,
 		password: &str,
 		conn: &ConcreteConnection,
-	) -> Result<User> {
+	) -> Result<User>
+	{
 		users
 			.filter(user::username.eq(username))
 			.first(conn)

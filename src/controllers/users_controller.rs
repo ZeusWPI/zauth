@@ -23,7 +23,8 @@ pub fn show_user(
 	session: UserSession,
 	conn: DbConn,
 	id: i32,
-) -> Result<impl Responder<'static>> {
+) -> Result<impl Responder<'static>>
+{
 	let user = User::find(id, &conn)?;
 	if session.user.admin || session.user.id == user.id {
 		Ok(Accepter {
@@ -42,7 +43,8 @@ pub fn show_user(
 pub fn list_users(
 	session: UserSession,
 	conn: DbConn,
-) -> impl Responder<'static> {
+) -> impl Responder<'static>
+{
 	let users = User::all(&conn);
 	Accepter {
 		html: template! {
@@ -58,7 +60,8 @@ pub fn list_users(
 pub fn create_user(
 	user: Api<NewUser>,
 	conn: DbConn,
-) -> Result<impl Responder<'static>> {
+) -> Result<impl Responder<'static>>
+{
 	let user = User::create(user.into_inner(), &conn)?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user: user.id)),
@@ -74,7 +77,8 @@ pub fn update_user(
 	conn: DbConn,
 ) -> Result<
 	Either<impl Responder<'static>, Custom<impl Debug + Responder<'static>>>,
-> {
+>
+{
 	let mut user = User::find(id, &conn)?;
 	if session.user.id == user.id || session.user.admin {
 		user.change_with(change.into_inner())?;
@@ -94,7 +98,8 @@ pub fn set_admin(
 	value: Api<ChangeAdmin>,
 	_session: AdminSession,
 	conn: DbConn,
-) -> Result<impl Responder<'static>> {
+) -> Result<impl Responder<'static>>
+{
 	let mut user = User::find(id, &conn)?;
 	dbg!(&user);
 	dbg!(&value);

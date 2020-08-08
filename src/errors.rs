@@ -27,8 +27,8 @@ pub enum ZauthError {
 	NotImplemented(String),
 	#[error("{0}")]
 	Custom(Status, String),
-	#[error("Token error {0}")]
-	TokenError(#[from] Json<TokenError>),
+	#[error("Token error {0:?}")]
+	TokenError(Json<TokenError>),
 	#[error("Anyhow error")]
 	Anyhow(#[from] anyhow::Error),
 }
