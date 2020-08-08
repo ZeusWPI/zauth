@@ -99,7 +99,7 @@ fn assemble(rocket: Rocket) -> Rocket {
 				Err(e) => {
 					eprintln!("Failed to run database migrations: {:?}", e);
 					Err(rocket)
-				}
+				},
 			}
 		}));
 	if rocket.config().environment.is_dev() {
@@ -129,11 +129,11 @@ fn assemble(rocket: Rocket) -> Rocket {
 					match admin {
 						Ok(admin) => {
 							dbg!(admin);
-						}
+						},
 						Err(e) => {
 							eprintln!("Error {:?}", e);
 							return Err(rocket);
-						}
+						},
 					}
 				}
 				Ok(rocket)

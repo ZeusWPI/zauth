@@ -23,26 +23,26 @@ mod schema {
 
 #[derive(Serialize, Queryable, Debug, Clone)]
 pub struct Client {
-	pub id: i32,
-	pub name: String,
-	pub secret: String,
-	pub needs_grant: bool,
+	pub id:                i32,
+	pub name:              String,
+	pub secret:            String,
+	pub needs_grant:       bool,
 	pub redirect_uri_list: String,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct NewClient {
-	pub name: String,
-	pub needs_grant: bool,
+	pub name:              String,
+	pub needs_grant:       bool,
 	pub redirect_uri_list: String,
 }
 
 #[table_name = "clients"]
 #[derive(Insertable, Debug, Clone)]
 pub struct NewClientWithSecret {
-	pub name: String,
-	pub needs_grant: bool,
-	pub secret: String,
+	pub name:              String,
+	pub needs_grant:       bool,
+	pub secret:            String,
 	pub redirect_uri_list: String,
 }
 
@@ -62,12 +62,13 @@ impl Client {
 	pub fn create(
 		client: NewClient,
 		conn: &ConcreteConnection,
-	) -> Result<Client> {
+	) -> Result<Client>
+	{
 		let client = NewClientWithSecret {
-			name: client.name,
-			needs_grant: client.needs_grant,
+			name:              client.name,
+			needs_grant:       client.needs_grant,
 			redirect_uri_list: client.redirect_uri_list,
-			secret: Self::generate_random_secret(),
+			secret:            Self::generate_random_secret(),
 		};
 		dbg!(&client);
 		let client = conn
@@ -87,7 +88,8 @@ impl Client {
 	pub fn find_by_name(
 		name: &str,
 		conn: &ConcreteConnection,
-	) -> Result<Client> {
+	) -> Result<Client>
+	{
 		let client =
 			clients::table.filter(clients::name.eq(name)).first(conn)?;
 		Ok(client)
@@ -108,7 +110,8 @@ impl Client {
 		name: &str,
 		secret: &str,
 		conn: &ConcreteConnection,
-	) -> Result<Client> {
+	) -> Result<Client>
+	{
 		let client = Self::find_by_name(name, conn)?;
 		if client.secret == secret {
 			Ok(client)

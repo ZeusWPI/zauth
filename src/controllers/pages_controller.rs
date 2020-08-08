@@ -10,7 +10,8 @@ use crate::DbConn;
 pub fn home_page(
 	session: Option<UserSession>,
 	conn: DbConn,
-) -> Result<impl Responder<'static>> {
+) -> Result<impl Responder<'static>>
+{
 	Ok(template! {
 		"pages/home.html";
 		current_user: Option<User> = session.map(|session| session.user),
