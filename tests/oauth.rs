@@ -36,24 +36,24 @@ fn normal_flow() {
 		let user_username = "batman";
 		let user_password = "wolololo";
 
-		let client = {
-			User::create(
-				NewUser {
-					username: String::from(user_username),
-					password: String::from(user_password),
-				},
-				&db,
-			);
-			Client::create(
-				NewClient {
-					name:              String::from(client_id),
-					needs_grant:       true,
-					redirect_uri_list: String::from(redirect_uri),
-				},
-				&db,
-			)
-			.expect("client")
-		};
+		let user = User::create(
+			&db,
+			NewUser {
+				username: String::from(user_username),
+				password: String::from(user_password),
+			},
+		)
+		.expect("user");
+
+		let client = Client::create(
+			NewClient {
+				name:              String::from(client_id),
+				needs_grant:       true,
+				redirect_uri_list: String::from(redirect_uri),
+			},
+			&db,
+		)
+		.expect("client");
 
 		// 1. User is redirected to OAuth server with request params given by
 		// the client    The OAuth server should respond with a redirect to
@@ -229,7 +229,7 @@ fn normal_flow() {
 			.rocket()
 			.state::<TokenStore<UserToken>>()
 			.expect("should have token store");
-		let user = User::find(1, &db).expect("user");
+
 		let authorization_code = token_store.create_token(UserToken {
 			user_id:      user.id,
 			username:     user.username.clone(),

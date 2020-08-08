@@ -137,7 +137,7 @@ mod test {
 	}
 
 	#[test]
-	fn preffers_html() {
+	fn prefers_html() {
 		let client = client();
 		let mut response = client
 			.get("/simple")
@@ -159,7 +159,7 @@ mod test {
 	}
 
 	#[test]
-	fn preffers_json() {
+	fn prefers_json() {
 		let client = client();
 		let mut response = client
 			.get("/simple")
@@ -180,7 +180,7 @@ mod test {
 	}
 
 	#[test]
-	fn no_prefference() {
+	fn no_preference() {
 		let client = client();
 
 		let response = client.get("/simple").dispatch();

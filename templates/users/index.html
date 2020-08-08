@@ -2,27 +2,29 @@
 {% block content %}
 <h1>Users ({{ users.len() }})</h1>
 <table>
-<tr>
-    <th>Username</th>
-    <th>Admin?</th>
-</tr>
-{% for user in users %}
+    <tr>
+        <th>Username</th>
+        <th>Admin?</th>
+    </tr>
+    {% for user in users %}
     <tr>
         <td><a href="/users/{{ user.id }}">{{ user.username }}</a></td>
-    {% if user.admin %}
+        {% if user.admin %}
         <td><b>Yes</b></td>
-    {% else %}
+        {% else %}
         <td>No</td>
-    {% endif%}
+        {% endif%}
     </tr>
-{% endfor %}
+    {% endfor %}
 </table>
 
 {% if current_user.admin %}
 <form action="/users" method="post">
-<label for="username">Username</label><input name="username" type="text"></input>
-<label for="password">Password</label><input name="password" type="password"></input>
-<button type="submit">Create</button>
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text"/>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password"/>
+    <button type="submit">Create</button>
 </form>
 {% endif %}
 

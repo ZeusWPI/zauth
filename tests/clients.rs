@@ -1,6 +1,7 @@
 extern crate diesel;
 extern crate rocket;
 
+use rocket::http::Accept;
 use rocket::http::ContentType;
 use rocket::http::Status;
 
@@ -24,6 +25,7 @@ fn create_client() {
 			.post("/clients")
 			.body(client_form)
 			.header(ContentType::Form)
+			.header(Accept::JSON)
 			.dispatch();
 
 		assert_eq!(response.status(), Status::Created);

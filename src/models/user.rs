@@ -1,9 +1,7 @@
-use diesel::{self, prelude::*};
-
-use self::schema::user;
-use self::schema::user::dsl::user as users;
+use self::schema::users;
 use crate::errors::{AuthenticationError, Result, ZauthError};
 use crate::ConcreteConnection;
+use diesel::{self, prelude::*};
 
 use pwhash::bcrypt::{self, BcryptSetup};
 
@@ -16,7 +14,7 @@ const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
 
 mod schema {
 	table! {
-		user {
+		users {
 			id -> Integer,
 			username -> Text,
 			#[sql_name = "password"]
@@ -27,7 +25,7 @@ mod schema {
 }
 
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
-#[table_name = "user"]
+#[table_name = "users"]
 pub struct User {
 	pub id: i32,
 	pub username: String,
@@ -42,7 +40,7 @@ pub struct NewUser {
 	pub password: String,
 }
 
-#[table_name = "user"]
+#[table_name = "users"]
 #[derive(Serialize, Insertable, Debug, Clone)]
 struct NewUserHashed {
 	username: String,
@@ -51,8 +49,8 @@ struct NewUserHashed {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct UserChange {
-	username: Option<String>,
-	password: Option<String>,
+	pub username: Option<String>,
+	pub password: Option<String>,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -62,8 +60,18 @@ pub struct ChangeAdmin {
 
 impl User {
 	pub fn all(conn: &ConcreteConnection) -> Result<Vec<User>> {
-		let all_users = users.load::<User>(conn)?;
+		let all_users = users::table.load::<User>(conn)?;
 		Ok(all_users)
+	}
+
+	pub fn find_by_username(
+		username: &str,
+		conn: &ConcreteConnection,
+	) -> Result<User> {
+		users::table
+			.filter(users::username.eq(username))
+			.first(conn)
+			.map_err(ZauthError::from)
 	}
 
 	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Result<User> {
@@ -73,11 +81,11 @@ impl User {
 		};
 		conn.transaction(|| {
 			// Create a new user
-			diesel::insert_into(user::table)
+			diesel::insert_into(users::table)
 				.values(&user)
 				.execute(conn)?;
 			// Fetch the last created user
-			let user = users.order(user::id.desc()).first(conn)?;
+			let user = users::table.order(users::id.desc()).first(conn)?;
 			Ok(user)
 		})
 	}
@@ -96,22 +104,24 @@ impl User {
 		let id = self.id;
 		conn.transaction(|| {
 			// Create a new user
-			diesel::update(users.find(id)).set(self).execute(conn)?;
+			diesel::update(users::table.find(id))
+				.set(self)
+				.execute(conn)?;
 			// Fetch the updated record
-			users.find(id).first(conn)
+			users::table.find(id).first(conn)
 		})
-		.map_err(|e| e.into())
+		.map_err(ZauthError::from)
 	}
 
 	pub fn find(id: i32, conn: &ConcreteConnection) -> Result<User> {
-		users.find(id).first(conn).map_err(|e| e.into())
+		users::table.find(id).first(conn).map_err(ZauthError::from)
 	}
 
 	pub fn last(conn: &ConcreteConnection) -> Result<User> {
-		users
-			.order(user::id.desc())
+		users::table
+			.order(users::id.desc())
 			.first(conn)
-			.map_err(|e| e.into())
+			.map_err(ZauthError::from)
 	}
 
 	pub fn find_and_authenticate(
@@ -119,17 +129,13 @@ impl User {
 		password: &str,
 		conn: &ConcreteConnection,
 	) -> Result<User> {
-		users
-			.filter(user::username.eq(username))
-			.first(conn)
-			.map_err(ZauthError::from)
-			.and_then(|user: User| {
-				if verify(password, &user.hashed_password) {
-					Ok(user)
-				} else {
-					Err(ZauthError::from(AuthenticationError::AuthFailed))
-				}
-			})
+		Self::find_by_username(username, conn).and_then(|user: User| {
+			if verify(password, &user.hashed_password) {
+				Ok(user)
+			} else {
+				Err(ZauthError::from(AuthenticationError::AuthFailed))
+			}
+		})
 	}
 }
 

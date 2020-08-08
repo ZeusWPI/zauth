@@ -31,20 +31,21 @@ pub mod models;
 pub mod token_store;
 
 use crate::controllers::*;
+use crate::models::user::*;
 use crate::token_store::TokenStore;
 use rocket::config::Config;
 use rocket::Rocket;
 use rocket_contrib::serve::StaticFiles;
 
-use diesel::MysqlConnection;
+use diesel::PgConnection;
 use rocket::fairing::AdHoc;
 
 // Embed diesel migrations (provides embedded_migrations::run())
 embed_migrations!();
 
-#[database("mysql_database")]
-pub struct DbConn(MysqlConnection);
-pub type ConcreteConnection = MysqlConnection;
+#[database("postgresql_database")]
+pub struct DbConn(PgConnection);
+pub type ConcreteConnection = PgConnection;
 
 #[get("/favicon.ico")]
 pub fn favicon() -> &'static str {
@@ -62,7 +63,7 @@ pub fn prepare() -> Rocket {
 /// Setup of the given rocket instance. Mount routes, add managed state, and
 /// attach fairings.
 fn assemble(rocket: Rocket) -> Rocket {
-	rocket
+	let mut rocket = rocket
 		.mount(
 			"/",
 			routes![
@@ -100,7 +101,45 @@ fn assemble(rocket: Rocket) -> Rocket {
 					Err(rocket)
 				}
 			}
-		}))
+		}));
+	if rocket.config().environment.is_dev() {
+		rocket =
+			rocket.attach(AdHoc::on_attach("Create admin user", |rocket| {
+				let conn =
+					DbConn::get_one(&rocket).expect("database connection");
+				if let Ok(pw) = std::env::var("ZAUTH_ADMIN_PASSWORD") {
+					let admin = User::find_by_username("admin", &conn)
+						.or_else(|_e| {
+							User::create(
+								NewUser {
+									username: String::from("admin"),
+									password: String::from(&pw),
+								},
+								&conn,
+							)
+						})
+						.and_then(|mut user| {
+							user.change_with(UserChange {
+								username: None,
+								password: Some(pw),
+							})?;
+							user.admin = true;
+							user.update(&conn)
+						});
+					match admin {
+						Ok(admin) => {
+							dbg!(admin);
+						}
+						Err(e) => {
+							eprintln!("Error {:?}", e);
+							return Err(rocket);
+						}
+					}
+				}
+				Ok(rocket)
+			}))
+	}
+	rocket
 }
 
 use rocket::response::Responder;

@@ -58,7 +58,8 @@ pub fn create_user(
 	user: Api<NewUser>,
 	conn: DbConn,
 ) -> Result<impl Responder<'static>> {
-	let user = User::create(user.into_inner(), &conn)?;
+	let user =
+		User::create(user.into_inner(), &conn).map_err(ZauthError::from)?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user: user.id)),
 		json: Json(user),
