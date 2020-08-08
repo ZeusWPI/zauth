@@ -3,6 +3,8 @@ use rocket::response::{self, Responder};
 use rocket::Request;
 use thiserror::Error;
 
+use std::io::Cursor;
+
 #[derive(Error, Debug)]
 pub enum ZauthError {
 	#[error("Encoding error {0:?}")]
@@ -21,7 +23,9 @@ pub enum ZauthError {
 
 impl Responder<'static> for ZauthError {
 	fn respond_to(self, _: &Request) -> response::Result<'static> {
-		Err(Status::ImATeapot)
+		Ok(response::Response::build()
+			.sized_body(Cursor::new(format!("An error occured: {:?}", self)))
+			.finalize())
 	}
 }
 
