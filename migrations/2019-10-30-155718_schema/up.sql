@@ -22,5 +22,6 @@ CREATE TABLE clients
     name              VARCHAR(255) NOT NULL UNIQUE,
     secret            VARCHAR(255) NOT NULL,
     needs_grant       BOOLEAN      NOT NULL DEFAULT false,
-    redirect_uri_list TEXT         NOT NULL DEFAULT ''
+    redirect_uri_list TEXT         NOT NULL DEFAULT '',
+    created_at        TIMESTAMP    NOT NULL DEFAULT NOW()
 );

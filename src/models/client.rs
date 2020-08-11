@@ -17,6 +17,7 @@ mod schema {
 			secret -> Text,
 			needs_grant -> Bool,
 			redirect_uri_list -> Text,
+			created_at -> Timestamp,
 		}
 	}
 }
