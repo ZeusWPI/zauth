@@ -112,24 +112,24 @@ fn assemble(rocket: Rocket) -> Rocket {
 						.or_else(|_e| {
 							User::create(
 								NewUser {
-									username:  String::from("admin"),
-									password:  String::from(&pw),
-									firstname: String::from(""),
-									lastname:  String::from(""),
-									email:     String::from(""),
-									ssh_key:   None,
+									username:   String::from("admin"),
+									password:   String::from(&pw),
+									first_name: String::from(""),
+									last_name:  String::from(""),
+									email:      String::from(""),
+									ssh_key:    None,
 								},
 								&conn,
 							)
 						})
 						.and_then(|mut user| {
 							user.change_with(UserChange {
-								username:  None,
-								password:  Some(pw),
-								firstname: None,
-								lastname:  None,
-								email:     None,
-								ssh_key:   None,
+								username:   None,
+								password:   Some(pw),
+								first_name: None,
+								last_name:  None,
+								email:      None,
+								ssh_key:    None,
 							})?;
 							user.admin = true;
 							user.update(&conn)

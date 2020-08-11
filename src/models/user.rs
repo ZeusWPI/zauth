@@ -20,8 +20,8 @@ mod schema {
 		username -> Varchar,
 		hashed_password -> Varchar,
 		admin -> Bool,
-		firstname -> Varchar,
-		lastname -> Varchar,
+		first_name -> Varchar,
+		last_name -> Varchar,
 		email -> Varchar,
 		ssh_key -> Nullable<Text>,
 		last_seen -> Timestamp,
@@ -40,8 +40,8 @@ pub struct User {
 	pub hashed_password: String,
 	pub admin:           bool,
 
-	pub firstname:  String,
-	pub lastname:   String,
+	pub first_name: String,
+	pub last_name:  String,
 	pub email:      String,
 	pub ssh_key:    Option<String>,
 	pub last_seen:  NaiveDateTime,
@@ -50,12 +50,12 @@ pub struct User {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
-	pub username:  String,
-	pub password:  String,
-	pub firstname: String,
-	pub lastname:  String,
-	pub email:     String,
-	pub ssh_key:   Option<String>,
+	pub username:   String,
+	pub password:   String,
+	pub first_name: String,
+	pub last_name:  String,
+	pub email:      String,
+	pub ssh_key:    Option<String>,
 }
 
 #[table_name = "users"]
@@ -63,8 +63,8 @@ pub struct NewUser {
 struct NewUserHashed {
 	username:        String,
 	hashed_password: String,
-	firstname:       String,
-	lastname:        String,
+	first_name:      String,
+	last_name:       String,
 	email:           String,
 	ssh_key:         Option<String>,
 	last_seen:       NaiveDateTime,
@@ -72,12 +72,12 @@ struct NewUserHashed {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct UserChange {
-	pub username:  Option<String>,
-	pub password:  Option<String>,
-	pub firstname: Option<String>,
-	pub lastname:  Option<String>,
-	pub email:     Option<String>,
-	pub ssh_key:   Option<String>,
+	pub username:   Option<String>,
+	pub password:   Option<String>,
+	pub first_name: Option<String>,
+	pub last_name:  Option<String>,
+	pub email:      Option<String>,
+	pub ssh_key:    Option<String>,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -106,8 +106,8 @@ impl User {
 		let user = NewUserHashed {
 			username:        user.username,
 			hashed_password: hash(&user.password).ok()?,
-			firstname:       user.firstname,
-			lastname:        user.lastname,
+			first_name:      user.first_name,
+			last_name:       user.last_name,
 			email:           user.email,
 			ssh_key:         user.ssh_key,
 			last_seen:       Utc::now().naive_utc(),
@@ -130,11 +130,11 @@ impl User {
 		if let Some(password) = change.password {
 			self.hashed_password = hash(&password).ok()?;
 		}
-		if let Some(firstname) = change.firstname {
-			self.firstname = firstname;
+		if let Some(first_name) = change.first_name {
+			self.first_name = first_name;
 		}
-		if let Some(lastname) = change.lastname {
-			self.lastname = lastname;
+		if let Some(last_name) = change.last_name {
+			self.last_name = last_name;
 		}
 		if let Some(email) = change.email {
 			self.email = email;
