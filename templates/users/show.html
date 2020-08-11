@@ -34,12 +34,8 @@
                 <input id="email" name="email" type="email" value="{{ user.email }}"/>
 
                 <label for="ssh_key">ssh key</label>
-                <input id="ssh_key" name="ssh_key" type="text" value="{% match user.ssh_key %}
-                {% when Some with (val) %}
-                    Found {{ val }}
-                {% when None %}
-            {% endmatch %}
-  "/>
+                <input id="ssh_key" name="ssh_key" type="text"
+                       value="{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}"/>
 
                 <button type="submit">Update</button>
             </form>

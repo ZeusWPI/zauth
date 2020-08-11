@@ -26,7 +26,7 @@
         <td>
             {% match user.ssh_key %}
                 {% when Some with (val) %}
-                    Found {{ val }}
+                    {{ val }}
                 {% when None %}
                     Not configured
             {% endmatch %}
