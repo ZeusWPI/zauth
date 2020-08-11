@@ -261,7 +261,7 @@ fn create_user_form() {
 			.post("/users")
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body("username=testuser&password=testpassword")
+			.body("username=testuser&password=testpassword&firstname=abc&lastname=def&email=hij@klm.op&ssh_key=qrs")
 			.dispatch();
 
 		assert_eq!(response.status(), Status::Ok);
@@ -283,7 +283,7 @@ fn create_user_json() {
 			.header(ContentType::JSON)
 			.header(Accept::JSON)
 			.body(
-				"{\"username\": \"testuser\", \"password\": \"testpassword\"}",
+				"{\"username\": \"testuser\", \"password\": \"testpassword\", \"firstname\": \"abc\", \"lastname\": \"def\", \"email\": \"hij@klm.op\", \"ssh_key\": \"qrs\"}",
 			)
 			.dispatch();
 
