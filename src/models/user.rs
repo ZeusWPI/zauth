@@ -66,6 +66,7 @@ struct NewUserHashed {
 	firstname:       String,
 	lastname:        String,
 	email:           String,
+	ssh_key:         Option<String>,
 	last_seen:       NaiveDateTime,
 }
 
@@ -108,6 +109,7 @@ impl User {
 			firstname:       user.firstname,
 			lastname:        user.lastname,
 			email:           user.email,
+			ssh_key:         user.ssh_key,
 			last_seen:       Utc::now().naive_utc(),
 		};
 		conn.transaction(|| {
@@ -126,7 +128,7 @@ impl User {
 			self.username = username;
 		}
 		if let Some(password) = change.password {
-			self.hashed_password = hash(&password)?;
+			self.hashed_password = hash(&password).ok()?;
 		}
 		if let Some(firstname) = change.firstname {
 			self.firstname = firstname;
