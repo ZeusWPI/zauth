@@ -6,7 +6,7 @@ CREATE TABLE users
     admin           BOOLEAN      NOT NULL DEFAULT false,
     firstname       VARCHAR(255) NOT NULL,
     lastname        VARCHAR(255) NOT NULL,
-    email           VARCHAR(255) NOT NULL, -- TO BE OR NOT TE UNIQUE?
+    email           VARCHAR(255) NOT NULL UNIQUE,
     ssh_key         TEXT,
     last_seen       TIMESTAMP    NOT NULL,
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
