@@ -55,10 +55,11 @@
 
                 function putForm(url, formSelector) {
                     const formData = new FormData(document.querySelector(formSelector))
+                    const urlEncoded = new URLSearchParams(formData)
 
                     fetch(url, {
                         method: 'PUT', // 'GET', 'PUT', 'DELETE', etc.
-                        body: formData // a FormData will automatically set the 'Content-Type'
+                        body: urlEncoded, // this will automatically set the 'Content-Type'
                     })
                         .then(response => response.json())
                         .catch(error => console.error(error))
