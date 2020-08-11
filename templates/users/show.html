@@ -9,53 +9,71 @@
 
 <p>TODO: Add password change option (enter old and 2 times new)</p>
 
-<form id="userEdit">
-    <label for="username">Username</label>
-    <input id="username" name="username" type="text" value="{{ user.username }}"/>
+<div class="container">
 
-    <label for="password">password</label>
-    <input id="password" name="password" type="password"/>
-    
-    <label for="firstname">Firstname</label>
-    <input id="firstname" name="firstname" type="text" value="{{ user.firstname }}"/>
+    <div class="row">
+        <div class="column">
+            <h3>
+                Update profile info
+            </h3>
 
-    <label for="lastname">Lastname</label>
-    <input id="lastname" name="lastname" type="text" value="{{ user.lastname }}"/>
+            <form id="userEdit">
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" value="{{ user.username }}" disabled/>
 
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email" value="{{ user.email }}"/>
+                <label for="password">password</label>
+                <input id="password" name="password" type="password"/>
 
-    <label for="ssh_key">ssh key</label>
-    <input id="ssh_key" name="ssh_key" type="text" value="{% match user.ssh_key %}
+                <label for="firstname">Firstname</label>
+                <input id="firstname" name="firstname" type="text" value="{{ user.firstname }}"/>
+
+                <label for="lastname">Lastname</label>
+                <input id="lastname" name="lastname" type="text" value="{{ user.lastname }}"/>
+
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" value="{{ user.email }}"/>
+
+                <label for="ssh_key">ssh key</label>
+                <input id="ssh_key" name="ssh_key" type="text" value="{% match user.ssh_key %}
                 {% when Some with (val) %}
                     Found {{ val }}
                 {% when None %}
             {% endmatch %}
   "/>
 
-    <button type="submit">Update</button>
-</form>
-<script>
-    const element = document.querySelector('form#userEdit');
-    element.addEventListener('submit', event => {
-        event.preventDefault();
-        // actual logic, e.g. validate the form
-        console.log('Form submission cancelled.');
+                <button type="submit">Update</button>
+            </form>
+            <script>
+                const element = document.querySelector('form#userEdit');
+                element.addEventListener('submit', event => {
+                    event.preventDefault();
+                    // actual logic, e.g. validate the form
+                    console.log('Form submission cancelled.');
 
-        putForm('/users/{{user.id}}', '#userEdit').then(data => console.log(data))
-    });
+                    putForm('/users/{{user.id}}', '#userEdit').then(data => console.log(data))
+                });
 
-    function putForm(url, formSelector) {
-        const formData = new FormData(document.querySelector(formSelector))
+                function putForm(url, formSelector) {
+                    const formData = new FormData(document.querySelector(formSelector))
 
-        fetch(url, {
-            method: 'PUT', // 'GET', 'PUT', 'DELETE', etc.
-            body: formData // a FormData will automatically set the 'Content-Type'
-        })
-            .then(response => response.json())
-            .catch(error => console.error(error))
-        return false;
-    }
-</script>
+                    fetch(url, {
+                        method: 'PUT', // 'GET', 'PUT', 'DELETE', etc.
+                        body: formData // a FormData will automatically set the 'Content-Type'
+                    })
+                        .then(response => response.json())
+                        .catch(error => console.error(error))
+                    return false;
+                }
+            </script>
+        </div>
+        <div class="column">
+            <h3>
+                Set new password
+            </h3>
+            <p>Coming soon!</p>
+        </div>
+    </div>
+</div>
+
 
 {% endblock content %}
