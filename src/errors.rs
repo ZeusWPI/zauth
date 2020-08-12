@@ -1,5 +1,5 @@
 use rocket::http::Status;
-use rocket::response::{self, Responder};
+use rocket::response::{self, Responder, Response};
 use rocket::Request;
 use thiserror::Error;
 
@@ -27,9 +27,31 @@ impl ZauthError {
 
 impl Responder<'static> for ZauthError {
 	fn respond_to(self, _: &Request) -> response::Result<'static> {
-		Ok(response::Response::build()
+		let mut builder = Response::build();
+		match self {
+			ZauthError::Custom(status, _) => {
+				builder.status(status);
+			}
+			ZauthError::Internal(_) => {
+				builder.status(Status::InternalServerError);
+			}
+			ZauthError::AuthError(_) => {
+				builder.status(Status::Unauthorized);
+			}
+			_ => {}
+		}
+
+		Ok(builder
 			.sized_body(Cursor::new(format!("An error occured: {:?}", self)))
 			.finalize())
+		// Ok(match self {
+		// 	ZauthError::Custom(status, reason) => {
+		// 		Response::build().status(status)
+		// 	}
+		// 	_ => Response::build(),
+		// }
+		// .sized_body(Cursor::new(format!("An error occured: {:?}", self)))
+		// .finalize())
 	}
 }
 

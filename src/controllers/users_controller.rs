@@ -8,7 +8,7 @@ use std::fmt::Debug;
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::{AdminSession, UserSession};
 use crate::errors::Either::{self, Left, Right};
-use crate::errors::{AuthenticationError, Result, ZauthError};
+use crate::errors::{Result, ZauthError};
 use crate::models::user::*;
 use crate::views::accepter::Accepter;
 use crate::DbConn;
@@ -25,14 +25,16 @@ pub fn show_user(
 	id: i32,
 ) -> Result<impl Responder<'static>> {
 	let user = User::find(id, &conn)?;
-	if session.user.admin {
+	println!("user {:?} vs session {:?}", user, session);
+	if session.user.admin || session.user.id == id {
 		Ok(Accepter {
 			html: template!("users/show.html"; user: User = user.clone()),
 			json: Json(user),
 		})
 	} else {
-		Err(ZauthError::from(AuthenticationError::Unauthorized(
-			format!("client with id {} is not authorized on this server", id),
+		Err(ZauthError::not_found(&format!(
+			"User with id {} not found",
+			id
 		)))
 	}
 }

@@ -41,7 +41,9 @@ fn reset_db(db: &DbConn) {
 /// database. The database and its directory will be removed after the function
 /// has run.
 pub fn as_visitor<F>(run: F)
-where F: FnOnce(HttpClient, DbConn) -> () {
+where
+	F: FnOnce(HttpClient, DbConn) -> (),
+{
 	// Prepare config
 	let mut cfg = HashMap::new();
 	let db_url = "postgresql://zauth:zauth@localhost/zauth_test";
@@ -58,21 +60,23 @@ where F: FnOnce(HttpClient, DbConn) -> () {
 
 	let db = DbConn::get_one(client.rocket()).expect("database connection");
 	reset_db(&db);
-	assert_eq!(0, User::all(&db).len());
-	assert_eq!(0, Client::all(&db).len());
+	assert_eq!(0, User::all(&db).unwrap().len());
+	assert_eq!(0, Client::all(&db).unwrap().len());
 
 	run(client, db);
 }
 
 pub fn as_user<F>(run: F)
-where F: FnOnce(HttpClient, DbConn, User) -> () {
+where
+	F: FnOnce(HttpClient, DbConn, User) -> (),
+{
 	as_visitor(|client, db| {
 		let user = User::create(
-			&db,
 			NewUser {
 				username: String::from("user"),
 				password: String::from("user"),
 			},
+			&db,
 		)
 		.unwrap();
 
@@ -90,14 +94,16 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 }
 
 pub fn as_admin<F>(run: F)
-where F: FnOnce(HttpClient, DbConn, User) -> () {
+where
+	F: FnOnce(HttpClient, DbConn, User) -> (),
+{
 	as_visitor(|client, db| {
 		let mut user = User::create(
-			&db,
 			NewUser {
 				username: String::from("admin"),
 				password: String::from("admin"),
 			},
+			&db,
 		)
 		.unwrap();
 
