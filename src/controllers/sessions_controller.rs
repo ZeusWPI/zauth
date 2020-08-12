@@ -1,10 +1,10 @@
 use askama::Template;
 use rocket::http::Cookies;
-use rocket::http::Status;
 use rocket::request::Form;
-use rocket::response::{status, Redirect, Responder};
+use rocket::response::{Redirect, Responder};
 
 use crate::ephemeral::session::Session;
+use crate::errors::{Either, Result};
 use crate::models::user::User;
 use crate::DbConn;
 
@@ -26,7 +26,7 @@ pub fn delete_session() -> impl Responder<'static> {
 pub struct LoginFormData {
 	username: String,
 	password: String,
-	state:    Option<String>,
+	state: Option<String>,
 }
 
 #[post("/login", data = "<form>")]
@@ -34,26 +34,20 @@ pub fn create_session(
 	form: Form<LoginFormData>,
 	mut cookies: Cookies,
 	conn: DbConn,
-) -> impl Responder<'static>
-{
+) -> Result<Either<Redirect, impl Responder<'static>>> {
 	let form = form.into_inner();
 	let user =
-		User::find_and_authenticate(&form.username, &form.password, &conn);
+		User::find_and_authenticate(&form.username, &form.password, &conn)?;
 
-	// TODO: handle error value better
-	if let Ok(user) = user {
+	if let Some(user) = user {
 		Session::add_to_cookies(user, &mut cookies);
-		Ok(Redirect::to("/"))
+		Ok(Either::Left(Redirect::to("/")))
 	} else {
-		Err(status::Custom(
-			Status::Unauthorized,
-			template! {
+		Ok(Either::Right(template! {
 			"session/login.html";
-			state: String = form.state.unwrap_or_default(),
-			error: Option<String> =
-				Some(String::from("Incorrect username or password")),
-			},
-		))
+			state: String = form.state.unwrap(),
+			error: Option<String> = Some(String::from("Usernae or password incorrect")),
+		}))
 	}
 }
 

@@ -7,11 +7,11 @@ use std::fmt::Debug;
 
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::{AdminSession, UserSession};
+use crate::errors::Either::{self, Left, Right};
 use crate::errors::{AuthenticationError, Result, ZauthError};
 use crate::models::user::*;
 use crate::views::accepter::Accepter;
 use crate::DbConn;
-use crate::Either::{self, Left, Right};
 
 #[get("/current_user")]
 pub fn current_user(session: UserSession) -> Json<User> {
@@ -23,10 +23,9 @@ pub fn show_user(
 	session: UserSession,
 	conn: DbConn,
 	id: i32,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let user = User::find(id, &conn)?;
-	if session.user.admin || session.user.id == user.id {
+	if session.user.admin {
 		Ok(Accepter {
 			html: template!("users/show.html"; user: User = user.clone()),
 			json: Json(user),
@@ -42,8 +41,7 @@ pub fn show_user(
 pub fn list_users(
 	session: UserSession,
 	conn: DbConn,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let users = User::all(&conn)?;
 	Ok(Accepter {
 		html: template! {
@@ -59,8 +57,7 @@ pub fn list_users(
 pub fn create_user(
 	user: Api<NewUser>,
 	conn: DbConn,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let user =
 		User::create(user.into_inner(), &conn).map_err(ZauthError::from)?;
 	Ok(Accepter {
@@ -77,8 +74,7 @@ pub fn update_user(
 	conn: DbConn,
 ) -> Result<
 	Either<impl Responder<'static>, Custom<impl Debug + Responder<'static>>>,
->
-{
+> {
 	let mut user = User::find(id, &conn)?;
 	if session.user.id == user.id || session.user.admin {
 		user.change_with(change.into_inner())?;
@@ -98,8 +94,7 @@ pub fn set_admin(
 	value: Api<ChangeAdmin>,
 	_session: AdminSession,
 	conn: DbConn,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let mut user = User::find(id, &conn)?;
 	dbg!(&user);
 	dbg!(&value);

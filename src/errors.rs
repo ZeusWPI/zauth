@@ -7,18 +7,22 @@ use std::io::Cursor;
 
 #[derive(Error, Debug)]
 pub enum ZauthError {
-	#[error("Encoding error {0:?}")]
-	EncodingError(#[from] EncodingError),
-	#[error("database error")]
-	DatabaseError(#[from] diesel::result::Error),
+	#[error("Internal server error {0:?}")]
+	Internal(#[from] InternalError),
+	#[error("Request error {0:?}")]
+	RequestError(#[from] RequestError),
 	#[error("Authentication error {0:?}")]
 	AuthError(#[from] AuthenticationError),
-	#[error("invalid header (expected {expected:?}, found {found:?})")]
-	InvalidHeader { expected: String, found: String },
 	#[error("{0}")]
 	Custom(Status, String),
-	#[error("Session expired")]
-	SessionExpired,
+}
+impl ZauthError {
+	pub fn not_found(what: &str) -> Self {
+		ZauthError::Custom(Status::NotFound, what.to_string())
+	}
+	pub fn expired() -> Self {
+		Self::AuthError(AuthenticationError::SessionExpired)
+	}
 }
 
 impl Responder<'static> for ZauthError {
@@ -29,18 +33,36 @@ impl Responder<'static> for ZauthError {
 	}
 }
 
+impl From<diesel::result::Error> for ZauthError {
+	fn from(error: diesel::result::Error) -> Self {
+		ZauthError::Internal(InternalError::DatabaseError(error))
+	}
+}
 pub type Result<T> = std::result::Result<T, ZauthError>;
 
 #[derive(Error, Debug)]
-pub enum EncodingError {
-	#[error("hash error")]
+pub enum InternalError {
+	#[error("Hash error")]
 	HashError(#[from] pwhash::error::Error),
-	#[error("bindecode error")]
-	BinDecodeError(#[from] Box<bincode::ErrorKind>),
-	#[error("base64 decode error")]
-	DecodeError(#[from] base64::DecodeError),
+	#[error("Database error")]
+	DatabaseError(#[from] diesel::result::Error),
 }
-pub type EncodingResult<T> = std::result::Result<T, EncodingError>;
+pub type InternalResult<T> = std::result::Result<T, InternalError>;
+
+#[derive(Error, Debug)]
+pub enum RequestError {
+	#[error("Bindecode error")]
+	BinDecodeError(#[from] Box<bincode::ErrorKind>),
+	#[error("Base64 decode error")]
+	DecodeError(#[from] base64::DecodeError),
+	#[error("Invalid header (expected {expected:?}, found {found:?})")]
+	InvalidHeader { expected: String, found: String },
+	#[error("Only response_type=code is supported")]
+	ResponseTypeMismatch,
+	#[error("Invalid request")]
+	InvalidRequest,
+}
+pub type EncodingResult<T> = std::result::Result<T, RequestError>;
 
 #[derive(Error, Debug)]
 pub enum AuthenticationError {
@@ -48,9 +70,27 @@ pub enum AuthenticationError {
 	Unauthorized(String),
 	#[error("Authentication failed")]
 	AuthFailed,
-	#[error("only response_type=code is supported")]
-	ResponseTypeMismatch,
 	#[error("Invalid grant {0}")]
 	InvalidGrant(String),
+	#[error("Session expired")]
+	SessionExpired,
 }
 pub type AuthResult<T> = std::result::Result<T, AuthenticationError>;
+
+pub enum Either<R, E> {
+	Left(R),
+	Right(E),
+}
+
+impl<'r, R, E> Responder<'r> for Either<R, E>
+where
+	R: Responder<'r>,
+	E: Responder<'r>,
+{
+	fn respond_to(self, req: &Request) -> rocket::response::Result<'r> {
+		match self {
+			Self::Left(left) => left.respond_to(req),
+			Self::Right(right) => right.respond_to(req),
+		}
+	}
+}

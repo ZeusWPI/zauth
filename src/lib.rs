@@ -99,7 +99,7 @@ fn assemble(rocket: Rocket) -> Rocket {
 				Err(e) => {
 					eprintln!("Failed to run database migrations: {:?}", e);
 					Err(rocket)
-				},
+				}
 			}
 		}));
 	if rocket.config().environment.is_dev() {
@@ -129,35 +129,15 @@ fn assemble(rocket: Rocket) -> Rocket {
 					match admin {
 						Ok(admin) => {
 							dbg!(admin);
-						},
+						}
 						Err(e) => {
 							eprintln!("Error {:?}", e);
 							return Err(rocket);
-						},
+						}
 					}
 				}
 				Ok(rocket)
 			}))
 	}
 	rocket
-}
-
-use rocket::response::Responder;
-use rocket::Request;
-pub enum Either<R, E> {
-	Left(R),
-	Right(E),
-}
-
-impl<'r, R, E> Responder<'r> for Either<R, E>
-where
-	R: Responder<'r>,
-	E: Responder<'r>,
-{
-	fn respond_to(self, req: &Request) -> rocket::response::Result<'r> {
-		match self {
-			Self::Left(left) => left.respond_to(req),
-			Self::Right(right) => right.respond_to(req),
-		}
-	}
 }
