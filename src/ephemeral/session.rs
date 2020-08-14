@@ -12,14 +12,14 @@ pub const SESSION_VALIDITY_MINUTES: i64 = 59;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Session {
 	user_id: i32,
-	expiry: DateTime<Local>,
+	expiry:  DateTime<Local>,
 }
 
 impl Session {
 	pub fn new(user: User) -> Session {
 		Session {
 			user_id: user.id,
-			expiry: Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES),
+			expiry:  Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES),
 		}
 	}
 

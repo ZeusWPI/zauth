@@ -47,8 +47,8 @@ fn normal_flow() {
 
 		let client = Client::create(
 			NewClient {
-				name: String::from(client_id),
-				needs_grant: true,
+				name:              String::from(client_id),
+				needs_grant:       true,
 				redirect_uri_list: String::from(redirect_uri),
 			},
 			&db,
@@ -231,10 +231,10 @@ fn normal_flow() {
 			.expect("should have token store");
 
 		let authorization_code = token_store.create_token(UserToken {
-			user_id: user.id,
-			username: user.username.clone(),
-			client_id: client.id,
-			client_name: client.name,
+			user_id:      user.id,
+			username:     user.username.clone(),
+			client_id:    client.id,
+			client_name:  client.name,
 			redirect_uri: String::from(redirect_uri),
 		});
 

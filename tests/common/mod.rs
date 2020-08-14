@@ -41,9 +41,7 @@ fn reset_db(db: &DbConn) {
 /// database. The database and its directory will be removed after the function
 /// has run.
 pub fn as_visitor<F>(run: F)
-where
-	F: FnOnce(HttpClient, DbConn) -> (),
-{
+where F: FnOnce(HttpClient, DbConn) -> () {
 	// Prepare config
 	let mut cfg = HashMap::new();
 	let db_url = "postgresql://zauth:zauth@localhost/zauth_test";
@@ -67,9 +65,7 @@ where
 }
 
 pub fn as_user<F>(run: F)
-where
-	F: FnOnce(HttpClient, DbConn, User) -> (),
-{
+where F: FnOnce(HttpClient, DbConn, User) -> () {
 	as_visitor(|client, db| {
 		let user = User::create(
 			NewUser {
@@ -94,9 +90,7 @@ where
 }
 
 pub fn as_admin<F>(run: F)
-where
-	F: FnOnce(HttpClient, DbConn, User) -> (),
-{
+where F: FnOnce(HttpClient, DbConn, User) -> () {
 	as_visitor(|client, db| {
 		let mut user = User::create(
 			NewUser {

@@ -20,6 +20,7 @@ impl ZauthError {
 	pub fn not_found(what: &str) -> Self {
 		ZauthError::Custom(Status::NotFound, what.to_string())
 	}
+
 	pub fn expired() -> Self {
 		Self::AuthError(AuthenticationError::SessionExpired)
 	}
@@ -31,14 +32,14 @@ impl Responder<'static> for ZauthError {
 		match self {
 			ZauthError::Custom(status, _) => {
 				builder.status(status);
-			}
+			},
 			ZauthError::Internal(_) => {
 				builder.status(Status::InternalServerError);
-			}
+			},
 			ZauthError::AuthError(_) => {
 				builder.status(Status::Unauthorized);
-			}
-			_ => {}
+			},
+			_ => {},
 		}
 
 		Ok(builder
