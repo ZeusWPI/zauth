@@ -43,11 +43,11 @@ fn show_user_as_visitor() {
 fn show_user_as_user() {
 	common::as_user(|http_client, db, user| {
 		let other = User::create(
-			&db,
 			NewUser {
 				username: String::from("somebody"),
 				password: String::from("else"),
 			},
+			&db,
 		)
 		.unwrap();
 
@@ -77,11 +77,11 @@ fn show_user_as_user() {
 fn show_user_as_admin() {
 	common::as_admin(|http_client, db, admin| {
 		let other = User::create(
-			&db,
 			NewUser {
 				username: String::from("somebody"),
 				password: String::from("else"),
 			},
+			&db,
 		)
 		.unwrap();
 
@@ -126,11 +126,11 @@ fn update_self() {
 		assert_eq!("newusername", updated.username);
 
 		let other = User::create(
-			&db,
 			NewUser {
 				username: String::from("somebody"),
 				password: String::from("else"),
 			},
+			&db,
 		)
 		.unwrap();
 
@@ -178,11 +178,11 @@ fn change_password() {
 fn make_admin() {
 	common::as_admin(|http_client, db, _admin| {
 		let other = User::create(
-			&db,
 			NewUser {
 				username: String::from("padawan"),
 				password: String::from(""),
 			},
+			&db,
 		)
 		.unwrap();
 
@@ -209,11 +209,11 @@ fn make_admin() {
 fn try_make_admin() {
 	common::as_user(|http_client, db, _user| {
 		let other = User::create(
-			&db,
 			NewUser {
 				username: String::from("acccomplice"),
 				password: String::from("not_an_admin"),
 			},
+			&db,
 		)
 		.unwrap();
 
@@ -235,7 +235,7 @@ fn try_make_admin() {
 #[test]
 fn create_user_form() {
 	common::as_admin(|http_client, db, _admin| {
-		let user_count = User::all(&db).len();
+		let user_count = User::all(&db).unwrap().len();
 
 		let response = http_client
 			.post("/users")
@@ -246,7 +246,7 @@ fn create_user_form() {
 
 		assert_eq!(response.status(), Status::Ok);
 
-		assert_eq!(user_count + 1, User::all(&db).len());
+		assert_eq!(user_count + 1, User::all(&db).unwrap().len());
 
 		let last_created = User::last(&db).unwrap();
 		assert_eq!("testuser", last_created.username);
@@ -256,7 +256,7 @@ fn create_user_form() {
 #[test]
 fn create_user_json() {
 	common::as_admin(|http_client, db, _admin| {
-		let user_count = User::all(&db).len();
+		let user_count = User::all(&db).unwrap().len();
 
 		let response = http_client
 			.post("/users")
@@ -269,7 +269,7 @@ fn create_user_json() {
 
 		assert_eq!(response.status(), Status::Ok);
 
-		assert_eq!(user_count + 1, User::all(&db).len());
+		assert_eq!(user_count + 1, User::all(&db).unwrap().len());
 
 		let last_created = User::last(&db).unwrap();
 		assert_eq!("testuser", last_created.username);

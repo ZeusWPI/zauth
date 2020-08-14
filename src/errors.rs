@@ -1,40 +1,119 @@
 use rocket::http::Status;
-use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
+use rocket::Request;
+use thiserror::Error;
 
-error_chain! {
-	foreign_links {
-		SerdeUrlencode(serde_urlencoded::ser::Error);
+use std::io::Cursor;
+
+#[derive(Error, Debug)]
+pub enum ZauthError {
+	#[error("Internal server error {0:?}")]
+	Internal(#[from] InternalError),
+	#[error("Request error {0:?}")]
+	RequestError(#[from] RequestError),
+	#[error("Authentication error {0:?}")]
+	AuthError(#[from] AuthenticationError),
+	#[error("{0}")]
+	Custom(Status, String),
+}
+impl ZauthError {
+	pub fn not_found(what: &str) -> Self {
+		ZauthError::Custom(Status::NotFound, what.to_string())
 	}
-	errors {
-		NotImplemented(message: String) {
-			description("not implemented")
-			display("Not implemented: '{}'", message)
-		}
-		Unauthorized(message: String) {
-			description("not authorized")
-			display("Not authorized: '{}'", message)
-		}
+
+	pub fn expired() -> Self {
+		Self::AuthError(AuthenticationError::SessionExpired)
 	}
 }
 
-impl ErrorKind {
-	fn status(&self) -> Status {
+impl Responder<'static> for ZauthError {
+	fn respond_to(self, _: &Request) -> response::Result<'static> {
+		let mut builder = Response::build();
 		match self {
-			ErrorKind::NotImplemented(_) => Status::NotImplemented,
-			ErrorKind::Unauthorized(_) => Status::Unauthorized,
-			_ => Status::InternalServerError,
+			ZauthError::Custom(status, _) => {
+				builder.status(status);
+			},
+			ZauthError::Internal(_) => {
+				builder.status(Status::InternalServerError);
+			},
+			ZauthError::AuthError(_) => {
+				builder.status(Status::Unauthorized);
+			},
+			_ => {},
 		}
-	}
 
-	fn default_response<'r>(self, req: &Request) -> response::Result<'r> {
-		let message = format!("An error occured! {}", self).respond_to(req)?;
-		Response::build_from(message).status(self.status()).ok()
+		Ok(builder
+			.sized_body(Cursor::new(format!("An error occured: {:?}", self)))
+			.finalize())
+		// Ok(match self {
+		// 	ZauthError::Custom(status, reason) => {
+		// 		Response::build().status(status)
+		// 	}
+		// 	_ => Response::build(),
+		// }
+		// .sized_body(Cursor::new(format!("An error occured: {:?}", self)))
+		// .finalize())
 	}
 }
 
-impl<'r> Responder<'r> for Error {
-	fn respond_to(self, req: &Request) -> response::Result<'r> {
-		self.0.default_response(req)
+impl From<diesel::result::Error> for ZauthError {
+	fn from(error: diesel::result::Error) -> Self {
+		ZauthError::Internal(InternalError::DatabaseError(error))
+	}
+}
+pub type Result<T> = std::result::Result<T, ZauthError>;
+
+#[derive(Error, Debug)]
+pub enum InternalError {
+	#[error("Hash error")]
+	HashError(#[from] pwhash::error::Error),
+	#[error("Database error")]
+	DatabaseError(#[from] diesel::result::Error),
+}
+pub type InternalResult<T> = std::result::Result<T, InternalError>;
+
+#[derive(Error, Debug)]
+pub enum RequestError {
+	#[error("Bindecode error")]
+	BinDecodeError(#[from] Box<bincode::ErrorKind>),
+	#[error("Base64 decode error")]
+	DecodeError(#[from] base64::DecodeError),
+	#[error("Invalid header (expected {expected:?}, found {found:?})")]
+	InvalidHeader { expected: String, found: String },
+	#[error("Only response_type=code is supported")]
+	ResponseTypeMismatch,
+	#[error("Invalid request")]
+	InvalidRequest,
+}
+pub type EncodingResult<T> = std::result::Result<T, RequestError>;
+
+#[derive(Error, Debug)]
+pub enum AuthenticationError {
+	#[error("Not authorized '{0}'")]
+	Unauthorized(String),
+	#[error("Authentication failed")]
+	AuthFailed,
+	#[error("Invalid grant {0}")]
+	InvalidGrant(String),
+	#[error("Session expired")]
+	SessionExpired,
+}
+pub type AuthResult<T> = std::result::Result<T, AuthenticationError>;
+
+pub enum Either<R, E> {
+	Left(R),
+	Right(E),
+}
+
+impl<'r, R, E> Responder<'r> for Either<R, E>
+where
+	R: Responder<'r>,
+	E: Responder<'r>,
+{
+	fn respond_to(self, req: &Request) -> rocket::response::Result<'r> {
+		match self {
+			Self::Left(left) => left.respond_to(req),
+			Self::Right(right) => right.respond_to(req),
+		}
 	}
 }

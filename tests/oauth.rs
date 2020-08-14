@@ -37,11 +37,11 @@ fn normal_flow() {
 		let user_password = "wolololo";
 
 		let user = User::create(
-			&db,
 			NewUser {
 				username: String::from(user_username),
 				password: String::from(user_password),
 			},
+			&db,
 		)
 		.expect("user");
 

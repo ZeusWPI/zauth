@@ -2,6 +2,7 @@ use diesel::{self, prelude::*};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
+use crate::errors::{AuthenticationError, Result, ZauthError};
 use crate::ConcreteConnection;
 
 use self::schema::clients;
@@ -46,8 +47,9 @@ pub struct NewClientWithSecret {
 }
 
 impl Client {
-	pub fn all(conn: &ConcreteConnection) -> Vec<Client> {
-		clients::table.load::<Client>(conn).unwrap()
+	pub fn all(conn: &ConcreteConnection) -> Result<Vec<Client>> {
+		let all_clients = clients::table.load::<Client>(conn)?;
+		Ok(all_clients)
 	}
 
 	fn generate_random_secret() -> String {
@@ -60,7 +62,7 @@ impl Client {
 	pub fn create(
 		client: NewClient,
 		conn: &ConcreteConnection,
-	) -> Option<Client>
+	) -> Result<Client>
 	{
 		let client = NewClientWithSecret {
 			name:              client.name,
@@ -78,7 +80,7 @@ impl Client {
 				// Fetch the last created user
 				clients::table.order(clients::id.desc()).first(conn)
 			})
-			.ok();
+			.map_err(ZauthError::from);
 		dbg!(&client);
 		return client;
 	}
@@ -86,16 +88,16 @@ impl Client {
 	pub fn find_by_name(
 		name: &str,
 		conn: &ConcreteConnection,
-	) -> Option<Client>
+	) -> Result<Client>
 	{
-		clients::table
-			.filter(clients::name.eq(name))
-			.first(conn)
-			.ok()
+		let client =
+			clients::table.filter(clients::name.eq(name)).first(conn)?;
+		Ok(client)
 	}
 
-	pub fn find(id: i32, conn: &ConcreteConnection) -> Option<Client> {
-		clients::table.find(id).first(conn).ok()
+	pub fn find(id: i32, conn: &ConcreteConnection) -> Result<Client> {
+		let client = clients::table.find(id).first(conn)?;
+		Ok(client)
 	}
 
 	pub fn redirect_uri_acceptable(&self, redirect_uri: &str) -> bool {
@@ -108,8 +110,13 @@ impl Client {
 		name: &str,
 		secret: &str,
 		conn: &ConcreteConnection,
-	) -> Option<Client>
+	) -> Result<Client>
 	{
-		Self::find_by_name(name, conn).filter(|client| client.secret == secret)
+		let client = Self::find_by_name(name, conn)?;
+		if client.secret == secret {
+			Ok(client)
+		} else {
+			Err(ZauthError::from(AuthenticationError::AuthFailed))
+		}
 	}
 }

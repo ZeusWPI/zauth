@@ -1,12 +1,12 @@
-use rocket::http::{Cookies, Status};
+use rocket::http::Cookies;
 use rocket::request::Form;
-use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use rocket::State;
 use rocket_contrib::json::Json;
 use std::fmt::Debug;
 
 use crate::ephemeral::session::{Session, UserSession};
+use crate::errors::Either::{Left, Right};
 use crate::errors::*;
 use crate::models::client::*;
 use crate::models::user::*;
@@ -51,20 +51,18 @@ impl AuthState {
 		serde_urlencoded::to_string(self).unwrap()
 	}
 
-	pub fn encode_b64(&self) -> String {
-		base64::encode_config(
-			&bincode::serialize(self).unwrap(),
+	pub fn encode_b64(&self) -> EncodingResult<String> {
+		Ok(base64::encode_config(
+			&bincode::serialize(self)?,
 			base64::URL_SAFE_NO_PAD,
-		)
+		))
 	}
 
-	pub fn decode_b64(state_str: &str) -> Option<AuthState> {
-		bincode::deserialize(
-			&base64::decode_config(state_str, base64::URL_SAFE_NO_PAD)
-				.ok()
-				.unwrap(),
-		)
-		.ok()
+	pub fn decode_b64(state_str: &str) -> EncodingResult<AuthState> {
+		Ok(bincode::deserialize(&base64::decode_config(
+			state_str,
+			base64::URL_SAFE_NO_PAD,
+		)?)?)
 	}
 }
 
@@ -85,24 +83,25 @@ pub fn authorize(
 {
 	let req = req.into_inner();
 	if !req.response_type.eq("code") {
-		return Err(ErrorKind::NotImplemented(String::from(
-			"only response_type=code is supported",
-		))
-		.into());
+		// This was NotImplemented error, but it makes no sense for a authorise
+		// function not to return an AuthResult
+		return Err(ZauthError::from(RequestError::ResponseTypeMismatch));
 	}
-	if let Some(client) = Client::find_by_name(&req.client_id, &conn) {
+
+	// TODO: actually do something with the errors
+	if let Ok(client) = Client::find_by_name(&req.client_id, &conn) {
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
 			let state = AuthState::from_req(client, req);
 			Ok(Redirect::to(uri!(login_get: state)))
 		} else {
-			Err(ErrorKind::Unauthorized(format!(
+			Err(AuthenticationError::Unauthorized(format!(
 				"client with id {} is not authorized to useredirect_uri '{}'",
 				req.client_id, req.redirect_uri
 			))
 			.into())
 		}
 	} else {
-		Err(ErrorKind::Unauthorized(format!(
+		Err(AuthenticationError::Unauthorized(format!(
 			"client with id {} is not authorized on this server",
 			req.client_id
 		))
@@ -119,12 +118,13 @@ pub struct LoginFormData {
 }
 
 #[get("/oauth/login?<state..>")]
-pub fn login_get(state: Form<AuthState>) -> impl Responder<'static> {
-	template! {
+pub fn login_get(state: Form<AuthState>) -> Result<impl Responder<'static>> {
+	let state = state.encode_b64()?;
+	Ok(template! {
 		"session/login.html";
-		state:         String = state.encode_b64(),
+		state:         String = state,
 		error: Option<String> = None,
-	}
+	})
 }
 
 #[post("/oauth/login", data = "<form>")]
@@ -132,21 +132,22 @@ pub fn login_post(
 	mut cookies: Cookies,
 	form: Form<LoginFormData>,
 	conn: DbConn,
-) -> std::result::Result<Redirect, impl Debug + Responder<'static>>
+) -> Result<Either<Redirect, impl Responder<'static>>>
 {
 	let data = form.into_inner();
-	let state = AuthState::decode_b64(&data.state).unwrap();
+	let state = AuthState::decode_b64(&data.state)?;
 	let user =
-		User::find_and_authenticate(&data.username, &data.password, &conn);
+		User::find_and_authenticate(&data.username, &data.password, &conn)?;
+
 	if let Some(user) = user {
 		Session::add_to_cookies(user, &mut cookies);
-		Ok(Redirect::to(uri!(grant_get: state)))
+		Ok(Either::Left(Redirect::to(uri!(grant_get: state))))
 	} else {
-		Err(template! {
+		Ok(Either::Right(template! {
 			"session/login.html";
-			state: String = state.encode_b64(),
-			error: Option<String> = None,
-		})
+			state: String = state.encode_b64()?,
+			error: Option<String> = Some(String::from("Username or password incorrect")),
+		}))
 	}
 }
 
@@ -170,30 +171,24 @@ pub fn grant_get<'a>(
 	state: Form<AuthState>,
 	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> std::result::Result<
-	std::result::Result<
-		impl Responder<'static>,
-		impl Debug + Responder<'static>,
-	>,
-	Custom<String>,
->
+) -> Result<Either<impl Responder<'static>, impl Responder<'static>>>
 {
-	if let Some(client) = Client::find(state.client_id, &conn) {
+	if let Ok(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
-			Ok(Ok(template! {
+			Ok(Left(template! {
 				"oauth/grant.html";
 				client_name: String = state.client_name.clone(),
-				state:       String = state.encode_b64(),
+				state:       String = state.encode_b64()?,
 			}))
 		} else {
-			Ok(Err(authorization_granted(
+			Ok(Right(authorization_granted(
 				state.into_inner(),
 				session.user,
 				token_store.inner(),
 			)))
 		}
 	} else {
-		Err(Custom(Status::NotFound, String::from("client not found")))
+		Err(ZauthError::not_found("client not found"))
 	}
 }
 
@@ -202,10 +197,10 @@ pub fn grant_post(
 	session: UserSession,
 	form: Form<GrantFormData>,
 	token_store: State<TokenStore<UserToken>>,
-) -> std::result::Result<Redirect, Custom<&'static str>>
+) -> Result<Redirect>
 {
 	let data = form.into_inner();
-	let state = AuthState::decode_b64(&data.state).unwrap();
+	let state = AuthState::decode_b64(&data.state)?;
 	if data.grant {
 		Ok(authorization_granted(
 			state,
@@ -246,28 +241,6 @@ fn authorization_denied(state: AuthState) -> Redirect {
 }
 
 #[derive(Serialize, Debug)]
-pub struct TokenError {
-	error:             String,
-	error_description: Option<String>,
-}
-
-impl TokenError {
-	fn json(msg: &str) -> Json<TokenError> {
-		Json(TokenError {
-			error:             String::from(msg),
-			error_description: None,
-		})
-	}
-
-	fn json_extra(msg: &str, extra: &str) -> Json<TokenError> {
-		Json(TokenError {
-			error:             String::from(msg),
-			error_description: Some(String::from(extra)),
-		})
-	}
-}
-
-#[derive(Serialize, Debug)]
 pub struct TokenSuccess {
 	access_token: String,
 	token_type:   String,
@@ -299,7 +272,7 @@ pub fn token(
 	form: Form<TokenFormData>,
 	token_state: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> std::result::Result<Json<TokenSuccess>, Json<TokenError>>
+) -> Result<Json<TokenSuccess>>
 {
 	let data = form.into_inner();
 	let token = data.code.clone();
@@ -308,21 +281,31 @@ pub fn token(
 	let client = auth
 		.map(|auth| (auth.user, auth.password))
 		.or_else(|| Some((data.client_id?, data.client_secret?)))
-		.and_then(|auth| Client::find_and_authenticate(&auth.0, &auth.1, &conn))
-		.ok_or(TokenError::json("unauthorized_client"))?;
+		.ok_or(ZauthError::from(RequestError::InvalidRequest))
+		.and_then(|auth| {
+			Client::find_and_authenticate(&auth.0, &auth.1, &conn).map_err(
+				|e| match e {
+					ZauthError::AuthError(_) => ZauthError::AuthError(
+						AuthenticationError::Unauthorized(auth.0.to_string()),
+					),
+					e => e,
+				},
+			)
+		})?;
 
 	let token = token_store
 		.fetch_token(token)
-		.ok_or(TokenError::json_extra("invalid_grant", "incorrect token"))?
+		.ok_or(ZauthError::from(AuthenticationError::InvalidGrant(
+			"incorrect token".to_string(),
+		)))?
 		.item;
 
 	if client.id == token.client_id {
 		let access_token = token.username;
 		Ok(TokenSuccess::json(access_token))
 	} else {
-		Err(TokenError::json_extra(
-			"invalid grant",
-			"token was not authorized to this client",
-		))
+		Err(ZauthError::from(AuthenticationError::InvalidGrant(
+			"token was not authorized to this client".to_string(),
+		)))
 	}
 }

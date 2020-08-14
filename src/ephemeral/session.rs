@@ -3,6 +3,7 @@ use rocket::http::{Cookie, Cookies, Status};
 use rocket::request::{FromRequest, Outcome, Request};
 use std::str::FromStr;
 
+use crate::errors::{Result, ZauthError};
 use crate::models::user::User;
 use crate::DbConn;
 
@@ -33,10 +34,9 @@ impl Session {
 		cookies.remove_private(Cookie::named("session"))
 	}
 
-	pub fn user(&self, conn: &DbConn) -> Option<User> {
+	pub fn user(&self, conn: &DbConn) -> Result<User> {
 		if Local::now() > self.expiry {
-			println!("Session expired: {:?}", self);
-			None
+			Err(ZauthError::expired())
 		} else {
 			User::find(self.user_id, conn)
 		}
@@ -80,7 +80,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for UserSession {
 			(Status::InternalServerError, "could not connect to database")
 		})?;
 		match session.user(&db) {
-			Some(user) => Outcome::Success(UserSession { user }),
+			Ok(user) => Outcome::Success(UserSession { user }),
 			_ => Outcome::Failure((
 				Status::InternalServerError,
 				"user not found for valid session",

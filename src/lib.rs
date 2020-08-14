@@ -6,8 +6,8 @@ extern crate pwhash;
 extern crate rand;
 extern crate regex;
 
-#[macro_use]
-extern crate error_chain;
+extern crate thiserror;
+
 #[macro_use]
 extern crate rocket_contrib;
 #[macro_use]
@@ -108,29 +108,32 @@ fn assemble(rocket: Rocket) -> Rocket {
 				let conn =
 					DbConn::get_one(&rocket).expect("database connection");
 				if let Ok(pw) = std::env::var("ZAUTH_ADMIN_PASSWORD") {
-					let admin = User::find_by_username(&conn, "admin")
-						.or_else(|| {
+					let admin = User::find_by_username("admin", &conn)
+						.or_else(|_e| {
 							User::create(
-								&conn,
 								NewUser {
 									username: String::from("admin"),
 									password: String::from(&pw),
 								},
+								&conn,
 							)
 						})
-						.map(|mut user| {
+						.and_then(|mut user| {
 							user.change_with(UserChange {
 								username: None,
 								password: Some(pw),
-							});
+							})?;
 							user.admin = true;
 							user.update(&conn)
 						});
 					match admin {
-						Some(admin) => {
+						Ok(admin) => {
 							dbg!(admin);
 						},
-						None => return Err(rocket),
+						Err(e) => {
+							eprintln!("Error {:?}", e);
+							return Err(rocket);
+						},
 					}
 				}
 				Ok(rocket)
