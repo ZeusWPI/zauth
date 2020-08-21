@@ -28,3 +28,8 @@ CREATE TABLE clients
     redirect_uri_list TEXT         NOT NULL DEFAULT '',
     created_at        TIMESTAMP    NOT NULL DEFAULT NOW()
 );
+
+CREATE VIEW postfix_view AS
+  SELECT username, email
+  FROM users
+  WHERE state = 'active';
