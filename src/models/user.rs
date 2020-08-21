@@ -44,7 +44,7 @@ pub struct User {
 	pub last_name:  String,
 	pub email:      String,
 	pub ssh_key:    Option<String>,
-	pub last_login:  NaiveDateTime,
+	pub last_login: NaiveDateTime,
 	pub created_at: NaiveDateTime,
 }
 
@@ -67,7 +67,7 @@ struct NewUserHashed {
 	last_name:       String,
 	email:           String,
 	ssh_key:         Option<String>,
-	last_login:       NaiveDateTime,
+	last_login:      NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -110,7 +110,7 @@ impl User {
 			last_name:       user.last_name,
 			email:           user.email,
 			ssh_key:         user.ssh_key,
-			last_login:       Utc::now().naive_utc(),
+			last_login:      Utc::now().naive_utc(),
 		};
 		conn.transaction(|| {
 			// Create a new user
