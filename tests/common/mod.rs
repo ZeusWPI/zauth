@@ -69,8 +69,12 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 	as_visitor(|client, db| {
 		let user = User::create(
 			NewUser {
-				username: String::from("user"),
-				password: String::from("user"),
+				username:   String::from("user"),
+				password:   String::from("user"),
+				first_name: String::from("user"),
+				last_name:  String::from("user"),
+				email:      String::from("user"),
+				ssh_key:    Some(String::from("user")),
 			},
 			&db,
 		)
@@ -94,8 +98,12 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 	as_visitor(|client, db| {
 		let mut user = User::create(
 			NewUser {
-				username: String::from("admin"),
-				password: String::from("admin"),
+				username:   String::from("admin"),
+				password:   String::from("admin"),
+				first_name: String::from("admin"),
+				last_name:  String::from("admin"),
+				email:      String::from("admin"),
+				ssh_key:    Some(String::from("admin")),
 			},
 			&db,
 		)

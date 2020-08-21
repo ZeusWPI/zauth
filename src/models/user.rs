@@ -2,7 +2,10 @@ use self::schema::users;
 use crate::errors::{Result, ZauthError};
 use crate::ConcreteConnection;
 use diesel::{self, prelude::*};
+use diesel_derive_enum::DbEnum;
+use std::fmt;
 
+use chrono::{NaiveDateTime, Utc};
 use pwhash::bcrypt::{self, BcryptSetup};
 
 const DEFAULT_COST: u32 = 11;
@@ -12,15 +15,41 @@ const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
 	cost:    Some(DEFAULT_COST),
 };
 
+#[derive(DbEnum, Debug, Serialize, Clone)]
+pub enum UserState {
+	pending,
+	active,
+	disabled,
+}
+
+impl fmt::Display for UserState {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		match *self {
+			UserState::pending => write!(f, "Pending"),
+			UserState::active => write!(f, "Active"),
+			UserState::disabled => write!(f, "Disabled"),
+		}
+	}
+}
+
 mod schema {
 	table! {
+		use diesel::sql_types::*;
+		use crate::models::user::UserStateMapping;
+
 		users {
-			id -> Integer,
-			username -> Text,
-			#[sql_name = "password"]
-			hashed_password -> Text,
-			admin -> Bool,
-		}
+		id -> Integer,
+		username -> Varchar,
+		hashed_password -> Varchar,
+		admin -> Bool,
+		first_name -> Varchar,
+		last_name -> Varchar,
+		email -> Varchar,
+		ssh_key -> Nullable<Text>,
+		state -> UserStateMapping,
+		last_login -> Timestamp,
+		created_at -> Timestamp,
+	}
 	}
 }
 
@@ -28,16 +57,29 @@ mod schema {
 #[table_name = "users"]
 pub struct User {
 	pub id:              i32,
+	// validate to have at least 3 chars
 	pub username:        String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password: String,
 	pub admin:           bool,
+
+	pub first_name: String,
+	pub last_name:  String,
+	pub email:      String,
+	pub ssh_key:    Option<String>,
+	pub state:      UserState,
+	pub last_login: NaiveDateTime,
+	pub created_at: NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
-	pub username: String,
-	pub password: String,
+	pub username:   String,
+	pub password:   String,
+	pub first_name: String,
+	pub last_name:  String,
+	pub email:      String,
+	pub ssh_key:    Option<String>,
 }
 
 #[table_name = "users"]
@@ -45,12 +87,21 @@ pub struct NewUser {
 struct NewUserHashed {
 	username:        String,
 	hashed_password: String,
+	first_name:      String,
+	last_name:       String,
+	email:           String,
+	ssh_key:         Option<String>,
+	last_login:      NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct UserChange {
-	pub username: Option<String>,
-	pub password: Option<String>,
+	pub username:   Option<String>,
+	pub password:   Option<String>,
+	pub first_name: Option<String>,
+	pub last_name:  Option<String>,
+	pub email:      Option<String>,
+	pub ssh_key:    Option<String>,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -79,6 +130,11 @@ impl User {
 		let user = NewUserHashed {
 			username:        user.username,
 			hashed_password: hash(&user.password)?,
+			first_name:      user.first_name,
+			last_name:       user.last_name,
+			email:           user.email,
+			ssh_key:         user.ssh_key,
+			last_login:      Utc::now().naive_utc(),
 		};
 		conn.transaction(|| {
 			// Create a new user
@@ -98,16 +154,30 @@ impl User {
 		if let Some(password) = change.password {
 			self.hashed_password = hash(&password)?;
 		}
+		if let Some(first_name) = change.first_name {
+			self.first_name = first_name;
+		}
+		if let Some(last_name) = change.last_name {
+			self.last_name = last_name;
+		}
+		if let Some(email) = change.email {
+			self.email = email;
+		}
+		if let Some(ssh_key) = change.ssh_key {
+			self.ssh_key = Some(ssh_key);
+		}
 		Ok(())
 	}
 
 	pub fn update(self, conn: &ConcreteConnection) -> Result<Self> {
 		let id = self.id;
+
 		conn.transaction(|| {
 			// Create a new user
 			diesel::update(users::table.find(id))
 				.set(self)
 				.execute(conn)?;
+
 			// Fetch the updated record
 			users::table.find(id).first(conn)
 		})

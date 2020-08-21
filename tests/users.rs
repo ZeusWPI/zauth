@@ -44,8 +44,12 @@ fn show_user_as_user() {
 	common::as_user(|http_client, db, user| {
 		let other = User::create(
 			NewUser {
-				username: String::from("somebody"),
-				password: String::from("else"),
+				username:   String::from("somebody"),
+				password:   String::from("once"),
+				first_name: String::from("told"),
+				last_name:  String::from("me"),
+				email:      String::from("zeus"),
+				ssh_key:    Some(String::from("would be forever")),
 			},
 			&db,
 		)
@@ -78,8 +82,12 @@ fn show_user_as_admin() {
 	common::as_admin(|http_client, db, admin| {
 		let other = User::create(
 			NewUser {
-				username: String::from("somebody"),
-				password: String::from("else"),
+				username:   String::from("somebody"),
+				password:   String::from("once"),
+				first_name: String::from("told"),
+				last_name:  String::from("me"),
+				email:      String::from("zeus"),
+				ssh_key:    Some(String::from("would be forever")),
 			},
 			&db,
 		)
@@ -127,8 +135,12 @@ fn update_self() {
 
 		let other = User::create(
 			NewUser {
-				username: String::from("somebody"),
-				password: String::from("else"),
+				username:   String::from("somebody"),
+				password:   String::from("once"),
+				first_name: String::from("told"),
+				last_name:  String::from("me"),
+				email:      String::from("zeus"),
+				ssh_key:    Some(String::from("would be forever")),
 			},
 			&db,
 		)
@@ -179,8 +191,12 @@ fn make_admin() {
 	common::as_admin(|http_client, db, _admin| {
 		let other = User::create(
 			NewUser {
-				username: String::from("padawan"),
-				password: String::from(""),
+				username:   String::from("somebody"),
+				password:   String::from("once"),
+				first_name: String::from("told"),
+				last_name:  String::from("me"),
+				email:      String::from("zeus"),
+				ssh_key:    Some(String::from("would be forever")),
 			},
 			&db,
 		)
@@ -210,8 +226,12 @@ fn try_make_admin() {
 	common::as_user(|http_client, db, _user| {
 		let other = User::create(
 			NewUser {
-				username: String::from("acccomplice"),
-				password: String::from("not_an_admin"),
+				username:   String::from("somebody"),
+				password:   String::from("once"),
+				first_name: String::from("told"),
+				last_name:  String::from("me"),
+				email:      String::from("zeus"),
+				ssh_key:    Some(String::from("would be forever")),
 			},
 			&db,
 		)
@@ -241,7 +261,10 @@ fn create_user_form() {
 			.post("/users")
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body("username=testuser&password=testpassword")
+			.body(
+				"username=testuser&password=testpassword&first_name=abc&\
+				 last_name=def&email=hij@klm.op&ssh_key=qrs",
+			)
 			.dispatch();
 
 		assert_eq!(response.status(), Status::Ok);
@@ -263,7 +286,9 @@ fn create_user_json() {
 			.header(ContentType::JSON)
 			.header(Accept::JSON)
 			.body(
-				"{\"username\": \"testuser\", \"password\": \"testpassword\"}",
+				"{\"username\": \"testuser\", \"password\": \"testpassword\", \
+				 \"first_name\": \"abc\", \"last_name\": \"def\", \"email\": \
+				 \"hij@klm.op\", \"ssh_key\": \"qrs\"}",
 			)
 			.dispatch();
 

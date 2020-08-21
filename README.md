@@ -16,9 +16,10 @@ The name is open for discussion.
   with `cargo install diesel_cli`.
 
 4. Create the development and testing database with
-  `diesel database reset --database-url "postgresql://zauth:zauth@localhost/zauth"`
-  and
-  `diesel database reset --database-url "postgresql://zauth:zauth@localhost/zauth_test"`.
+    ```shell script
+    diesel database reset --database-url "postgresql://zauth:zauth@localhost/zauth"
+    diesel database reset --database-url "postgresql://zauth:zauth@localhost/zauth_test"
+    ```     
   This will also run the migrations.
 
 5. You can start the server with `cargo run`.
@@ -27,7 +28,7 @@ The name is open for discussion.
     ```
     ZAUTH_ADMIN_PASSWORD=admin cargo run
     ```
-   The server should then run on[localhost:8000](http://localhost:8000) and create
+   The server should then run on [localhost:8000](http://localhost:8000) and create
    an admin user with password 'admin'.
 
 You can now start developing! A good way to start is to look at the routes defined in the [controllers](./src/controllers/).

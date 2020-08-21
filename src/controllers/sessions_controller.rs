@@ -47,7 +47,7 @@ pub fn create_session(
 		Ok(Either::Right(template! {
 			"session/login.html";
 			state: String = form.state.unwrap(),
-			error: Option<String> = Some(String::from("Usernae or password incorrect")),
+			error: Option<String> = Some(String::from("Username or password incorrect")),
 		}))
 	}
 }

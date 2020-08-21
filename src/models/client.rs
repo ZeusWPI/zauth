@@ -7,6 +7,8 @@ use crate::ConcreteConnection;
 
 use self::schema::clients;
 
+use chrono::{NaiveDateTime, Utc};
+
 const SECRET_LENGTH: usize = 64;
 
 mod schema {
@@ -17,6 +19,7 @@ mod schema {
 			secret -> Text,
 			needs_grant -> Bool,
 			redirect_uri_list -> Text,
+			created_at -> Timestamp,
 		}
 	}
 }
@@ -28,6 +31,7 @@ pub struct Client {
 	pub secret:            String,
 	pub needs_grant:       bool,
 	pub redirect_uri_list: String,
+	pub created_at:        NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]

@@ -38,8 +38,12 @@ fn normal_flow() {
 
 		let user = User::create(
 			NewUser {
-				username: String::from(user_username),
-				password: String::from(user_password),
+				username:   String::from(user_username),
+				password:   String::from(user_password),
+				first_name: String::from("abc"),
+				last_name:  String::from("def"),
+				email:      String::from("ghi@jkl.mno"),
+				ssh_key:    Some(String::from("pqrstuvwxyz")),
 			},
 			&db,
 		)
