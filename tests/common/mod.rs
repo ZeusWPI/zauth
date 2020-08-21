@@ -77,8 +77,7 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 			NewUser {
 				username:   String::from("user"),
 				password:   String::from("user"),
-				first_name: String::from("user"),
-				last_name:  String::from("user"),
+				full_name:  String::from("user"),
 				email:      String::from("user"),
 				ssh_key:    Some(String::from("user")),
 			},
@@ -107,8 +106,7 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 			NewUser {
 				username:   String::from("admin"),
 				password:   String::from("admin"),
-				first_name: String::from("admin"),
-				last_name:  String::from("admin"),
+				full_name:  String::from("admin"),
 				email:      String::from("admin"),
 				ssh_key:    Some(String::from("admin")),
 			},

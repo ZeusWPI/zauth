@@ -10,7 +10,7 @@
         <p> Error: {{ message }}
     {% when None %}
     {% endmatch %}
-    <form action="login" method="post">
+    <form action="/login" method="post">
       <input type="hidden" name="state" value="{{ state }}">
       <input type="text" placeholder="Username" name="username" id="name" required>
       <input type="password" placeholder="Password" name="password" id="password" required>

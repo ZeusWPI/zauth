@@ -40,8 +40,7 @@ fn normal_flow() {
 			NewUser {
 				username:   String::from(user_username),
 				password:   String::from(user_password),
-				first_name: String::from("abc"),
-				last_name:  String::from("def"),
+				full_name:  String::from("abc"),
 				email:      String::from("ghi@jkl.mno"),
 				ssh_key:    Some(String::from("pqrstuvwxyz")),
 			},

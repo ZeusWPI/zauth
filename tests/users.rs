@@ -46,8 +46,7 @@ fn show_user_as_user() {
 			NewUser {
 				username:   String::from("somebody"),
 				password:   String::from("once"),
-				first_name: String::from("told"),
-				last_name:  String::from("me"),
+				full_name:  String::from("told me"),
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
@@ -83,8 +82,7 @@ fn show_user_as_admin() {
 			NewUser {
 				username:   String::from("somebody"),
 				password:   String::from("once"),
-				first_name: String::from("told"),
-				last_name:  String::from("me"),
+				full_name:  String::from("told me"),
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
@@ -137,8 +135,7 @@ fn update_self() {
 			NewUser {
 				username:   String::from("somebody"),
 				password:   String::from("once"),
-				first_name: String::from("told"),
-				last_name:  String::from("me"),
+				full_name:  String::from("told me"),
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
@@ -194,8 +191,7 @@ fn make_admin() {
 			NewUser {
 				username:   String::from("somebody"),
 				password:   String::from("once"),
-				first_name: String::from("told"),
-				last_name:  String::from("me"),
+				full_name:  String::from("told me"),
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
@@ -230,8 +226,7 @@ fn try_make_admin() {
 			NewUser {
 				username:   String::from("somebody"),
 				password:   String::from("once"),
-				first_name: String::from("told"),
-				last_name:  String::from("me"),
+				full_name:  String::from("told me"),
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
@@ -265,8 +260,8 @@ fn create_user_form() {
 			.header(ContentType::Form)
 			.header(Accept::JSON)
 			.body(
-				"username=testuser&password=testpassword&first_name=abc&\
-				 last_name=def&email=hij@klm.op&ssh_key=qrs",
+				"username=testuser&password=testpassword&full_name=abc&\
+				 email=hij@klm.op&ssh_key=qrs",
 			)
 			.dispatch();
 
@@ -290,7 +285,7 @@ fn create_user_json() {
 			.header(Accept::JSON)
 			.body(
 				"{\"username\": \"testuser\", \"password\": \"testpassword\", \
-				 \"first_name\": \"abc\", \"last_name\": \"def\", \"email\": \
+				 \"full_name\": \"abc\", \"email\": \
 				 \"hij@klm.op\", \"ssh_key\": \"qrs\"}",
 			)
 			.dispatch();

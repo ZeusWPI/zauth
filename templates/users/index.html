@@ -5,8 +5,7 @@
     <tr>
         <th>Username</th>
         <th>Admin?</th>
-        <th>First Name</th>
-        <th>Last Name</th>
+        <th>Full Name</th>
         <th>Email</th>
         <th>SSH key</th>
         <th>State</th>
@@ -21,8 +20,7 @@
         {% else %}
         <td>No</td>
         {% endif%}
-        <td>{{ user.first_name }}</td>
-        <td>{{ user.last_name }}</td>
+        <td>{{ user.full_name }}</td>
         <td>{{ user.email }}</td>
         <td>
             {% match user.ssh_key %}
@@ -47,11 +45,8 @@
     <label for="password">Password</label>
     <input id="password" name="password" type="password"/>
 
-    <label for="first_name">First Name</label>
-    <input id="first_name" name="first_name" type="text"/>
-
-    <label for="last_name">Last Name</label>
-    <input id="last_name" name="last_name" type="text"/>
+    <label for="full_name">Full Name</label>
+    <input id="full_name" name="full_name" type="text"/>
 
     <label for="email">Email</label>
     <input id="email" name="email" type="email"/>

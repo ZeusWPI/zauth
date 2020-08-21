@@ -40,8 +40,7 @@ mod schema {
 		admin -> Bool,
 		password_reset_token -> Nullable<Varchar>,
 		password_reset_expiry -> Nullable<Timestamp>,
-		first_name -> Varchar,
-		last_name -> Varchar,
+		full_name -> Varchar,
 		email -> Varchar,
 		ssh_key -> Nullable<Text>,
 		state -> UserStateMapping,
@@ -59,25 +58,23 @@ pub struct User {
 	// validate to have at least 3 chars
 	pub username:              String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
-	pub hashed_password:       String,
-	pub admin:                 bool,
+	pub hashed_password: String,
+	pub admin:           bool,
 	pub password_reset_token:  Option<String>,
 	pub password_reset_expiry: Option<NaiveDateTime>,
-	pub first_name:            String,
-	pub last_name:             String,
-	pub email:                 String,
-	pub ssh_key:               Option<String>,
-	pub state:                 UserState,
-	pub last_login:            NaiveDateTime,
-	pub created_at:            NaiveDateTime,
+	pub full_name:  String,
+	pub email:      String,
+	pub ssh_key:    Option<String>,
+	pub state:      UserState,
+	pub last_login: NaiveDateTime,
+	pub created_at: NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
 	pub username:   String,
 	pub password:   String,
-	pub first_name: String,
-	pub last_name:  String,
+	pub full_name:  String,
 	pub email:      String,
 	pub ssh_key:    Option<String>,
 }
@@ -87,8 +84,7 @@ pub struct NewUser {
 struct NewUserHashed {
 	username:        String,
 	hashed_password: String,
-	first_name:      String,
-	last_name:       String,
+	full_name:       String,
 	email:           String,
 	state:           UserState,
 	ssh_key:         Option<String>,
@@ -99,8 +95,7 @@ struct NewUserHashed {
 pub struct UserChange {
 	pub username:   Option<String>,
 	pub password:   Option<String>,
-	pub first_name: Option<String>,
-	pub last_name:  Option<String>,
+	pub full_name:  Option<String>,
 	pub email:      Option<String>,
 	pub ssh_key:    Option<String>,
 }
@@ -173,8 +168,7 @@ impl User {
 		let user = NewUserHashed {
 			username:        user.username,
 			hashed_password: hash(&user.password, bcrypt_cost)?,
-			first_name:      user.first_name,
-			last_name:       user.last_name,
+			full_name:       user.full_name,
 			email:           user.email,
 			ssh_key:         user.ssh_key,
 			state:           Active,
@@ -192,8 +186,7 @@ impl User {
 		let user = NewUserHashed {
 			username:        user.username,
 			hashed_password: hash(&user.password, bcrypt_cost)?,
-			first_name:      user.first_name,
-			last_name:       user.last_name,
+			full_name:       user.full_name,
 			email:           user.email,
 			ssh_key:         user.ssh_key,
 			state:           Pending,
@@ -226,11 +219,8 @@ impl User {
 		if let Some(password) = change.password {
 			self.hashed_password = hash(&password, bcrypt_cost)?;
 		}
-		if let Some(first_name) = change.first_name {
-			self.first_name = first_name;
-		}
-		if let Some(last_name) = change.last_name {
-			self.last_name = last_name;
+		if let Some(full_name) = change.full_name {
+			self.full_name = full_name;
 		}
 		if let Some(email) = change.email {
 			self.email = email;

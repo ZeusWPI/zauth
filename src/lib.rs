@@ -148,8 +148,7 @@ fn create_admin(
 				NewUser {
 					username:   username.clone(),
 					password:   password.clone(),
-					first_name: String::from(""),
-					last_name:  String::from(""),
+					full_name: String::from(""),
 					email:      String::from(""),
 					ssh_key:    None,
 				},

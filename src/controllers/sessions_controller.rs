@@ -20,7 +20,7 @@ pub fn new_session(
 			state: String = state.unwrap_or_default(),
 			error: Option<String> = None
 		}),
-		Some(userSession) => Either::Left(Redirect::to(uri!(home_page))),
+		Some(_user_session) => Either::Left(Redirect::to(uri!(home_page))),
 	}
 }
 

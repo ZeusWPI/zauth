@@ -8,10 +8,9 @@ CREATE TABLE users
     password_reset_token    VARCHAR(255) UNIQUE,
     password_reset_expiry   TIMESTAMP,
     admin                   BOOLEAN      NOT NULL DEFAULT false,
-    first_name              VARCHAR(255) NOT NULL,
-    last_name               VARCHAR(255) NOT NULL,
+    full_name               VARCHAR(255) NOT NULL,
     email                   VARCHAR(255) NOT NULL UNIQUE,
-    ssh_key                 VARCHAR(8192),
+    ssh_key                 TEXT,
     state                   user_state   NOT NULL DEFAULT 'pending',
     last_login              TIMESTAMP    NOT NULL,
     created_at              TIMESTAMP    NOT NULL DEFAULT NOW()
