@@ -25,9 +25,7 @@ pub fn new_session(
 }
 
 #[get("/logout")]
-pub fn delete_session(
-	session: UserSession
-) -> impl Responder<'static> {
+pub fn delete_session(session: UserSession) -> impl Responder<'static> {
 	template! {
 		"session/logout.html";
 		current_user: User = session.user

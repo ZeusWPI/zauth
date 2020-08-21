@@ -20,6 +20,8 @@ pub fn home_page(
 			clients:      Vec<Client>  = Client::all(&conn)?,
 			users:        Vec<User>    = User::all(&conn)?,
 		})),
-		Some(session) => Ok(Either::Left(Redirect::to(uri!(show_user: session.user.id)))),
+		Some(session) => {
+			Ok(Either::Left(Redirect::to(uri!(show_user: session.user.id))))
+		},
 	}
 }
