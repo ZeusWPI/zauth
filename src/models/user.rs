@@ -17,17 +17,17 @@ const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
 
 #[derive(DbEnum, Debug, Serialize, Clone)]
 pub enum UserState {
-	pending,
-	active,
-	disabled,
+	Pending,
+	Active,
+	Disabled,
 }
 
 impl fmt::Display for UserState {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match *self {
-			UserState::pending => write!(f, "Pending"),
-			UserState::active => write!(f, "Active"),
-			UserState::disabled => write!(f, "Disabled"),
+			UserState::Pending => write!(f, "Pending"),
+			UserState::Active => write!(f, "Active"),
+			UserState::Disabled => write!(f, "Disabled"),
 		}
 	}
 }

@@ -7,7 +7,7 @@ use crate::ConcreteConnection;
 
 use self::schema::clients;
 
-use chrono::{NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 
 const SECRET_LENGTH: usize = 64;
 
