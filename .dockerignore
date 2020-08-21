@@ -1,0 +1,7 @@
+.git/
+target/
+Dockerfile
+docker-compose.yml
+shell.nix
+nix/
+openapi/
