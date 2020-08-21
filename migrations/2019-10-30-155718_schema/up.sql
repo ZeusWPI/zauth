@@ -12,8 +12,8 @@ CREATE TABLE users
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX ix_user_username ON user (username);
-CREATE INDEX ix_user_email ON user (email);
+CREATE INDEX ix_users_username ON users (username);
+CREATE INDEX ix_users_email ON users (email);
 
 
 CREATE TABLE clients

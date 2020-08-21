@@ -105,7 +105,7 @@ impl User {
 	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Result<User> {
 		let user = NewUserHashed {
 			username:        user.username,
-			hashed_password: hash(&user.password).ok()?,
+			hashed_password: hash(&user.password)?,
 			first_name:      user.first_name,
 			last_name:       user.last_name,
 			email:           user.email,
@@ -114,13 +114,13 @@ impl User {
 		};
 		conn.transaction(|| {
 			// Create a new user
-			diesel::insert_into(user::table)
+			diesel::insert_into(users::table)
 				.values(&user)
 				.execute(conn)?;
 			// Fetch the last created user
-			users.order(user::id.desc()).first(conn)
+			let user = users::table.order(users::id.desc()).first(conn)?;
+			Ok(user)
 		})
-		.ok()
 	}
 
 	pub fn change_with(&mut self, change: UserChange) -> Result<()> {
@@ -128,7 +128,7 @@ impl User {
 			self.username = username;
 		}
 		if let Some(password) = change.password {
-			self.hashed_password = hash(&password).ok()?;
+			self.hashed_password = hash(&password)?;
 		}
 		if let Some(first_name) = change.first_name {
 			self.first_name = first_name;
