@@ -24,7 +24,7 @@ mod schema {
 		last_name -> Varchar,
 		email -> Varchar,
 		ssh_key -> Nullable<Text>,
-		last_seen -> Timestamp,
+		last_login -> Timestamp,
 		created_at -> Timestamp,
 	}
 	}
@@ -44,7 +44,7 @@ pub struct User {
 	pub last_name:  String,
 	pub email:      String,
 	pub ssh_key:    Option<String>,
-	pub last_seen:  NaiveDateTime,
+	pub last_login:  NaiveDateTime,
 	pub created_at: NaiveDateTime,
 }
 
@@ -67,7 +67,7 @@ struct NewUserHashed {
 	last_name:       String,
 	email:           String,
 	ssh_key:         Option<String>,
-	last_seen:       NaiveDateTime,
+	last_login:       NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -110,7 +110,7 @@ impl User {
 			last_name:       user.last_name,
 			email:           user.email,
 			ssh_key:         user.ssh_key,
-			last_seen:       Utc::now().naive_utc(),
+			last_login:       Utc::now().naive_utc(),
 		};
 		conn.transaction(|| {
 			// Create a new user

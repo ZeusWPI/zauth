@@ -8,7 +8,7 @@ CREATE TABLE users
     last_name       VARCHAR(255) NOT NULL,
     email           VARCHAR(255) NOT NULL UNIQUE,
     ssh_key         TEXT,
-    last_seen       TIMESTAMP    NOT NULL,
+    last_login      TIMESTAMP    NOT NULL,
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
