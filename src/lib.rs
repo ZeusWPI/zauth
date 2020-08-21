@@ -2,6 +2,7 @@
 #![recursion_limit = "256"]
 
 extern crate chrono;
+extern crate lettre_email;
 extern crate pwhash;
 extern crate rand;
 extern crate regex;
@@ -27,6 +28,7 @@ pub mod controllers;
 pub mod ephemeral;
 pub mod errors;
 pub mod http_authentication;
+pub mod mailer;
 pub mod models;
 pub mod token_store;
 

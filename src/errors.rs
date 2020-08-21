@@ -3,7 +3,9 @@ use rocket::response::{self, Responder, Response};
 use rocket::Request;
 use thiserror::Error;
 
+use lettre::SendableEmail;
 use std::io::Cursor;
+use std::sync::mpsc::SendError;
 
 #[derive(Error, Debug)]
 pub enum ZauthError {
@@ -69,6 +71,10 @@ pub enum InternalError {
 	HashError(#[from] pwhash::error::Error),
 	#[error("Database error")]
 	DatabaseError(#[from] diesel::result::Error),
+	#[error("Mailer error")]
+	MailError(#[from] lettre_email::error::Error),
+	#[error("Mail queue synchronisation error")]
+	SyncError(#[from] SendError<SendableEmail>),
 }
 pub type InternalResult<T> = std::result::Result<T, InternalError>;
 

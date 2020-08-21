@@ -11,6 +11,8 @@ bincode = "1.0"
 pwhash = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.1"
+lettre = "0.9"
+lettre_email = "0.9"
 urlencoding = "1.0"
 rand = "0.7"
 regex = "1.0"
@@ -25,8 +27,8 @@ diesel_migrations = "1.4"
 tempfile = "3.1"
 maplit = "1.0"
 parking_lot = { version = "0.11", features = ["nightly"] }
-
 thiserror = "1.0.20"
+threads_pool = "0.2.6"
 
 [dependencies.rocket_contrib]
 version = "0.4.2"

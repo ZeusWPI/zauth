@@ -6,6 +6,7 @@ use diesel_derive_enum::DbEnum;
 use std::fmt;
 
 use chrono::{NaiveDateTime, Utc};
+use lettre_email::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 
 const DEFAULT_COST: u32 = 11;
@@ -217,4 +218,14 @@ fn hash(password: &str) -> crate::errors::InternalResult<String> {
 
 fn verify(password: &str, hash: &str) -> bool {
 	bcrypt::verify(password, &hash)
+}
+
+impl Into<Mailbox> for &User {
+	fn into(self) -> Mailbox {
+		// TODO: user email
+		Mailbox::new_with_name(
+			self.username.to_string(),
+			self.username.to_string(),
+		)
+	}
 }
