@@ -1,3 +1,5 @@
+CREATE TYPE user_state AS ENUM ('pending', 'active', 'disabled');
+
 CREATE TABLE users
 (
     id              SERIAL PRIMARY KEY,
@@ -8,6 +10,7 @@ CREATE TABLE users
     last_name       VARCHAR(255) NOT NULL,
     email           VARCHAR(255) NOT NULL UNIQUE,
     ssh_key         TEXT,
+    state           user_state   NOT NULL DEFAULT 'pending',
     last_login      TIMESTAMP    NOT NULL,
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
 );

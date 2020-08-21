@@ -2,6 +2,8 @@ use self::schema::users;
 use crate::errors::{Result, ZauthError};
 use crate::ConcreteConnection;
 use diesel::{self, prelude::*};
+use diesel_derive_enum::DbEnum;
+use std::fmt;
 
 use chrono::{NaiveDateTime, Utc};
 use pwhash::bcrypt::{self, BcryptSetup};
@@ -13,8 +15,28 @@ const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
 	cost:    Some(DEFAULT_COST),
 };
 
+#[derive(DbEnum, Debug, Serialize, Clone)]
+pub enum UserState {
+	pending,
+	active,
+	disabled,
+}
+
+impl fmt::Display for UserState {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		match *self {
+			UserState::pending => write!(f, "Pending"),
+			UserState::active => write!(f, "Active"),
+			UserState::disabled => write!(f, "Disabled"),
+		}
+	}
+}
+
 mod schema {
 	table! {
+		use diesel::sql_types::*;
+		use crate::models::user::UserStateMapping;
+
 		users {
 		id -> Integer,
 		username -> Varchar,
@@ -24,6 +46,7 @@ mod schema {
 		last_name -> Varchar,
 		email -> Varchar,
 		ssh_key -> Nullable<Text>,
+		state -> UserStateMapping,
 		last_login -> Timestamp,
 		created_at -> Timestamp,
 	}
@@ -44,6 +67,7 @@ pub struct User {
 	pub last_name:  String,
 	pub email:      String,
 	pub ssh_key:    Option<String>,
+	pub state:      UserState,
 	pub last_login: NaiveDateTime,
 	pub created_at: NaiveDateTime,
 }

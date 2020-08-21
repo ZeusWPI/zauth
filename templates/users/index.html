@@ -9,6 +9,7 @@
         <th>Last Name</th>
         <th>Email</th>
         <th>SSH key</th>
+        <th>State</th>
         <th>Last login</th>
         <th>Created at</th>
     </tr>
@@ -31,6 +32,7 @@
                     Not configured
             {% endmatch %}
         </td>
+        <td>{{ user.state }}</td>
         <td>{{ user.last_login }}</td>
         <td>{{ user.created_at }}</td>
     </tr>
