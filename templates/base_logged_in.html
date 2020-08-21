@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block nav %}
+
+<nav class="nav">
+  <ul>
+    <li><a href="/">Home</a></li>
+{% if current_user.admin %}
+    <li><a href="/users/">Users</a></li>
+    <li><a href="/clients/">Clients</a></li>
+{% endif %}
+    <li><a href="/users/{{ current_user.id }}">Profile</a></li>
+    <li><a href="/logout">Logout</a></li>
+  </ul>
+</nav>
+
+{% endblock nav %}

@@ -15,9 +15,12 @@
     {% endblock head %}
 </head>
 <body>
-{% include "navbar.html" %}
+{% block nav %}{% endblock nav %}
+
 <div class="container">
     {% block content %}{% endblock content %}
 </div>
+
+
 </body>
 </html>

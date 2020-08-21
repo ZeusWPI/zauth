@@ -1,25 +1,18 @@
-{% extends "layout.html" %}
+{% extends "base_not_logged_in.html" %}
 {% block content %}
 <h2>This is the Zeus Authentication platform</h2>
-{% match current_user %}
-{% when Some with (user) %}
-<p>You are logged in as <b>{{ user.username }}</b>.
-    <a href="/users/{{ user.id }}">profile</a>
-    <a href="/logout">Log out here.</a>
-    {% when None %}
-    <div class="row">
-        <div class="column" id="center-outer">
-            <div id="center-inner">
-                <h3><a href="/login">Login</a></h3>
-            </div>
-        </div>
-        <div class="column" id="center-outer">
-            <div id="center-inner">
-                <h3><a href="/register">Register</a></h3>
-            </div>
+
+<div class="row">
+    <div class="column" id="center-outer">
+        <div id="center-inner">
+            <h3><a href="/login">Login</a></h3>
         </div>
     </div>
-    {% endmatch %}
-
+    <div class="column" id="center-outer">
+        <div id="center-inner">
+            <h3><a href="/register">Register</a></h3>
+        </div>
+    </div>
+</div>
 
 {% endblock content %}

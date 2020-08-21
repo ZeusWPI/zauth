@@ -35,7 +35,10 @@ pub fn show_user(
 	// Check whether the current session is allowed to view this user
 	if session.user.admin || session.user.id == id {
 		Ok(Accepter {
-			html: template!("users/show.html"; user: User = user.clone()),
+			html: template!("users/show.html";
+							user: User = user.clone(),
+							current_user: User = session.user,
+			),
 			json: Json(user),
 		})
 	} else {
