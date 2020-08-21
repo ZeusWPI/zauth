@@ -2,17 +2,27 @@ use rocket::http::Cookies;
 use rocket::request::Form;
 use rocket::response::{Redirect, Responder};
 
-use crate::ephemeral::session::Session;
+use crate::controllers::pages_controller::{rocket_uri_macro_home_page};
+use crate::ephemeral::session::{Session, UserSession};
 use crate::errors::{Either, Result};
 use crate::models::user::User;
 use crate::DbConn;
 
 #[get("/login?<state>")]
-pub fn new_session(state: Option<String>) -> impl Responder<'static> {
-	template! {
-		"session/login.html";
-		state: String = state.unwrap_or_default(),
-		error: Option<String> = None
+pub fn new_session(
+	session: Option<UserSession>,
+	state: Option<String>,
+) -> Either<Redirect, impl Responder<'static>>
+{
+	match session.map(|session| session.user) {
+		None => {
+			Either::Right(template! {
+				"session/login.html";
+				state: String = state.unwrap_or_default(),
+				error: Option<String> = None
+			})
+		},
+		Some(userSession) => Either::Left(Redirect::to(uri!(home_page))),
 	}
 }
 
