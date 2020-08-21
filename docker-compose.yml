@@ -19,7 +19,6 @@ services:
       POSTGRES_USER: zauth
       POSTGRES_PASSWORD: zauth
     volumes:
-      - "./docker_misc/pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf"
       - zauth-database:/var/lib/postgresql/data
     networks:
       - zauth-internal
