@@ -22,6 +22,9 @@ extern crate diesel;
 extern crate diesel_migrations;
 
 #[macro_use]
+extern crate rpa;
+
+#[macro_use]
 pub mod views;
 pub mod controllers;
 pub mod ephemeral;
