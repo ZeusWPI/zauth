@@ -15,7 +15,9 @@
                 Update profile info
             </h3>
 
-            <form id="userEdit">
+            <form action="/users/{{user.id}}" method="POST">
+                <input type="hidden" name="_method" value="put"/>
+
                 <label for="username">Username</label>
                 <input id="username" name="username" type="text" value="{{ user.username }}" disabled/>
 
@@ -37,29 +39,6 @@
 
                 <button type="submit">Update</button>
             </form>
-            <script>
-                const element = document.querySelector('form#userEdit');
-                element.addEventListener('submit', event => {
-                    event.preventDefault();
-                    // actual logic, e.g. validate the form
-                    console.log('Form submission cancelled.');
-
-                    putForm('/users/{{user.id}}', '#userEdit').then(data => console.log(data))
-                });
-
-                function putForm(url, formSelector) {
-                    const formData = new FormData(document.querySelector(formSelector))
-                    const urlEncoded = new URLSearchParams(formData)
-
-                    fetch(url, {
-                        method: 'PUT', // 'GET', 'PUT', 'DELETE', etc.
-                        body: urlEncoded, // this will automatically set the 'Content-Type'
-                    })
-                        .then(response => response.json())
-                        .catch(error => console.error(error))
-                    return false;
-                }
-            </script>
         </div>
         <div class="column">
             <h3>
