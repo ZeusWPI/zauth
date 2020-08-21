@@ -2,5 +2,3 @@
 # see diesel.rs/guides/configuring-diesel-cli
 
 [print_schema]
-file = "src/schema.rs"
-import_types = ["diesel::sql_types::*", "crate::user_state::*"]   # <- note the extra import
