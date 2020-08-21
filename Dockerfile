@@ -1,18 +1,16 @@
-FROM rustlang/rust:nightly-alpine AS builder
+FROM rustlang/rust:nightly-buster AS builder
 
 WORKDIR /usr/src/zauth
-
-RUN apk add --no-cache musl-dev mariadb-connector-c-dev postgresql-dev sqlite-dev
 
 RUN cargo install diesel_cli
 COPY . .
 RUN cargo install --path .
 
-FROM alpine
+FROM debian:buster-slim
 
 WORKDIR /usr/src/zauth
 
-RUN apk add --no-cache netcat-openbsd libpq
+RUN apt-get update && apt-get install -y netcat-openbsd sqlite3 libpq-dev libmariadbclient-dev
 COPY --from=builder /usr/local/cargo/bin/diesel /usr/local/cargo/bin/zauth /usr/local/bin/
 COPY Rocket.toml diesel.toml /usr/src/zauth/
 COPY migrations/ migrations/
