@@ -44,11 +44,11 @@ fn show_user_as_user() {
 	common::as_user(|http_client, db, user| {
 		let other = User::create(
 			NewUser {
-				username:   String::from("somebody"),
-				password:   String::from("once"),
-				full_name:  String::from("told me"),
-				email:      String::from("zeus"),
-				ssh_key:    Some(String::from("would be forever")),
+				username:  String::from("somebody"),
+				password:  String::from("once"),
+				full_name: String::from("told me"),
+				email:     String::from("zeus"),
+				ssh_key:   Some(String::from("would be forever")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -80,11 +80,11 @@ fn show_user_as_admin() {
 	common::as_admin(|http_client, db, admin| {
 		let other = User::create(
 			NewUser {
-				username:   String::from("somebody"),
-				password:   String::from("once"),
-				full_name:  String::from("told me"),
-				email:      String::from("zeus"),
-				ssh_key:    Some(String::from("would be forever")),
+				username:  String::from("somebody"),
+				password:  String::from("once"),
+				full_name: String::from("told me"),
+				email:     String::from("zeus"),
+				ssh_key:   Some(String::from("would be forever")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -133,11 +133,11 @@ fn update_self() {
 
 		let other = User::create(
 			NewUser {
-				username:   String::from("somebody"),
-				password:   String::from("once"),
-				full_name:  String::from("told me"),
-				email:      String::from("zeus"),
-				ssh_key:    Some(String::from("would be forever")),
+				username:  String::from("somebody"),
+				password:  String::from("once"),
+				full_name: String::from("told me"),
+				email:     String::from("zeus"),
+				ssh_key:   Some(String::from("would be forever")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -189,11 +189,11 @@ fn make_admin() {
 	common::as_admin(|http_client, db, _admin| {
 		let other = User::create(
 			NewUser {
-				username:   String::from("somebody"),
-				password:   String::from("once"),
-				full_name:  String::from("told me"),
-				email:      String::from("zeus"),
-				ssh_key:    Some(String::from("would be forever")),
+				username:  String::from("somebody"),
+				password:  String::from("once"),
+				full_name: String::from("told me"),
+				email:     String::from("zeus"),
+				ssh_key:   Some(String::from("would be forever")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -224,11 +224,11 @@ fn try_make_admin() {
 	common::as_user(|http_client, db, _user| {
 		let other = User::create(
 			NewUser {
-				username:   String::from("somebody"),
-				password:   String::from("once"),
-				full_name:  String::from("told me"),
-				email:      String::from("zeus"),
-				ssh_key:    Some(String::from("would be forever")),
+				username:  String::from("somebody"),
+				password:  String::from("once"),
+				full_name: String::from("told me"),
+				email:     String::from("zeus"),
+				ssh_key:   Some(String::from("would be forever")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -285,8 +285,8 @@ fn create_user_json() {
 			.header(Accept::JSON)
 			.body(
 				"{\"username\": \"testuser\", \"password\": \"testpassword\", \
-				 \"full_name\": \"abc\", \"email\": \
-				 \"hij@klm.op\", \"ssh_key\": \"qrs\"}",
+				 \"full_name\": \"abc\", \"email\": \"hij@klm.op\", \
+				 \"ssh_key\": \"qrs\"}",
 			)
 			.dispatch();
 

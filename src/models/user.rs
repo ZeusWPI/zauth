@@ -72,11 +72,11 @@ pub struct User {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
-	pub username:   String,
-	pub password:   String,
-	pub full_name:  String,
-	pub email:      String,
-	pub ssh_key:    Option<String>,
+	pub username:  String,
+	pub password:  String,
+	pub full_name: String,
+	pub email:     String,
+	pub ssh_key:   Option<String>,
 }
 
 #[table_name = "users"]
@@ -93,11 +93,11 @@ struct NewUserHashed {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct UserChange {
-	pub username:   Option<String>,
-	pub password:   Option<String>,
-	pub full_name:  Option<String>,
-	pub email:      Option<String>,
-	pub ssh_key:    Option<String>,
+	pub username:  Option<String>,
+	pub password:  Option<String>,
+	pub full_name: Option<String>,
+	pub email:     Option<String>,
+	pub ssh_key:   Option<String>,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]

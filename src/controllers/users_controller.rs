@@ -68,6 +68,29 @@ pub fn list_users(
 
 #[post("/users", data = "<user>")]
 pub fn create_user(
+	_session: AdminSession,
+	user: Api<NewUser>,
+	conn: DbConn,
+	config: State<Config>,
+) -> Result<impl Responder<'static>>
+{
+	let user =
+		User::create(user.into_inner(), config.bcrypt_cost, &conn).map_err(ZauthError::from)?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_user: user.id)),
+		json: Json(user),
+	})
+}
+
+#[get("/register")]
+pub fn register_page(conn: DbConn) -> Result<impl Responder<'static>> {
+	Ok(template! {
+		"users/register.html"
+	})
+}
+
+#[post("/register", data = "<user>")]
+pub fn register(
 	user: Api<NewUser>,
 	conf: State<Config>,
 	conn: DbConn,
