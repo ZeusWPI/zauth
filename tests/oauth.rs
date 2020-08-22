@@ -45,6 +45,7 @@ fn normal_flow() {
 				email:      String::from("ghi@jkl.mno"),
 				ssh_key:    Some(String::from("pqrstuvwxyz")),
 			},
+			common::BCRYPT_COST,
 			&db,
 		)
 		.expect("user");

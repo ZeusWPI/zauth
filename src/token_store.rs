@@ -1,10 +1,8 @@
+use crate::config::Config;
 use crate::util;
 use chrono::{DateTime, Duration, Local};
 use std::collections::HashMap;
 use std::sync::Mutex;
-
-const TOKEN_VALIDITY_SECONDS: i64 = 3600;
-const TOKEN_LENGTH: usize = 32;
 
 #[derive(Debug)]
 pub struct Token<T> {
@@ -15,18 +13,24 @@ pub struct Token<T> {
 
 #[derive(Debug)]
 pub struct TokenStore<T> {
-	tokens: Mutex<HashMap<String, Token<T>>>,
+	tokens:         Mutex<HashMap<String, Token<T>>>,
+	token_validity: Duration,
+	token_length:   usize,
 }
 
 impl<T> TokenStore<T> {
-	pub fn new() -> TokenStore<T> {
+	pub fn new(config: &Config) -> TokenStore<T> {
 		TokenStore {
-			tokens: Mutex::new(HashMap::new()),
+			tokens:         Mutex::new(HashMap::new()),
+			token_validity: Duration::seconds(
+				config.authorization_token_validity_seconds as i64,
+			),
+			token_length:   config.secure_token_length,
 		}
 	}
 
-	fn generate_random_token() -> String {
-		util::random_token(TOKEN_LENGTH)
+	fn generate_random_token(&self) -> String {
+		util::random_token(self.token_length)
 	}
 
 	fn remove_expired_tokens(tokens: &mut HashMap<String, Token<T>>) {
@@ -40,14 +44,14 @@ impl<T> TokenStore<T> {
 
 		Self::remove_expired_tokens(tokens);
 
-		let mut token_str = Self::generate_random_token();
+		let mut token_str = self.generate_random_token();
 		let mut token = Token {
 			item,
 			token_str: token_str.clone(),
-			expiry: Local::now() + Duration::seconds(TOKEN_VALIDITY_SECONDS),
+			expiry: Local::now() + self.token_validity,
 		};
 		while tokens.contains_key(&token_str) {
-			token_str = Self::generate_random_token();
+			token_str = self.generate_random_token();
 			token.token_str = token_str.clone();
 		}
 		tokens.insert(token_str.clone(), token);

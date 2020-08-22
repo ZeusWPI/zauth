@@ -10,13 +10,6 @@ use chrono::{NaiveDateTime, Utc};
 use lettre_email::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 
-const DEFAULT_COST: u32 = 11;
-const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
-	salt:    None,
-	variant: None,
-	cost:    Some(DEFAULT_COST),
-};
-
 #[derive(DbEnum, Debug, Serialize, Clone)]
 pub enum UserState {
 	Pending,
@@ -168,10 +161,15 @@ impl User {
 		}
 	}
 
-	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Result<User> {
+	pub fn create(
+		user: NewUser,
+		bcrypt_cost: u32,
+		conn: &ConcreteConnection,
+	) -> Result<User>
+	{
 		let user = NewUserHashed {
 			username:        user.username,
-			hashed_password: hash(&user.password)?,
+			hashed_password: hash(&user.password, bcrypt_cost)?,
 			first_name:      user.first_name,
 			last_name:       user.last_name,
 			email:           user.email,
@@ -189,12 +187,17 @@ impl User {
 		})
 	}
 
-	pub fn change_with(&mut self, change: UserChange) -> Result<()> {
+	pub fn change_with(
+		&mut self,
+		change: UserChange,
+		bcrypt_cost: u32,
+	) -> Result<()>
+	{
 		if let Some(username) = change.username {
 			self.username = username;
 		}
 		if let Some(password) = change.password {
-			self.hashed_password = hash(&password)?;
+			self.hashed_password = hash(&password, bcrypt_cost)?;
 		}
 		if let Some(first_name) = change.first_name {
 			self.first_name = first_name;
@@ -226,13 +229,14 @@ impl User {
 		.map_err(ZauthError::from)
 	}
 
-	pub fn reset_password(
+	pub fn change_password(
 		mut self,
 		new_password: &str,
+		bcrypt_cost: u32,
 		conn: &ConcreteConnection,
 	) -> Result<Self>
 	{
-		self.hashed_password = hash(new_password)?;
+		self.hashed_password = hash(new_password, bcrypt_cost)?;
 		self.password_reset_token = None;
 		self.password_reset_expiry = None;
 		self.update(conn)
@@ -264,8 +268,17 @@ impl User {
 	}
 }
 
-fn hash(password: &str) -> crate::errors::InternalResult<String> {
-	let hashed = bcrypt::hash_with(BCRYPT_SETUP, password)?;
+fn hash(
+	password: &str,
+	bcrypt_cost: u32,
+) -> crate::errors::InternalResult<String>
+{
+	let b: BcryptSetup = BcryptSetup {
+		salt:    None,
+		variant: None,
+		cost:    Some(bcrypt_cost),
+	};
+	let hashed = bcrypt::hash_with(b, password)?;
 	Ok(hashed)
 }
 

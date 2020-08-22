@@ -51,6 +51,7 @@ fn show_user_as_user() {
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
+			common::BCRYPT_COST,
 			&db,
 		)
 		.unwrap();
@@ -89,6 +90,7 @@ fn show_user_as_admin() {
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
+			common::BCRYPT_COST,
 			&db,
 		)
 		.unwrap();
@@ -142,6 +144,7 @@ fn update_self() {
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
+			common::BCRYPT_COST,
 			&db,
 		)
 		.unwrap();
@@ -198,6 +201,7 @@ fn make_admin() {
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
+			common::BCRYPT_COST,
 			&db,
 		)
 		.unwrap();
@@ -233,6 +237,7 @@ fn try_make_admin() {
 				email:      String::from("zeus"),
 				ssh_key:    Some(String::from("would be forever")),
 			},
+			common::BCRYPT_COST,
 			&db,
 		)
 		.unwrap();

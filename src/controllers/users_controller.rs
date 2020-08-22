@@ -5,6 +5,7 @@ use rocket_contrib::json::Json;
 
 use std::fmt::Debug;
 
+use crate::config::Config;
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::{AdminSession, UserSession};
 use crate::errors::Either::{self, Left, Right};
@@ -65,11 +66,12 @@ pub fn list_users(
 #[post("/users", data = "<user>")]
 pub fn create_user(
 	user: Api<NewUser>,
+	conf: State<Config>,
 	conn: DbConn,
 ) -> Result<impl Responder<'static>>
 {
-	let user =
-		User::create(user.into_inner(), &conn).map_err(ZauthError::from)?;
+	let user = User::create(user.into_inner(), conf.bcrypt_cost, &conn)
+		.map_err(ZauthError::from)?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user: user.id)),
 		json: Json(user),
@@ -81,6 +83,7 @@ pub fn update_user(
 	id: i32,
 	change: Api<UserChange>,
 	session: UserSession,
+	conf: State<Config>,
 	conn: DbConn,
 ) -> Result<
 	Either<impl Responder<'static>, Custom<impl Debug + Responder<'static>>>,
@@ -88,7 +91,7 @@ pub fn update_user(
 {
 	let mut user = User::find(id, &conn)?;
 	if session.user.id == user.id || session.user.admin {
-		user.change_with(change.into_inner())?;
+		user.change_with(change.into_inner(), conf.bcrypt_cost)?;
 		let user = user.update(&conn)?;
 		Ok(Left(Accepter {
 			html: Redirect::to(uri!(show_user: user.id)),
@@ -134,7 +137,7 @@ pub struct ResetPassword {
 pub fn forgot_password_post(
 	value: Form<ResetPassword>,
 	conn: DbConn,
-	mailer: State<&Mailer>,
+	mailer: State<Mailer>,
 ) -> Result<impl Responder<'static>>
 {
 	let for_email = value.into_inner().for_email;
@@ -191,12 +194,13 @@ pub struct PasswordReset {
 pub fn reset_password_post(
 	form: Form<PasswordReset>,
 	conn: DbConn,
+	conf: State<Config>,
 	mailer: State<Mailer>,
 ) -> Result<impl Responder<'static>>
 {
 	let form = form.into_inner();
 	if let Some(user) = User::find_by_token(&form.token, &conn)? {
-		match user.reset_password(&form.password, &conn) {
+		match user.change_password(&form.password, conf.bcrypt_cost, &conn) {
 			Ok(user) => {
 				let body = template!(
 					"mails/password_reset_success.txt";

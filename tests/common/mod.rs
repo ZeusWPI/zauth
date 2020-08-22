@@ -26,6 +26,8 @@ type HttpClient = rocket::local::Client;
 // serialize tests.
 static DB_LOCK: Mutex<()> = Mutex::new(());
 
+pub const BCRYPT_COST: u32 = 4;
+
 pub fn url(content: &str) -> String {
 	urlencoding::encode(content)
 }
@@ -76,6 +78,7 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 				email:      String::from("user"),
 				ssh_key:    Some(String::from("user")),
 			},
+			BCRYPT_COST,
 			&db,
 		)
 		.unwrap();
@@ -105,6 +108,7 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 				email:      String::from("admin"),
 				ssh_key:    Some(String::from("admin")),
 			},
+			BCRYPT_COST,
 			&db,
 		)
 		.unwrap();
