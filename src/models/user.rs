@@ -5,6 +5,7 @@ use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
 
+use crate::models::user::UserState::Active;
 use chrono::{NaiveDateTime, Utc};
 use lettre_email::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
@@ -43,6 +44,8 @@ mod schema {
 		username -> Varchar,
 		hashed_password -> Varchar,
 		admin -> Bool,
+		password_reset_token -> Nullable<Varchar>,
+		password_reset_expiry -> Nullable<Timestamp>,
 		first_name -> Varchar,
 		last_name -> Varchar,
 		email -> Varchar,
@@ -57,20 +60,21 @@ mod schema {
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
 #[table_name = "users"]
 pub struct User {
-	pub id:              i32,
+	pub id:                    i32,
 	// validate to have at least 3 chars
-	pub username:        String,
+	pub username:              String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
-	pub hashed_password: String,
-	pub admin:           bool,
-
-	pub first_name: String,
-	pub last_name:  String,
-	pub email:      String,
-	pub ssh_key:    Option<String>,
-	pub state:      UserState,
-	pub last_login: NaiveDateTime,
-	pub created_at: NaiveDateTime,
+	pub hashed_password:       String,
+	pub admin:                 bool,
+	pub password_reset_token:  Option<String>,
+	pub password_reset_expiry: Option<NaiveDateTime>,
+	pub first_name:            String,
+	pub last_name:             String,
+	pub email:                 String,
+	pub ssh_key:               Option<String>,
+	pub state:                 UserState,
+	pub last_login:            NaiveDateTime,
+	pub created_at:            NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -116,15 +120,52 @@ impl User {
 		Ok(all_users)
 	}
 
+	pub fn is_active(&self) -> bool {
+		matches!(self.state, Active)
+	}
+
 	pub fn find_by_username(
 		username: &str,
 		conn: &ConcreteConnection,
-	) -> diesel::result::QueryResult<User>
+	) -> Result<User>
 	{
 		users::table
 			.filter(users::username.eq(username))
 			.first(conn)
-		// .map_err(ZauthError::from)
+			.map_err(ZauthError::from)
+	}
+
+	pub fn find_by_email(
+		email: &str,
+		conn: &ConcreteConnection,
+	) -> Result<User>
+	{
+		users::table
+			.filter(users::email.eq(email))
+			.first(conn)
+			.map_err(ZauthError::from)
+	}
+
+	pub fn find_by_token(
+		token: &str,
+		conn: &ConcreteConnection,
+	) -> Result<Option<User>>
+	{
+		match users::table
+			.filter(users::password_reset_token.eq(token))
+			.first::<Self>(conn)
+			.map_err(ZauthError::from)
+		{
+			Ok(user)
+				if user.password_reset_expiry.unwrap()
+					< Utc::now().naive_utc() =>
+			{
+				Ok(Some(user))
+			},
+			Ok(_) => Ok(None),
+			Err(ZauthError::NotFound(_)) => Ok(None),
+			Err(err) => Err(err),
+		}
 	}
 
 	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Result<User> {
@@ -185,6 +226,18 @@ impl User {
 		.map_err(ZauthError::from)
 	}
 
+	pub fn reset_password(
+		mut self,
+		new_password: &str,
+		conn: &ConcreteConnection,
+	) -> Result<Self>
+	{
+		self.hashed_password = hash(new_password)?;
+		self.password_reset_token = None;
+		self.password_reset_expiry = None;
+		self.update(conn)
+	}
+
 	pub fn find(id: i32, conn: &ConcreteConnection) -> Result<User> {
 		users::table.find(id).first(conn).map_err(ZauthError::from)
 	}
@@ -205,7 +258,7 @@ impl User {
 		match Self::find_by_username(username, conn) {
 			Ok(user) if !verify(password, &user.hashed_password) => Ok(None),
 			Ok(user) => Ok(Some(user)),
-			Err(diesel::result::Error::NotFound) => Ok(None),
+			Err(ZauthError::NotFound(_)) => Ok(None),
 			Err(e) => Err(ZauthError::from(e)),
 		}
 	}

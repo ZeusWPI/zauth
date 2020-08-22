@@ -1,4 +1,4 @@
-use crate::errors::{InternalError, Result};
+use crate::errors::{InternalError, Result, ZauthError};
 use crate::models::user::User;
 
 use lettre::{SendableEmail, SmtpTransport, Transport};
@@ -6,33 +6,39 @@ use lettre_email::Email;
 use std::sync::mpsc;
 use std::thread;
 
+const MAILQUEUE_BOUND: usize = 32;
+
+#[derive(Clone)]
 pub struct Mailer {
 	from:  String,
-	queue: mpsc::Sender<SendableEmail>,
+	queue: mpsc::SyncSender<SendableEmail>,
 }
 
 impl Mailer {
 	pub fn create(
-		self,
+		&self,
 		user: &User,
 		subject: String,
 		text: String,
 	) -> Result<()>
 	{
-		let mail = Email::builder()
+		let mail: SendableEmail = Email::builder()
 			.to(user)
 			.subject(subject)
-			.from(self.from)
+			.from(self.from.clone())
 			.text(text)
 			.build()
-			.map_err(InternalError::from)?;
-		self.queue.send(mail.into()).map_err(InternalError::from)?;
-		Ok(())
+			.map_err(InternalError::from)?
+			.into();
+
+		self.queue
+			.try_send(mail)
+			.map_err(|e| ZauthError::from(InternalError::from(e)))
 	}
 }
 
 pub fn create_queue(from: String, mut transport: SmtpTransport) -> Mailer {
-	let (queue, recv) = mpsc::channel();
+	let (sender, recv) = mpsc::sync_channel(MAILQUEUE_BOUND);
 
 	thread::spawn(move || {
 		while let Ok(mail) = recv.recv() {
@@ -45,5 +51,8 @@ pub fn create_queue(from: String, mut transport: SmtpTransport) -> Mailer {
 		}
 	});
 
-	Mailer { from, queue }
+	Mailer {
+		from,
+		queue: sender,
+	}
 }

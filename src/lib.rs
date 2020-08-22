@@ -31,6 +31,7 @@ pub mod http_authentication;
 pub mod mailer;
 pub mod models;
 pub mod token_store;
+pub mod util;
 
 use crate::controllers::*;
 use crate::models::user::*;

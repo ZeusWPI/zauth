@@ -1,6 +1,5 @@
+use crate::util;
 use chrono::{DateTime, Duration, Local};
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -27,10 +26,7 @@ impl<T> TokenStore<T> {
 	}
 
 	fn generate_random_token() -> String {
-		thread_rng()
-			.sample_iter(&Alphanumeric)
-			.take(TOKEN_LENGTH)
-			.collect()
+		util::random_token(TOKEN_LENGTH)
 	}
 
 	fn remove_expired_tokens(tokens: &mut HashMap<String, Token<T>>) {
