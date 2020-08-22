@@ -138,16 +138,16 @@ fn create_admin(
 {
 	let username = String::from("admin");
 	let conn = DbConn::get_one(&rocket).expect("database connection");
-	let admin = User::find_by_username("admin", &conn)
+	let admin = User::find_by_username(&username, &conn)
 		.or_else(|_e| {
 			User::create(
 				NewUser {
-					username,
-					password,
+					username:   username.clone(),
+					password:   password.clone(),
 					first_name: String::from(""),
-					last_name: String::from(""),
-					email: String::from(""),
-					ssh_key: None,
+					last_name:  String::from(""),
+					email:      String::from(""),
+					ssh_key:    None,
 				},
 				config.bcrypt_cost,
 				&conn,
@@ -158,8 +158,11 @@ fn create_admin(
 			user.update(&conn)
 		});
 	match admin {
-		Ok(admin) => {
-			dbg!(admin);
+		Ok(_admin) => {
+			println!(
+				"Admin created with username \"{}\" and password \"{}\"",
+				username, password
+			);
 			Ok(rocket)
 		},
 		Err(e) => {

@@ -16,7 +16,6 @@ fn get_all_users() {
 
 	common::as_user(|http_client, _db, _user| {
 		let mut response = http_client.get("/users").dispatch();
-		dbg!(response.body_string());
 		assert_eq!(response.status(), Status::Ok);
 	});
 
@@ -58,7 +57,6 @@ fn show_user_as_user() {
 
 		let mut response =
 			http_client.get(format!("/users/{}", other.id)).dispatch();
-		dbg!(response.body_string());
 
 		assert_eq!(
 			response.status(),
@@ -68,7 +66,6 @@ fn show_user_as_user() {
 
 		let mut response =
 			http_client.get(format!("/users/{}", user.id)).dispatch();
-		dbg!(response.body_string());
 
 		assert_eq!(
 			response.status(),
@@ -182,8 +179,8 @@ fn change_password() {
 
 		let updated = User::find(user.id, &db).unwrap();
 
-		assert!(
-			user.hashed_password != updated.hashed_password,
+		assert_ne!(
+			user.hashed_password, updated.hashed_password,
 			"password should have changed"
 		);
 	});

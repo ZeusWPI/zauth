@@ -111,12 +111,8 @@ pub fn set_admin(
 ) -> Result<impl Responder<'static>>
 {
 	let mut user = User::find(id, &conn)?;
-	dbg!(&user);
-	dbg!(&value);
 	user.admin = value.into_inner().admin;
-	dbg!(&user);
 	let user = user.update(&conn)?;
-	dbg!(&user);
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user: user.id)),
 		json: Custom(Status::NoContent, ()),
