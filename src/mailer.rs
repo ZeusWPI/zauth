@@ -9,9 +9,6 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-const MAIL_QUEUE_BOUND: usize = 32;
-const MAIL_QUEUE_WAIT_SECONDS: u64 = 1;
-
 #[derive(Clone)]
 pub struct Mailer {
 	from:  String,
@@ -44,8 +41,9 @@ impl Mailer {
 		let mut transport = FileTransport::new(temp_dir());
 
 		let from = config.emails_from.clone();
+		let wait = Duration::from_secs(config.mail_queue_wait_seconds);
 
-		let (sender, recv) = mpsc::sync_channel(MAIL_QUEUE_BOUND);
+		let (sender, recv) = mpsc::sync_channel(config.mail_queue_size);
 		thread::spawn(move || {
 			while let Ok(mail) = recv.recv() {
 				let result = transport.send(mail);
@@ -55,7 +53,7 @@ impl Mailer {
 					println!("Error sending email: {:?}", result);
 				}
 				// sleep for a while to prevent sending mails too fast
-				thread::sleep(Duration::from_secs(MAIL_QUEUE_WAIT_SECONDS));
+				thread::sleep(wait);
 			}
 		});
 

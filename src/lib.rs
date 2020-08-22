@@ -98,6 +98,10 @@ fn assemble(rocket: Rocket) -> Rocket {
 				users_controller::list_users,
 				users_controller::update_user,
 				users_controller::set_admin,
+				users_controller::forgot_password_get,
+				users_controller::forgot_password_post,
+				users_controller::reset_password_get,
+				users_controller::reset_password_post,
 			],
 		)
 		.mount("/static/", StaticFiles::from("static/"))

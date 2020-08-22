@@ -52,6 +52,7 @@ mod schema {
 
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
 #[table_name = "users"]
+#[changeset_options(treat_none_as_null = "true")]
 pub struct User {
 	pub id:                    i32,
 	// validate to have at least 3 chars
@@ -150,8 +151,8 @@ impl User {
 			.map_err(ZauthError::from)
 		{
 			Ok(user)
-				if user.password_reset_expiry.unwrap()
-					< Utc::now().naive_utc() =>
+				if Utc::now().naive_utc()
+					< user.password_reset_expiry.unwrap() =>
 			{
 				Ok(Some(user))
 			},
@@ -242,6 +243,10 @@ impl User {
 		self.update(conn)
 	}
 
+	pub fn reload(self, conn: &ConcreteConnection) -> Result<User> {
+		Self::find(self.id, conn)
+	}
+
 	pub fn find(id: i32, conn: &ConcreteConnection) -> Result<User> {
 		users::table.find(id).first(conn).map_err(ZauthError::from)
 	}
@@ -291,7 +296,7 @@ impl Into<Mailbox> for &User {
 		// TODO: user email
 		Mailbox::new_with_name(
 			self.username.to_string(),
-			self.username.to_string(),
+			self.email.to_string(),
 		)
 	}
 }

@@ -137,6 +137,7 @@ pub fn forgot_password_post(
 ) -> Result<impl Responder<'static>>
 {
 	let for_email = value.into_inner().for_email;
+
 	let user = match User::find_by_email(&for_email, &conn) {
 		Ok(user) if user.is_active() => Ok(Some(user)),
 		Ok(_user) => Ok(None),
@@ -180,10 +181,10 @@ pub fn reset_password_get(token: String) -> impl Responder<'static> {
 	}
 }
 
-#[derive(FromForm)]
+#[derive(Debug, FromForm)]
 pub struct PasswordReset {
-	token:    String,
-	password: String,
+	token:        String,
+	new_password: String,
 }
 
 #[post("/users/reset_password", data = "<form>")]
@@ -196,7 +197,8 @@ pub fn reset_password_post(
 {
 	let form = form.into_inner();
 	if let Some(user) = User::find_by_token(&form.token, &conn)? {
-		match user.change_password(&form.password, conf.bcrypt_cost, &conn) {
+		match user.change_password(&form.new_password, conf.bcrypt_cost, &conn)
+		{
 			Ok(user) => {
 				let body = template!(
 					"mails/password_reset_success.txt";
