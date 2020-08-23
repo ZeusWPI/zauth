@@ -83,10 +83,8 @@ pub fn create_user(
 }
 
 #[get("/register")]
-pub fn register_page(conn: DbConn) -> Result<impl Responder<'static>> {
-	Ok(template! {
-		"users/register.html"
-	})
+pub fn register_page() -> Result<impl Responder<'static>> {
+	Ok(template! { "users/registration_form.html" })
 }
 
 #[post("/register", data = "<user>")]
@@ -99,8 +97,11 @@ pub fn register(
 	let user = User::create(user.into_inner(), conf.bcrypt_cost, &conn)
 		.map_err(ZauthError::from)?;
 	Ok(Accepter {
-		html: Redirect::to(uri!(show_user: user.id)),
-		json: Json(user),
+		html: Custom(
+			Status::Created,
+			template!("users/registration_success.html"),
+		),
+		json: Custom(Status::Created, Json(user)),
 	})
 }
 
