@@ -32,7 +32,7 @@ pub fn show_user(
 ) -> Result<impl Responder<'static>>
 {
 	let user = User::find(id, &conn)?;
-	println!("user {:?} vs session {:?}", user, session);
+	// Check whether the current session is allowed to view this user
 	if session.user.admin || session.user.id == id {
 		Ok(Accepter {
 			html: template!("users/show.html"; user: User = user.clone()),
@@ -175,7 +175,7 @@ pub fn forgot_password_post(
 #[get("/users/reset_password/<token>")]
 pub fn reset_password_get(token: String) -> impl Responder<'static> {
 	template! {
-		"users/forgot_password.html";
+		"users/reset_password_form.html";
 		token: String = token,
 		errors: Option<String> = None,
 	}
@@ -211,9 +211,9 @@ pub fn reset_password_post(
 					String::from("[Zauth] Your password has been reset"),
 					body,
 				)?;
-				Ok(OneOf::One(
-					template! { "users/reset_password_success.html" },
-				))
+				let template =
+					template! { "users/reset_password_success.html" };
+				Ok(OneOf::One(Custom(Status::UnprocessableEntity, template)))
 			},
 			Err(err) => Ok(OneOf::Two(template! {
 					"users/reset_password_form.html";
@@ -222,8 +222,7 @@ pub fn reset_password_post(
 			})),
 		}
 	} else {
-		Ok(OneOf::Three(
-			template! { "users/reset_password_expired.html" },
-		))
+		let template = template! { "users/reset_password_invalid.html" };
+		Ok(OneOf::Three(Custom(Status::Forbidden, template)))
 	}
 }

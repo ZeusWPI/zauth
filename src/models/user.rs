@@ -5,7 +5,7 @@ use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
 
-use crate::models::user::UserState::Active;
+use crate::models::user::UserState::{Active, Pending};
 use chrono::{NaiveDateTime, Utc};
 use lettre::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
@@ -90,6 +90,7 @@ struct NewUserHashed {
 	first_name:      String,
 	last_name:       String,
 	email:           String,
+	state:           UserState,
 	ssh_key:         Option<String>,
 	last_login:      NaiveDateTime,
 }
@@ -176,8 +177,32 @@ impl User {
 			last_name:       user.last_name,
 			email:           user.email,
 			ssh_key:         user.ssh_key,
+			state:           Active,
 			last_login:      Utc::now().naive_utc(),
 		};
+		Self::insert(user, conn)
+	}
+
+	pub fn create_pending(
+		user: NewUser,
+		bcrypt_cost: u32,
+		conn: &ConcreteConnection,
+	) -> Result<User>
+	{
+		let user = NewUserHashed {
+			username:        user.username,
+			hashed_password: hash(&user.password, bcrypt_cost)?,
+			first_name:      user.first_name,
+			last_name:       user.last_name,
+			email:           user.email,
+			ssh_key:         user.ssh_key,
+			state:           Pending,
+			last_login:      Utc::now().naive_utc(),
+		};
+		Self::insert(user, conn)
+	}
+
+	fn insert(user: NewUserHashed, conn: &ConcreteConnection) -> Result<User> {
 		conn.transaction(|| {
 			// Create a new user
 			diesel::insert_into(users::table)

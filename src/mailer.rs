@@ -89,9 +89,12 @@ impl Mailer {
 	{
 		move || {
 			while let Ok(mail) = receiver.recv() {
-				println!("Email received");
 				{
 					let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
+					println!(
+						"\n==> [STUB MAILER] Sending email:\n\n{}\n",
+						String::from_utf8_lossy(&mail.formatted())
+					);
 					mailbox.lock().push(mail);
 					condvar.notify_all();
 				}

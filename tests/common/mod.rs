@@ -20,6 +20,7 @@ use crate::common::zauth::models::client::*;
 use crate::common::zauth::models::user::*;
 use crate::common::zauth::DbConn;
 use lettre::Address;
+use std::thread;
 use std::time::Duration;
 use zauth::mailer::STUB_MAILER_OUTBOX;
 
@@ -130,6 +131,19 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 
 		run(client, db, user);
 	});
+}
+
+pub fn dont_expect_mail<T>(run: impl FnOnce() -> T) -> T {
+	let (mailbox, _condvar) = &STUB_MAILER_OUTBOX;
+	let outbox_size = { mailbox.lock().len() };
+	let result: T = run();
+	thread::sleep(Duration::from_secs(1));
+	assert_eq!(
+		outbox_size,
+		mailbox.lock().len(),
+		"Expected no mail to be sent"
+	);
+	result
 }
 
 pub fn expect_mail_to<T>(receivers: Vec<&str>, run: impl FnOnce() -> T) -> T {

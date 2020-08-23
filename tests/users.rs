@@ -308,7 +308,7 @@ fn create_user_json() {
 fn forgot_password() {
 	common::as_visitor(|http_client, db| {
 		let email = String::from("test@example.com");
-		let mut user = User::create(
+		let user = User::create(
 			NewUser {
 				username:   String::from("a"),
 				password:   String::from("b"),
@@ -321,9 +321,6 @@ fn forgot_password() {
 			&db,
 		)
 		.unwrap();
-
-		user.state = UserState::Active;
-		let user = user.update(&db).unwrap();
 
 		assert!(user.password_reset_token.is_none());
 		assert!(user.password_reset_expiry.is_none());
@@ -373,7 +370,7 @@ fn forgot_password() {
 		);
 
 		let old_password_hash = user.hashed_password.clone();
-		let new_password = "blablabla";
+		let new_password = "pA$$w0rd";
 
 		dbg!(&user);
 
@@ -403,5 +400,90 @@ fn forgot_password() {
 		assert!(user.password_reset_expiry.is_none());
 		assert_ne!(user.hashed_password, old_password_hash);
 		assert!(bcrypt::verify(new_password, &user.hashed_password));
+	});
+}
+
+#[test]
+fn forgot_password_non_existing_email() {
+	common::as_visitor(|http_client, db| {
+		let email = String::from("test@example.com");
+		let _user = User::create(
+			NewUser {
+				username:   String::from("a"),
+				password:   String::from("b"),
+				first_name: String::from("c"),
+				last_name:  String::from("d"),
+				email:      email.clone(),
+				ssh_key:    None,
+			},
+			common::BCRYPT_COST,
+			&db,
+		)
+		.unwrap();
+
+		let response = common::dont_expect_mail(|| {
+			http_client
+				.post("/users/forgot_password")
+				.header(ContentType::Form)
+				.header(Accept::HTML)
+				.body("for_email=not_this_email@example.com")
+				.dispatch()
+		});
+
+		assert_eq!(
+			response.status(),
+			Status::Ok,
+			"should still say everything is OK, even when email does not exist"
+		);
+	});
+}
+
+#[test]
+fn reset_password_invalid_token() {
+	common::as_visitor(|http_client, db| {
+		let email = String::from("test@example.com");
+		let user = User::create(
+			NewUser {
+				username:   String::from("a"),
+				password:   String::from("b"),
+				first_name: String::from("c"),
+				last_name:  String::from("d"),
+				email:      email.clone(),
+				ssh_key:    None,
+			},
+			common::BCRYPT_COST,
+			&db,
+		)
+		.unwrap();
+
+		let response = http_client
+			.post("/users/forgot_password")
+			.header(ContentType::Form)
+			.header(Accept::HTML)
+			.body(format!("for_email={}", &email))
+			.dispatch();
+
+		assert_eq!(response.status(), Status::Ok);
+
+		let user = user.reload(&db).unwrap();
+		let token = user.password_reset_token.clone().unwrap();
+		let old_hash = user.hashed_password.clone();
+
+		let response = common::dont_expect_mail(|| {
+			http_client
+				.post("/users/reset_password/")
+				.header(ContentType::Form)
+				.header(Accept::HTML)
+				.body(format!(
+					"token=not{}&new_password={}",
+					&token, "pA$$w0rd"
+				))
+				.dispatch()
+		});
+
+		assert_eq!(response.status(), Status::Forbidden);
+
+		let user = user.reload(&db).unwrap();
+		assert_eq!(user.hashed_password, old_hash);
 	});
 }
