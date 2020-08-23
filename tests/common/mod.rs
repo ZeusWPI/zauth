@@ -19,7 +19,7 @@ use std::str::FromStr;
 use crate::common::zauth::models::client::*;
 use crate::common::zauth::models::user::*;
 use crate::common::zauth::DbConn;
-use lettre::EmailAddress;
+use lettre::Address;
 use std::time::Duration;
 use zauth::mailer::STUB_MAILER_OUTBOX;
 
@@ -155,8 +155,8 @@ pub fn expect_mail_to<T>(receivers: Vec<&str>, run: impl FnOnce() -> T) -> T {
 	let last_mail = mailbox.last().unwrap();
 	let receivers = receivers
 		.into_iter()
-		.map(|e| EmailAddress::from_str(e).unwrap())
-		.collect::<Vec<EmailAddress>>();
+		.map(|e| Address::from_str(e).unwrap())
+		.collect::<Vec<Address>>();
 	assert_eq!(last_mail.envelope().to(), receivers, "Unexpected receivers");
 	result
 }

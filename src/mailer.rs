@@ -2,9 +2,9 @@ use crate::config::Config;
 use crate::errors::{InternalError, LaunchError, Result, ZauthError};
 use crate::models::user::User;
 
-use lettre::{SendableEmail, SmtpClient, Transport};
-use lettre_email::Email;
+use lettre::{Address, Mailbox, Message, SmtpTransport, Transport};
 use parking_lot::{Condvar, Mutex};
+use std::convert::TryInto;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::thread;
@@ -12,11 +12,11 @@ use std::time::Duration;
 
 #[derive(Clone)]
 pub struct Mailer {
-	from:  String,
-	queue: mpsc::SyncSender<SendableEmail>,
+	from:  Address,
+	queue: mpsc::SyncSender<Message>,
 }
 
-pub static STUB_MAILER_OUTBOX: (Mutex<Vec<SendableEmail>>, Condvar) =
+pub static STUB_MAILER_OUTBOX: (Mutex<Vec<Message>>, Condvar) =
 	(Mutex::new(vec![]), Condvar::new());
 
 impl Mailer {
@@ -25,14 +25,13 @@ impl Mailer {
 		user: &User,
 		subject: String,
 		text: String,
-	) -> Result<SendableEmail>
+	) -> Result<Message>
 	{
-		Ok(Email::builder()
-			.to(user)
+		Ok(Message::builder()
+			.to(user.try_into()?)
 			.subject(subject)
-			.from(self.from.clone())
-			.text(text)
-			.build()
+			.from(Mailbox::new(None, self.from.clone()))
+			.body(text)
 			.map_err(InternalError::from)?
 			.into())
 	}
@@ -74,14 +73,18 @@ impl Mailer {
 		};
 
 		Ok(Mailer {
-			from:  config.mail_from.clone(),
+			from:  config
+				.mail_from
+				.clone()
+				.parse()
+				.map_err(LaunchError::from)?,
 			queue: sender,
 		})
 	}
 
 	fn stub_sender(
 		wait: Duration,
-		receiver: Receiver<SendableEmail>,
+		receiver: Receiver<Message>,
 	) -> impl FnOnce()
 	{
 		move || {
@@ -101,16 +104,16 @@ impl Mailer {
 
 	fn smtp_sender(
 		wait: Duration,
-		receiver: Receiver<SendableEmail>,
+		receiver: Receiver<Message>,
 		server: &str,
 	) -> Result<impl FnOnce()>
 	{
-		let mut transport = SmtpClient::new_simple(server)
-			.map_err(|e| ZauthError::from(LaunchError::from(e)))?
-			.transport();
+		let transport = SmtpTransport::relay(server)
+			.map_err(LaunchError::from)?
+			.build();
 		Ok(move || {
 			while let Ok(mail) = receiver.recv() {
-				let result = transport.send(mail);
+				let result = transport.send(&mail);
 				if result.is_ok() {
 					println!("Sent email: {:?}", result);
 				} else {

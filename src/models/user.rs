@@ -1,5 +1,5 @@
 use self::schema::users;
-use crate::errors::{Result, ZauthError};
+use crate::errors::{InternalError, Result, ZauthError};
 use crate::ConcreteConnection;
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
@@ -7,8 +7,9 @@ use std::fmt;
 
 use crate::models::user::UserState::Active;
 use chrono::{NaiveDateTime, Utc};
-use lettre_email::Mailbox;
+use lettre::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
+use std::convert::TryInto;
 
 #[derive(DbEnum, Debug, Serialize, Clone)]
 pub enum UserState {
@@ -291,12 +292,13 @@ fn verify(password: &str, hash: &str) -> bool {
 	bcrypt::verify(password, &hash)
 }
 
-impl Into<Mailbox> for &User {
-	fn into(self) -> Mailbox {
-		// TODO: user email
-		Mailbox::new_with_name(
-			self.username.to_string(),
-			self.email.to_string(),
-		)
+impl TryInto<Mailbox> for &User {
+	type Error = ZauthError;
+
+	fn try_into(self) -> Result<Mailbox> {
+		Ok(Mailbox::new(
+			Some(self.username.to_string()),
+			self.email.clone().parse().map_err(InternalError::from)?,
+		))
 	}
 }

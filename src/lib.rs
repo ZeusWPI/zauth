@@ -2,7 +2,7 @@
 #![recursion_limit = "256"]
 
 extern crate chrono;
-extern crate lettre_email;
+extern crate lettre;
 extern crate pwhash;
 extern crate rand;
 extern crate regex;

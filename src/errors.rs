@@ -4,7 +4,7 @@ use rocket::Request;
 use thiserror::Error;
 
 use diesel::result::Error::NotFound;
-use lettre::SendableEmail;
+use lettre::Message;
 use std::io::Cursor;
 use std::sync::mpsc::{SendError, TrySendError};
 
@@ -84,12 +84,14 @@ pub enum InternalError {
 	DatabaseError(#[from] diesel::result::Error),
 	#[error("Template error")]
 	TemplateError(#[from] askama::Error),
+	#[error("Invalid email: {0}")]
+	InvalidEmail(#[from] lettre::address::AddressError),
 	#[error("Mailer error")]
-	MailError(#[from] lettre_email::error::Error),
+	MailError(#[from] lettre::error::Error),
 	#[error("Mailer stopped processing items")]
-	MailerStopped(#[from] SendError<SendableEmail>),
+	MailerStopped(#[from] SendError<Message>),
 	#[error("Mail queue full")]
-	MailQueueFull(#[from] TrySendError<SendableEmail>),
+	MailQueueFull(#[from] TrySendError<Message>),
 }
 pub type InternalResult<T> = std::result::Result<T, InternalError>;
 
@@ -125,8 +127,10 @@ pub type AuthResult<T> = std::result::Result<T, AuthenticationError>;
 pub enum LaunchError {
 	#[error("Incorrect config value type for key '{0}'")]
 	BadConfigValueType(String),
-	#[error("Error launching smtp relay")]
-	SmtpLaunchError(#[from] lettre::smtp::error::Error),
+	#[error("Incorrect email address '{0}'")]
+	InvalidEmail(#[from] lettre::address::AddressError),
+	#[error("Failed to create SMTP transport")]
+	SMTPError(#[from] lettre::transport::smtp::error::Error),
 }
 
 pub enum Either<R, E> {
