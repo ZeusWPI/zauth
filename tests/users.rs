@@ -370,7 +370,7 @@ fn forgot_password() {
 		);
 
 		let old_password_hash = user.hashed_password.clone();
-		let new_password = "pA$$w0rd";
+		let new_password = "passw0rd";
 
 		dbg!(&user);
 
@@ -476,7 +476,7 @@ fn reset_password_invalid_token() {
 				.header(Accept::HTML)
 				.body(format!(
 					"token=not{}&new_password={}",
-					&token, "pA$$w0rd"
+					&token, "passw0rd"
 				))
 				.dispatch()
 		});

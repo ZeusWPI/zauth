@@ -211,15 +211,18 @@ pub fn reset_password_post(
 					String::from("[Zauth] Your password has been reset"),
 					body,
 				)?;
-				let template =
-					template! { "users/reset_password_success.html" };
-				Ok(OneOf::One(Custom(Status::UnprocessableEntity, template)))
+				Ok(OneOf::One(
+					template! { "users/reset_password_success.html" },
+				))
 			},
-			Err(err) => Ok(OneOf::Two(template! {
+			Err(err) => {
+				let template = template! {
 					"users/reset_password_form.html";
 					token: String = form.token,
 					errors: Option<String> = Some(err.to_string()),
-			})),
+				};
+				Ok(OneOf::Two(Custom(Status::UnprocessableEntity, template)))
+			},
 		}
 	} else {
 		let template = template! { "users/reset_password_invalid.html" };
