@@ -339,12 +339,14 @@ fn forgot_password() {
 			"should get forgot password page"
 		);
 
-		let response = http_client
-			.post("/users/forgot_password")
-			.header(ContentType::Form)
-			.header(Accept::HTML)
-			.body(format!("for_email={}", &email))
-			.dispatch();
+		let response = common::expect_mail_to(vec![&email], || {
+			http_client
+				.post("/users/forgot_password")
+				.header(ContentType::Form)
+				.header(Accept::HTML)
+				.body(format!("for_email={}", &email))
+				.dispatch()
+		});
 
 		assert_eq!(
 			response.status(),
@@ -375,12 +377,17 @@ fn forgot_password() {
 
 		dbg!(&user);
 
-		let response = http_client
-			.post(format!("/users/reset_password/"))
-			.header(ContentType::Form)
-			.header(Accept::HTML)
-			.body(format!("token={}&new_password={}", &token, &new_password))
-			.dispatch();
+		let response = common::expect_mail_to(vec![&email], || {
+			http_client
+				.post(format!("/users/reset_password/"))
+				.header(ContentType::Form)
+				.header(Accept::HTML)
+				.body(format!(
+					"token={}&new_password={}",
+					&token, &new_password
+				))
+				.dispatch()
+		});
 
 		dbg!(&user);
 

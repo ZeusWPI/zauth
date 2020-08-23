@@ -72,7 +72,7 @@ fn assemble(rocket: Rocket) -> Rocket {
 	let rocket_config = rocket.config();
 	let config: Config = Config::try_from(rocket_config).unwrap();
 	let token_store = TokenStore::<oauth_controller::UserToken>::new(&config);
-	let mailer = Mailer::new(&config);
+	let mailer = Mailer::new(&config).unwrap();
 
 	let mut rocket = rocket
 		.mount(

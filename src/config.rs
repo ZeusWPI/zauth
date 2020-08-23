@@ -31,10 +31,11 @@ macro_rules! config_options {
 }
 
 config_options!(
-	mail_queue_size: usize = 32,
-	mail_queue_wait_seconds: u64 = 1,
 	authorization_token_validity_seconds: usize = 300,
 	secure_token_length: usize = 64,
 	bcrypt_cost: u32 = bcrypt::DEFAULT_COST,
-	emails_from: String = String::from("zauth@zeus.ugent.be"),
+	mail_queue_size: usize = 32,
+	mail_queue_wait_seconds: u64 = 1,
+	mail_from: String = String::from("zauth@zeus.ugent.be"),
+	mail_server: &'static str = "stub"
 );

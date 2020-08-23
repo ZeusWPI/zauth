@@ -12,6 +12,8 @@ use std::sync::mpsc::{SendError, TrySendError};
 pub enum ZauthError {
 	#[error("Internal server error {0:?}")]
 	Internal(#[from] InternalError),
+	#[error("Launch error {0:?}")]
+	Launch(#[from] LaunchError),
 	#[error("Not found: {0:?}")]
 	NotFound(String),
 	#[error("Request error {0:?}")]
@@ -118,6 +120,14 @@ pub enum AuthenticationError {
 	SessionExpired,
 }
 pub type AuthResult<T> = std::result::Result<T, AuthenticationError>;
+
+#[derive(Error, Debug)]
+pub enum LaunchError {
+	#[error("Incorrect config value type for key '{0}'")]
+	BadConfigValueType(String),
+	#[error("Error launching smtp relay")]
+	SmtpLaunchError(#[from] lettre::smtp::error::Error),
+}
 
 pub enum Either<R, E> {
 	Left(R),

@@ -153,7 +153,7 @@ pub fn forgot_password_post(
 
 		let token = user.password_reset_token.as_ref().unwrap();
 		let reset_url = uri!(reset_password_get: token);
-		mailer.create(
+		mailer.try_create(
 			&user,
 			String::from("[Zauth] You've requested a password reset"),
 			template!(
