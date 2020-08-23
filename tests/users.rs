@@ -482,3 +482,39 @@ fn reset_password_invalid_token() {
 		assert_eq!(user.hashed_password, old_hash);
 	});
 }
+
+#[test]
+fn register_user() {
+	common::as_visitor(|http_client, db| {
+		let response =
+			http_client.get("/register").header(Accept::HTML).dispatch();
+
+		assert_eq!(response.status(), Status::Ok);
+
+		let username = "somebody";
+		let password = "toucha";
+		let full_name = "ma";
+		let email = "spaghet@zeus.ugent.be";
+
+		let response = http_client
+			.post("/register")
+			.header(Accept::HTML)
+			.header(ContentType::Form)
+			.body(format!(
+				"username={}&password={}&full_name={}&email={}",
+				username, password, full_name, email
+			))
+			.dispatch();
+
+		assert_eq!(response.status(), Status::Created);
+
+		let user = User::find_by_username(username, &db)
+			.expect("user should be created");
+
+		assert_eq!(
+			user.state,
+			UserState::Pending,
+			"registered users should be pending"
+		);
+	});
+}

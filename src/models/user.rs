@@ -11,7 +11,7 @@ use lettre::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use std::convert::TryInto;
 
-#[derive(DbEnum, Debug, Serialize, Clone)]
+#[derive(DbEnum, Debug, Serialize, Clone, PartialEq)]
 pub enum UserState {
 	Pending,
 	Active,
