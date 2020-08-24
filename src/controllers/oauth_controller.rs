@@ -136,18 +136,26 @@ pub fn login_post(
 {
 	let data = form.into_inner();
 	let state = AuthState::decode_b64(&data.state)?;
-	let user =
-		User::find_and_authenticate(&data.username, &data.password, &conn)?;
 
-	if let Some(user) = user {
-		Session::add_to_cookies(user, &mut cookies);
-		Ok(Either::Left(Redirect::to(uri!(grant_get: state))))
-	} else {
-		Ok(Either::Right(template! {
-			"session/login.html";
-			state: String = state.encode_b64()?,
-			error: Option<String> = Some(String::from("Username or password incorrect")),
-		}))
+	match User::find_and_authenticate(&data.username, &data.password, &conn) {
+		Err(error) => {
+			let err_msg: String;
+			match error {
+				ZauthError::LoginError(login_error) => {
+					err_msg = login_error.to_string()
+				},
+				_ => err_msg = LoginError::UsernamePasswordError.to_string(),
+			}
+			Ok(Either::Right(template! {
+				"session/login.html";
+				state: String = state.encode_b64()?,
+				error: Option<String> = Some(err_msg),
+			}))
+		},
+		Ok(user) => {
+			Session::add_to_cookies(user, &mut cookies);
+			Ok(Either::Left(Redirect::to(uri!(grant_get: state))))
+		},
 	}
 }
 

@@ -4,7 +4,7 @@ use rocket::response::{Redirect, Responder};
 
 use crate::controllers::pages_controller::rocket_uri_macro_home_page;
 use crate::ephemeral::session::{Session, UserSession};
-use crate::errors::{Either, Result};
+use crate::errors::{Either, Result, ZauthError};
 use crate::models::user::User;
 use crate::DbConn;
 
@@ -47,18 +47,19 @@ pub fn create_session(
 ) -> Result<Either<Redirect, impl Responder<'static>>>
 {
 	let form = form.into_inner();
-	let user =
-		User::find_and_authenticate(&form.username, &form.password, &conn)?;
-
-	if let Some(user) = user {
-		Session::add_to_cookies(user, &mut cookies);
-		Ok(Either::Left(Redirect::to("/")))
-	} else {
-		Ok(Either::Right(template! {
-			"session/login.html";
-			state: String = form.state.unwrap(),
-			error: Option<String> = Some(String::from("Username or password incorrect")),
-		}))
+	match User::find_and_authenticate(&form.username, &form.password, &conn) {
+		Err(ZauthError::LoginError(login_error)) => {
+			Ok(Either::Right(template! {
+				"session/login.html";
+				state: String = form.state.unwrap(),
+				error: Option<String> = Some(login_error.to_string()),
+			}))
+		},
+		Ok(user) => {
+			Session::add_to_cookies(user, &mut cookies);
+			Ok(Either::Left(Redirect::to("/")))
+		},
+		Err(err) => Err(err),
 	}
 }
 

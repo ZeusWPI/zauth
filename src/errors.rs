@@ -20,6 +20,8 @@ pub enum ZauthError {
 	RequestError(#[from] RequestError),
 	#[error("Authentication error {0:?}")]
 	AuthError(#[from] AuthenticationError),
+	#[error("Login error {0:?}")]
+	LoginError(#[from] LoginError),
 	#[error("{0}")]
 	Custom(Status, String),
 }
@@ -94,6 +96,17 @@ pub enum InternalError {
 	MailQueueFull(#[from] TrySendError<Message>),
 }
 pub type InternalResult<T> = std::result::Result<T, InternalError>;
+
+#[derive(Error, Debug)]
+pub enum LoginError {
+	#[error("Username or password incorrect")]
+	UsernamePasswordError,
+	#[error("Account still pending")]
+	AccountPendingError,
+	#[error("Account disabled")]
+	AccountDisabledError,
+}
+pub type LoginResult<T> = std::result::Result<T, LoginError>;
 
 #[derive(Error, Debug)]
 pub enum RequestError {

@@ -1,5 +1,5 @@
 use self::schema::users;
-use crate::errors::{InternalError, Result, ZauthError};
+use crate::errors::{InternalError, LoginError, Result, ZauthError};
 use crate::ConcreteConnection;
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
@@ -278,12 +278,22 @@ impl User {
 		username: &str,
 		password: &str,
 		conn: &ConcreteConnection,
-	) -> Result<Option<User>>
+	) -> Result<User>
 	{
 		match Self::find_by_username(username, conn) {
-			Ok(user) if !verify(password, &user.hashed_password) => Ok(None),
-			Ok(user) => Ok(Some(user)),
-			Err(ZauthError::NotFound(_)) => Ok(None),
+			Ok(user) if !verify(password, &user.hashed_password) => {
+				Err(ZauthError::LoginError(LoginError::UsernamePasswordError))
+			},
+			Ok(user) if user.state == UserState::Pending => {
+				Err(ZauthError::LoginError(LoginError::AccountPendingError))
+			},
+			Ok(user) if user.state == UserState::Disabled => {
+				Err(ZauthError::LoginError(LoginError::AccountDisabledError))
+			},
+			Ok(user) => Ok(user),
+			Err(ZauthError::NotFound(_msg)) => {
+				Err(ZauthError::LoginError(LoginError::UsernamePasswordError))
+			},
 			Err(e) => Err(ZauthError::from(e)),
 		}
 	}
