@@ -8,27 +8,22 @@ authors = ["Rien Maertens <rien.maertens@posteo.be>"]
 askama = { version = "0.9.0", features = ["with-rocket", "mime", "mime_guess"] }
 base64 = "0.12"
 bincode = "1.0"
-pwhash = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
-lazy_static = "1.1"
-urlencoding = "1.0"
-rand = "0.7"
-regex = "1.0"
-rocket = "0.4.2"
-serde = "1.0"
-serde_json = "1.0"
-serde_derive = "1.0"
-serde_urlencoded = "0.6"
 diesel = { version = "1.4", features = ["postgres", "r2d2", "chrono"] }
 diesel-derive-enum = { version = "1", features = ["postgres"] }
 diesel_migrations = "1.4"
-tempfile = "3.1"
+lazy_static = "1.1"
 maplit = "1.0"
 parking_lot = { version = "0.11", features = ["nightly"] }
-
+pwhash = "0.3"
+rand = "0.7"
+regex = "1.0"
+rocket = "0.4.2"
+rocket_contrib = { version = "0.4.2", default-features = false, features = ["json", "diesel_postgres_pool",  "serve"] }
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+serde_urlencoded = "0.6"
+tempfile = "3.1"
 thiserror = "1.0.20"
-
-[dependencies.rocket_contrib]
-version = "0.4.2"
-default-features = false
-features = ["json", "diesel_postgres_pool",  "serve"]
+urlencoding = "1.0"
