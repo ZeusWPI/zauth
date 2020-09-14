@@ -96,6 +96,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90c108c1a94380c89d2215d0ac54ce09796823cca0fd91b299cfff3b33e346fb"
 
 [[package]]
+name = "askama_rocket"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40428c13bd027adfd481391729b85bf9961b59e5b21bb55e80f603d19d054583"
+dependencies = [
+ "askama",
+ "rocket",
+]
+
+[[package]]
 name = "askama_shared"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1680,6 +1690,7 @@ name = "zauth"
 version = "0.1.0"
 dependencies = [
  "askama",
+ "askama_rocket",
  "base64 0.12.3",
  "bincode",
  "chrono",
