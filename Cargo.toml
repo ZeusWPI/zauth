@@ -5,7 +5,8 @@ edition = "2018"
 authors = ["Rien Maertens <rien.maertens@posteo.be>"]
 
 [dependencies]
-askama = { version = "0.9.0", features = ["with-rocket", "mime", "mime_guess"] }
+askama = { version = "0.10", features = ["with-rocket", "mime", "mime_guess"] }
+askama_rocket = "0.10"
 base64 = "0.12"
 bincode = "1.0"
 pwhash = "0.3"

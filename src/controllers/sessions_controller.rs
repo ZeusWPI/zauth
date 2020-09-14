@@ -1,4 +1,3 @@
-use askama::Template;
 use rocket::http::Cookies;
 use rocket::request::Form;
 use rocket::response::{Redirect, Responder};
