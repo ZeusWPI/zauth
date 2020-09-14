@@ -3,12 +3,19 @@ use rocket::response::{self, Responder, Response};
 use rocket::Request;
 use thiserror::Error;
 
+use diesel::result::Error::NotFound;
+use lettre::Message;
 use std::io::Cursor;
+use std::sync::mpsc::{SendError, TrySendError};
 
 #[derive(Error, Debug)]
 pub enum ZauthError {
 	#[error("Internal server error {0:?}")]
 	Internal(#[from] InternalError),
+	#[error("Launch error {0:?}")]
+	Launch(#[from] LaunchError),
+	#[error("Not found: {0:?}")]
+	NotFound(String),
 	#[error("Request error {0:?}")]
 	RequestError(#[from] RequestError),
 	#[error("Authentication error {0:?}")]
@@ -18,7 +25,7 @@ pub enum ZauthError {
 }
 impl ZauthError {
 	pub fn not_found(what: &str) -> Self {
-		ZauthError::Custom(Status::NotFound, what.to_string())
+		ZauthError::NotFound(what.to_string())
 	}
 
 	pub fn expired() -> Self {
@@ -32,6 +39,9 @@ impl Responder<'static> for ZauthError {
 		match self {
 			ZauthError::Custom(status, _) => {
 				builder.status(status);
+			},
+			ZauthError::NotFound(_) => {
+				builder.status(Status::NotFound);
 			},
 			ZauthError::Internal(_) => {
 				builder.status(Status::InternalServerError);
@@ -58,7 +68,10 @@ impl Responder<'static> for ZauthError {
 
 impl From<diesel::result::Error> for ZauthError {
 	fn from(error: diesel::result::Error) -> Self {
-		ZauthError::Internal(InternalError::DatabaseError(error))
+		match error {
+			NotFound => ZauthError::not_found(&error.to_string()),
+			_ => ZauthError::Internal(InternalError::DatabaseError(error)),
+		}
 	}
 }
 pub type Result<T> = std::result::Result<T, ZauthError>;
@@ -69,6 +82,16 @@ pub enum InternalError {
 	HashError(#[from] pwhash::error::Error),
 	#[error("Database error")]
 	DatabaseError(#[from] diesel::result::Error),
+	#[error("Template error")]
+	TemplateError(#[from] askama::Error),
+	#[error("Invalid email: {0}")]
+	InvalidEmail(#[from] lettre::address::AddressError),
+	#[error("Mailer error")]
+	MailError(#[from] lettre::error::Error),
+	#[error("Mailer stopped processing items")]
+	MailerStopped(#[from] SendError<Message>),
+	#[error("Mail queue full")]
+	MailQueueFull(#[from] TrySendError<Message>),
 }
 pub type InternalResult<T> = std::result::Result<T, InternalError>;
 
@@ -100,6 +123,16 @@ pub enum AuthenticationError {
 }
 pub type AuthResult<T> = std::result::Result<T, AuthenticationError>;
 
+#[derive(Error, Debug)]
+pub enum LaunchError {
+	#[error("Incorrect config value type for key '{0}'")]
+	BadConfigValueType(String),
+	#[error("Incorrect email address '{0}'")]
+	InvalidEmail(#[from] lettre::address::AddressError),
+	#[error("Failed to create SMTP transport")]
+	SMTPError(#[from] lettre::transport::smtp::error::Error),
+}
+
 pub enum Either<R, E> {
 	Left(R),
 	Right(E),
@@ -114,6 +147,27 @@ where
 		match self {
 			Self::Left(left) => left.respond_to(req),
 			Self::Right(right) => right.respond_to(req),
+		}
+	}
+}
+
+pub enum OneOf<X, Y, Z> {
+	One(X),
+	Two(Y),
+	Three(Z),
+}
+
+impl<'r, X, Y, Z> Responder<'r> for OneOf<X, Y, Z>
+where
+	X: Responder<'r>,
+	Y: Responder<'r>,
+	Z: Responder<'r>,
+{
+	fn respond_to(self, req: &Request) -> rocket::response::Result<'r> {
+		match self {
+			Self::One(one) => one.respond_to(req),
+			Self::Two(two) => two.respond_to(req),
+			Self::Three(three) => three.respond_to(req),
 		}
 	}
 }

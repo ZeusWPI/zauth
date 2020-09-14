@@ -74,7 +74,6 @@ impl Client {
 			redirect_uri_list: client.redirect_uri_list,
 			secret:            Self::generate_random_secret(),
 		};
-		dbg!(&client);
 		let client = conn
 			.transaction(|| {
 				// Create a new user
@@ -85,7 +84,6 @@ impl Client {
 				clients::table.order(clients::id.desc()).first(conn)
 			})
 			.map_err(ZauthError::from);
-		dbg!(&client);
 		return client;
 	}
 

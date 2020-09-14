@@ -19,12 +19,18 @@ use std::str::FromStr;
 use crate::common::zauth::models::client::*;
 use crate::common::zauth::models::user::*;
 use crate::common::zauth::DbConn;
+use lettre::Address;
+use std::thread;
+use std::time::Duration;
+use zauth::mailer::STUB_MAILER_OUTBOX;
 
 type HttpClient = rocket::local::Client;
 
 // Rocket doesn't support transactional testing yet, so we use a lock to
 // serialize tests.
 static DB_LOCK: Mutex<()> = Mutex::new(());
+
+pub const BCRYPT_COST: u32 = 4;
 
 pub fn url(content: &str) -> String {
 	urlencoding::encode(content)
@@ -76,6 +82,7 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 				email:      String::from("user"),
 				ssh_key:    Some(String::from("user")),
 			},
+			BCRYPT_COST,
 			&db,
 		)
 		.unwrap();
@@ -105,6 +112,7 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 				email:      String::from("admin"),
 				ssh_key:    Some(String::from("admin")),
 			},
+			BCRYPT_COST,
 			&db,
 		)
 		.unwrap();
@@ -123,4 +131,46 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 
 		run(client, db, user);
 	});
+}
+
+pub fn dont_expect_mail<T>(run: impl FnOnce() -> T) -> T {
+	let (mailbox, _condvar) = &STUB_MAILER_OUTBOX;
+	let outbox_size = { mailbox.lock().len() };
+	let result: T = run();
+	thread::sleep(Duration::from_secs(1));
+	assert_eq!(
+		outbox_size,
+		mailbox.lock().len(),
+		"Expected no mail to be sent"
+	);
+	result
+}
+
+pub fn expect_mail_to<T>(receivers: Vec<&str>, run: impl FnOnce() -> T) -> T {
+	let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
+	let outbox_size = { mailbox.lock().len() };
+	let result: T = run();
+
+	let mut mailbox = mailbox.lock();
+	if mailbox.len() == outbox_size {
+		let wait_result =
+			condvar.wait_for(&mut mailbox, Duration::from_secs(1));
+		assert!(
+			!wait_result.timed_out(),
+			"Timed out while waiting for email"
+		);
+	}
+
+	assert_eq!(
+		mailbox.len(),
+		outbox_size + 1,
+		"Expected an email to be sent"
+	);
+	let last_mail = mailbox.last().unwrap();
+	let receivers = receivers
+		.into_iter()
+		.map(|e| Address::from_str(e).unwrap())
+		.collect::<Vec<Address>>();
+	assert_eq!(last_mail.envelope().to(), receivers, "Unexpected receivers");
+	result
 }

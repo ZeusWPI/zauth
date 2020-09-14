@@ -3,7 +3,16 @@ url = "postgresql://zauth:zauth@localhost/zauth"
 
 [development]
 secret_key = "1vwCFFPSdQya895gNiO556SzmfShG6MokstgttLvwjw="
+bcrypt_cost = 4
+
+[production]
+# Values you want to fill in for production use
+# secret_key =  # used to encrypt cookies (generate a new one!)
+# base_url =    # URL where the application is hosten (e.g. https://auth.zeus.gent)
+# mail_from =   # From header to set when sending emails (e.g. zauth@zeus.gent)
+# mail_server = # domain of the SMTP server used to send mail (e.g. smtp.zeus.gent)
+
+# See src/config.rs for all the possible config values and their defaults
 
 [production.databases.postgresql_database]
 url = "postgresql://zauth:zauth@database/zauth"
-

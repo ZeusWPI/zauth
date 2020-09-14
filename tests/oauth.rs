@@ -45,6 +45,7 @@ fn normal_flow() {
 				email:      String::from("ghi@jkl.mno"),
 				ssh_key:    Some(String::from("pqrstuvwxyz")),
 			},
+			common::BCRYPT_COST,
 			&db,
 		)
 		.expect("user");
@@ -76,7 +77,7 @@ fn normal_flow() {
 			.headers()
 			.get_one("Location")
 			.expect("Location header");
-		dbg!(login_location);
+
 		assert!(login_location.starts_with("/oauth/login"));
 
 		// 2. User requests the login page
@@ -94,8 +95,6 @@ fn normal_flow() {
 			.captures(&body)
 			.map(|c| c[1].to_string())
 			.expect("hidden state field");
-
-		dbg!(&form_state);
 
 		// 3. User posts it credentials to the login path
 		let login_url = "/oauth/login";

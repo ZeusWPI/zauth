@@ -1,19 +1,15 @@
 use self::schema::users;
-use crate::errors::{Result, ZauthError};
+use crate::errors::{InternalError, Result, ZauthError};
 use crate::ConcreteConnection;
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
 
+use crate::models::user::UserState::{Active, Pending};
 use chrono::{NaiveDateTime, Utc};
+use lettre::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
-
-const DEFAULT_COST: u32 = 11;
-const BCRYPT_SETUP: BcryptSetup = BcryptSetup {
-	salt:    None,
-	variant: None,
-	cost:    Some(DEFAULT_COST),
-};
+use std::convert::TryInto;
 
 #[derive(DbEnum, Debug, Serialize, Clone)]
 pub enum UserState {
@@ -42,6 +38,8 @@ mod schema {
 		username -> Varchar,
 		hashed_password -> Varchar,
 		admin -> Bool,
+		password_reset_token -> Nullable<Varchar>,
+		password_reset_expiry -> Nullable<Timestamp>,
 		first_name -> Varchar,
 		last_name -> Varchar,
 		email -> Varchar,
@@ -55,21 +53,23 @@ mod schema {
 
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
 #[table_name = "users"]
+#[changeset_options(treat_none_as_null = "true")]
 pub struct User {
-	pub id:              i32,
+	pub id:                    i32,
 	// validate to have at least 3 chars
-	pub username:        String,
+	pub username:              String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
-	pub hashed_password: String,
-	pub admin:           bool,
-
-	pub first_name: String,
-	pub last_name:  String,
-	pub email:      String,
-	pub ssh_key:    Option<String>,
-	pub state:      UserState,
-	pub last_login: NaiveDateTime,
-	pub created_at: NaiveDateTime,
+	pub hashed_password:       String,
+	pub admin:                 bool,
+	pub password_reset_token:  Option<String>,
+	pub password_reset_expiry: Option<NaiveDateTime>,
+	pub first_name:            String,
+	pub last_name:             String,
+	pub email:                 String,
+	pub ssh_key:               Option<String>,
+	pub state:                 UserState,
+	pub last_login:            NaiveDateTime,
+	pub created_at:            NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -90,6 +90,7 @@ struct NewUserHashed {
 	first_name:      String,
 	last_name:       String,
 	email:           String,
+	state:           UserState,
 	ssh_key:         Option<String>,
 	last_login:      NaiveDateTime,
 }
@@ -115,27 +116,93 @@ impl User {
 		Ok(all_users)
 	}
 
+	pub fn is_active(&self) -> bool {
+		matches!(self.state, Active)
+	}
+
 	pub fn find_by_username(
 		username: &str,
 		conn: &ConcreteConnection,
-	) -> diesel::result::QueryResult<User>
+	) -> Result<User>
 	{
 		users::table
 			.filter(users::username.eq(username))
 			.first(conn)
-		// .map_err(ZauthError::from)
+			.map_err(ZauthError::from)
 	}
 
-	pub fn create(user: NewUser, conn: &ConcreteConnection) -> Result<User> {
+	pub fn find_by_email(
+		email: &str,
+		conn: &ConcreteConnection,
+	) -> Result<User>
+	{
+		users::table
+			.filter(users::email.eq(email))
+			.first(conn)
+			.map_err(ZauthError::from)
+	}
+
+	pub fn find_by_token(
+		token: &str,
+		conn: &ConcreteConnection,
+	) -> Result<Option<User>>
+	{
+		match users::table
+			.filter(users::password_reset_token.eq(token))
+			.first::<Self>(conn)
+			.map_err(ZauthError::from)
+		{
+			Ok(user)
+				if Utc::now().naive_utc()
+					< user.password_reset_expiry.unwrap() =>
+			{
+				Ok(Some(user))
+			},
+			Ok(_) => Ok(None),
+			Err(ZauthError::NotFound(_)) => Ok(None),
+			Err(err) => Err(err),
+		}
+	}
+
+	pub fn create(
+		user: NewUser,
+		bcrypt_cost: u32,
+		conn: &ConcreteConnection,
+	) -> Result<User>
+	{
 		let user = NewUserHashed {
 			username:        user.username,
-			hashed_password: hash(&user.password)?,
+			hashed_password: hash(&user.password, bcrypt_cost)?,
 			first_name:      user.first_name,
 			last_name:       user.last_name,
 			email:           user.email,
 			ssh_key:         user.ssh_key,
+			state:           Active,
 			last_login:      Utc::now().naive_utc(),
 		};
+		Self::insert(user, conn)
+	}
+
+	pub fn create_pending(
+		user: NewUser,
+		bcrypt_cost: u32,
+		conn: &ConcreteConnection,
+	) -> Result<User>
+	{
+		let user = NewUserHashed {
+			username:        user.username,
+			hashed_password: hash(&user.password, bcrypt_cost)?,
+			first_name:      user.first_name,
+			last_name:       user.last_name,
+			email:           user.email,
+			ssh_key:         user.ssh_key,
+			state:           Pending,
+			last_login:      Utc::now().naive_utc(),
+		};
+		Self::insert(user, conn)
+	}
+
+	fn insert(user: NewUserHashed, conn: &ConcreteConnection) -> Result<User> {
 		conn.transaction(|| {
 			// Create a new user
 			diesel::insert_into(users::table)
@@ -147,12 +214,17 @@ impl User {
 		})
 	}
 
-	pub fn change_with(&mut self, change: UserChange) -> Result<()> {
+	pub fn change_with(
+		&mut self,
+		change: UserChange,
+		bcrypt_cost: u32,
+	) -> Result<()>
+	{
 		if let Some(username) = change.username {
 			self.username = username;
 		}
 		if let Some(password) = change.password {
-			self.hashed_password = hash(&password)?;
+			self.hashed_password = hash(&password, bcrypt_cost)?;
 		}
 		if let Some(first_name) = change.first_name {
 			self.first_name = first_name;
@@ -184,6 +256,23 @@ impl User {
 		.map_err(ZauthError::from)
 	}
 
+	pub fn change_password(
+		mut self,
+		new_password: &str,
+		bcrypt_cost: u32,
+		conn: &ConcreteConnection,
+	) -> Result<Self>
+	{
+		self.hashed_password = hash(new_password, bcrypt_cost)?;
+		self.password_reset_token = None;
+		self.password_reset_expiry = None;
+		self.update(conn)
+	}
+
+	pub fn reload(self, conn: &ConcreteConnection) -> Result<User> {
+		Self::find(self.id, conn)
+	}
+
 	pub fn find(id: i32, conn: &ConcreteConnection) -> Result<User> {
 		users::table.find(id).first(conn).map_err(ZauthError::from)
 	}
@@ -204,17 +293,37 @@ impl User {
 		match Self::find_by_username(username, conn) {
 			Ok(user) if !verify(password, &user.hashed_password) => Ok(None),
 			Ok(user) => Ok(Some(user)),
-			Err(diesel::result::Error::NotFound) => Ok(None),
+			Err(ZauthError::NotFound(_)) => Ok(None),
 			Err(e) => Err(ZauthError::from(e)),
 		}
 	}
 }
 
-fn hash(password: &str) -> crate::errors::InternalResult<String> {
-	let hashed = bcrypt::hash_with(BCRYPT_SETUP, password)?;
+fn hash(
+	password: &str,
+	bcrypt_cost: u32,
+) -> crate::errors::InternalResult<String>
+{
+	let b: BcryptSetup = BcryptSetup {
+		salt:    None,
+		variant: None,
+		cost:    Some(bcrypt_cost),
+	};
+	let hashed = bcrypt::hash_with(b, password)?;
 	Ok(hashed)
 }
 
 fn verify(password: &str, hash: &str) -> bool {
 	bcrypt::verify(password, &hash)
+}
+
+impl TryInto<Mailbox> for &User {
+	type Error = ZauthError;
+
+	fn try_into(self) -> Result<Mailbox> {
+		Ok(Mailbox::new(
+			Some(self.username.to_string()),
+			self.email.clone().parse().map_err(InternalError::from)?,
+		))
+	}
 }
