@@ -1,0 +1,17 @@
+[package]
+name = "zauth_derive"
+version = "0.1.0"
+authors = ["Rien Maertens <rien.maertens@posteo.be>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+zauth_record = { version = "0.1", path = "../zauth_record/" }
+syn = "1.0"
+quote = "1.0"
+proc-macro2 = "1.0"
+diesel = "1.4"

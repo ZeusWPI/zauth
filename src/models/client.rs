@@ -8,6 +8,8 @@ use crate::ConcreteConnection;
 use self::schema::clients;
 
 use chrono::NaiveDateTime;
+use diesel::result::Error;
+use zauth_record::Record;
 
 const SECRET_LENGTH: usize = 64;
 
@@ -24,7 +26,9 @@ mod schema {
 	}
 }
 
+#[table_name = "clients"]
 #[derive(Serialize, Queryable, Debug, Clone)]
+//#[connection = "ConcreteConnection"]
 pub struct Client {
 	pub id:                i32,
 	pub name:              String,
@@ -32,6 +36,15 @@ pub struct Client {
 	pub needs_grant:       bool,
 	pub redirect_uri_list: String,
 	pub created_at:        NaiveDateTime,
+}
+
+impl Record for Client {
+	type Db = ConcreteConnection;
+	type Output = Client;
+
+	fn last(db: &Self::Db) -> std::result::Result<Self::Output, Error> {
+		clients::table.order(clients::id.desc()).first(db)
+	}
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]

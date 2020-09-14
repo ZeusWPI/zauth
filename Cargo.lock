@@ -1698,6 +1698,26 @@ dependencies = [
  "tempfile",
  "thiserror",
  "urlencoding",
+ "zauth_derive",
+ "zauth_record",
+]
+
+[[package]]
+name = "zauth_derive"
+version = "0.1.0"
+dependencies = [
+ "diesel",
+ "proc-macro2 1.0.19",
+ "quote 1.0.7",
+ "syn 1.0.38",
+ "zauth_record",
+]
+
+[[package]]
+name = "zauth_record"
+version = "0.1.0"
+dependencies = [
+ "diesel",
 ]
 
 [[package]]
