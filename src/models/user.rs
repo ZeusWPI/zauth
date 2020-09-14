@@ -34,19 +34,19 @@ mod schema {
 		use crate::models::user::UserStateMapping;
 
 		users {
-		id -> Integer,
-		username -> Varchar,
-		hashed_password -> Varchar,
-		admin -> Bool,
-		password_reset_token -> Nullable<Varchar>,
-		password_reset_expiry -> Nullable<Timestamp>,
-		full_name -> Varchar,
-		email -> Varchar,
-		ssh_key -> Nullable<Text>,
-		state -> UserStateMapping,
-		last_login -> Timestamp,
-		created_at -> Timestamp,
-	}
+			id -> Integer,
+			username -> Varchar,
+			hashed_password -> Varchar,
+			admin -> Bool,
+			password_reset_token -> Nullable<Varchar>,
+			password_reset_expiry -> Nullable<Timestamp>,
+			full_name -> Varchar,
+			email -> Varchar,
+			ssh_key -> Nullable<Text>,
+			state -> UserStateMapping,
+			last_login -> Timestamp,
+			created_at -> Timestamp,
+		}
 	}
 }
 
@@ -58,16 +58,16 @@ pub struct User {
 	// validate to have at least 3 chars
 	pub username:              String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
-	pub hashed_password: String,
-	pub admin:           bool,
+	pub hashed_password:       String,
+	pub admin:                 bool,
 	pub password_reset_token:  Option<String>,
 	pub password_reset_expiry: Option<NaiveDateTime>,
-	pub full_name:  String,
-	pub email:      String,
-	pub ssh_key:    Option<String>,
-	pub state:      UserState,
-	pub last_login: NaiveDateTime,
-	pub created_at: NaiveDateTime,
+	pub full_name:             String,
+	pub email:                 String,
+	pub ssh_key:               Option<String>,
+	pub state:                 UserState,
+	pub last_login:            NaiveDateTime,
+	pub created_at:            NaiveDateTime,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]

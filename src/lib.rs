@@ -148,11 +148,11 @@ fn create_admin(
 		.or_else(|_e| {
 			User::create(
 				NewUser {
-					username:   username.clone(),
-					password:   password.clone(),
+					username:  username.clone(),
+					password:  password.clone(),
 					full_name: String::from(""),
-					email:      String::from(""),
-					ssh_key:    None,
+					email:     String::from(""),
+					ssh_key:   None,
 				},
 				config.bcrypt_cost,
 				&conn,

@@ -305,12 +305,11 @@ fn forgot_password() {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
-				username:   String::from("a"),
-				password:   String::from("b"),
-				first_name: String::from("c"),
-				last_name:  String::from("d"),
-				email:      email.clone(),
-				ssh_key:    None,
+				username:  String::from("a"),
+				password:  String::from("b"),
+				full_name: String::from("c"),
+				email:     email.clone(),
+				ssh_key:   None,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -404,12 +403,11 @@ fn forgot_password_non_existing_email() {
 		let email = String::from("test@example.com");
 		let _user = User::create(
 			NewUser {
-				username:   String::from("a"),
-				password:   String::from("b"),
-				first_name: String::from("c"),
-				last_name:  String::from("d"),
-				email:      email.clone(),
-				ssh_key:    None,
+				username:  String::from("a"),
+				password:  String::from("b"),
+				full_name: String::from("c"),
+				email:     email.clone(),
+				ssh_key:   None,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -439,12 +437,11 @@ fn reset_password_invalid_token() {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
-				username:   String::from("a"),
-				password:   String::from("b"),
-				first_name: String::from("c"),
-				last_name:  String::from("d"),
-				email:      email.clone(),
-				ssh_key:    None,
+				username:  String::from("a"),
+				password:  String::from("b"),
+				full_name: String::from("c"),
+				email:     email.clone(),
+				ssh_key:   None,
 			},
 			common::BCRYPT_COST,
 			&db,

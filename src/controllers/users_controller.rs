@@ -74,8 +74,8 @@ pub fn create_user(
 	config: State<Config>,
 ) -> Result<impl Responder<'static>>
 {
-	let user =
-		User::create(user.into_inner(), config.bcrypt_cost, &conn).map_err(ZauthError::from)?;
+	let user = User::create(user.into_inner(), config.bcrypt_cost, &conn)
+		.map_err(ZauthError::from)?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user: user.id)),
 		json: Json(user),
@@ -94,7 +94,7 @@ pub fn register(
 	conn: DbConn,
 ) -> Result<impl Responder<'static>>
 {
-	let user = User::create(user.into_inner(), conf.bcrypt_cost, &conn)
+	let user = User::create_pending(user.into_inner(), conf.bcrypt_cost, &conn)
 		.map_err(ZauthError::from)?;
 	Ok(Accepter {
 		html: Custom(
