@@ -8,6 +8,7 @@ extern crate rand;
 extern crate regex;
 extern crate thiserror;
 extern crate toml;
+extern crate validator;
 
 #[macro_use]
 extern crate rocket_contrib;
@@ -21,6 +22,8 @@ extern crate lazy_static;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
+#[macro_use]
+extern crate validator_derive;
 
 #[macro_use]
 pub mod views;

@@ -9,7 +9,9 @@ use crate::models::user::UserState::{Active, Pending};
 use chrono::{NaiveDateTime, Utc};
 use lettre::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
+use regex::Regex;
 use std::convert::TryInto;
+use validator::{Validate, ValidationError};
 
 #[derive(DbEnum, Debug, Serialize, Clone, PartialEq)]
 pub enum UserState {
@@ -50,32 +52,40 @@ mod schema {
 	}
 }
 
-#[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
+#[derive(Validate, Serialize, AsChangeset, Queryable, Debug, Clone)]
 #[table_name = "users"]
 #[changeset_options(treat_none_as_null = "true")]
 pub struct User {
 	pub id:                    i32,
-	// validate to have at least 3 chars
+	#[validate(length(min = 3, max = 254))]
 	pub username:              String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password:       String,
 	pub admin:                 bool,
 	pub password_reset_token:  Option<String>,
 	pub password_reset_expiry: Option<NaiveDateTime>,
+	#[validate(length(min = 3, max = 254))]
 	pub full_name:             String,
+	#[validate(email)]
 	pub email:                 String,
+	#[validate(custom = "validate_ssh_key_list")]
 	pub ssh_key:               Option<String>,
 	pub state:                 UserState,
 	pub last_login:            NaiveDateTime,
 	pub created_at:            NaiveDateTime,
 }
 
-#[derive(FromForm, Deserialize, Debug, Clone)]
+#[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
+	#[validate(length(min = 3, max = 254))]
 	pub username:  String,
+	#[validate(length(min = 8))]
 	pub password:  String,
+	#[validate(length(min = 3, max = 254))]
 	pub full_name: String,
+	#[validate(email)]
 	pub email:     String,
+	#[validate(custom = "validate_ssh_key_list")]
 	pub ssh_key:   Option<String>,
 }
 
@@ -165,6 +175,7 @@ impl User {
 		conn: &ConcreteConnection,
 	) -> Result<User>
 	{
+		user.validate()?;
 		let user = NewUserHashed {
 			username:        user.username,
 			hashed_password: hash(&user.password, bcrypt_cost)?,
@@ -183,6 +194,7 @@ impl User {
 		conn: &ConcreteConnection,
 	) -> Result<User>
 	{
+		user.validate()?;
 		let user = NewUserHashed {
 			username:        user.username,
 			hashed_password: hash(&user.password, bcrypt_cost)?,
@@ -326,4 +338,22 @@ impl TryInto<Mailbox> for &User {
 			self.email.clone().parse().map_err(InternalError::from)?,
 		))
 	}
+}
+
+fn validate_ssh_key_list(
+	ssh_keys: &String,
+) -> std::result::Result<(), ValidationError> {
+	lazy_static! {
+		static ref SSH_KEY_REGEX: Regex = Regex::new(
+			r"ssh-(rsa|dsa|ecdsa|ed25519) [a-zA-Z0-9+/]{60,750}={0,3} ([^ ]+)?"
+		)
+		.unwrap();
+	}
+	for line in ssh_keys.lines() {
+		let line = line.trim();
+		if !line.is_empty() && !SSH_KEY_REGEX.is_match(line) {
+			return Err(ValidationError::new("Invalid ssh key"));
+		}
+	}
+	Ok(())
 }

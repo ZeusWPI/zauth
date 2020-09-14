@@ -2,8 +2,8 @@ use rocket::http::Status;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use rocket_contrib::json::Json;
-
 use std::fmt::Debug;
+use validator::ValidationErrors;
 
 use crate::config::Config;
 use crate::ephemeral::from_api::Api;
@@ -84,7 +84,9 @@ pub fn create_user(
 
 #[get("/register")]
 pub fn register_page() -> Result<impl Responder<'static>> {
-	Ok(template! { "users/registration_form.html" })
+	Ok(
+		template! { "users/registration_form.html"; errors: Option<ValidationErrors> = None },
+	)
 }
 
 #[post("/register", data = "<user>")]
@@ -92,17 +94,22 @@ pub fn register(
 	user: Api<NewUser>,
 	conf: State<Config>,
 	conn: DbConn,
-) -> Result<impl Responder<'static>>
+) -> Result<Either<impl Responder<'static>, impl Responder<'static>>>
 {
-	let user = User::create_pending(user.into_inner(), conf.bcrypt_cost, &conn)
-		.map_err(ZauthError::from)?;
-	Ok(Accepter {
-		html: Custom(
-			Status::Created,
-			template!("users/registration_success.html"),
-		),
-		json: Custom(Status::Created, Json(user)),
-	})
+	match User::create_pending(user.into_inner(), conf.bcrypt_cost, &conn) {
+		Ok(user) => Ok(Left(Accepter {
+			html: Custom(
+				Status::Created,
+				template!("users/registration_success.html"),
+			),
+			json: Custom(Status::Created, Json(user)),
+		})),
+		Err(ZauthError::ValidationError(errors)) => Ok(Right(template! {
+			"users/registration_form.html";
+			errors: Option<ValidationErrors> = Some(errors),
+		})),
+		Err(other) => Err(other),
+	}
 }
 
 #[put("/users/<id>", data = "<change>")]
