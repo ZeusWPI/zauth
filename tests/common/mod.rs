@@ -75,11 +75,11 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 	as_visitor(|client, db| {
 		let user = User::create(
 			NewUser {
-				username:  String::from("user"),
-				password:  String::from("user"),
-				full_name: String::from("user"),
-				email:     String::from("user"),
-				ssh_key:   Some(String::from("user")),
+				username:  String::from("username"),
+				password:  String::from("password"),
+				full_name: String::from("full"),
+				email:     String::from("user@domain.tld"),
+				ssh_key:   Some(String::from("ssh-rsa base64== key@hostname")),
 			},
 			BCRYPT_COST,
 			&db,
@@ -89,7 +89,7 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 		{
 			let response = client
 				.post("/login")
-				.body("username=user&password=user")
+				.body("username=username&password=password")
 				.header(ContentType::Form)
 				.dispatch();
 			assert_eq!(response.status(), Status::SeeOther, "login failed");
@@ -105,10 +105,10 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 		let mut user = User::create(
 			NewUser {
 				username:  String::from("admin"),
-				password:  String::from("admin"),
-				full_name: String::from("admin"),
-				email:     String::from("admin"),
-				ssh_key:   Some(String::from("admin")),
+				password:  String::from("password"),
+				full_name: String::from("admin name"),
+				email:     String::from("admin@domain.tld"),
+				ssh_key:   Some(String::from("ssh-rsa admin admin@hostname")),
 			},
 			BCRYPT_COST,
 			&db,
@@ -121,7 +121,7 @@ where F: FnOnce(HttpClient, DbConn, User) -> () {
 		{
 			let response = client
 				.post("/login")
-				.body("username=admin&password=admin")
+				.body("username=admin&password=password")
 				.header(ContentType::Form)
 				.dispatch();
 			assert_eq!(response.status(), Status::SeeOther, "login failed");

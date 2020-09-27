@@ -345,7 +345,7 @@ fn validate_ssh_key_list(
 ) -> std::result::Result<(), ValidationError> {
 	lazy_static! {
 		static ref SSH_KEY_REGEX: Regex = Regex::new(
-			r"ssh-(rsa|dsa|ecdsa|ed25519) [a-zA-Z0-9+/]{60,750}={0,3} ([^ ]+)?"
+			r"ssh-(rsa|dsa|ecdsa|ed25519) [a-zA-Z0-9+/]{1,750}={0,3}( [^ ]+)?"
 		)
 		.unwrap();
 	}

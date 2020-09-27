@@ -45,10 +45,10 @@ fn show_user_as_user() {
 		let other = User::create(
 			NewUser {
 				username:  String::from("somebody"),
-				password:  String::from("once"),
-				full_name: String::from("told me"),
-				email:     String::from("zeus"),
-				ssh_key:   Some(String::from("would be forever")),
+				password:  String::from("once told me"),
+				full_name: String::from("zeus"),
+				email:     String::from("would@be.forever"),
+				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -81,10 +81,10 @@ fn show_user_as_admin() {
 		let other = User::create(
 			NewUser {
 				username:  String::from("somebody"),
-				password:  String::from("once"),
-				full_name: String::from("told me"),
-				email:     String::from("zeus"),
-				ssh_key:   Some(String::from("would be forever")),
+				password:  String::from("once told me"),
+				full_name: String::from("zeus"),
+				email:     String::from("would@be.forever"),
+				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -134,10 +134,10 @@ fn update_self() {
 		let other = User::create(
 			NewUser {
 				username:  String::from("somebody"),
-				password:  String::from("once"),
-				full_name: String::from("told me"),
-				email:     String::from("zeus"),
-				ssh_key:   Some(String::from("would be forever")),
+				password:  String::from("once told me"),
+				full_name: String::from("zeus"),
+				email:     String::from("would@be.forever"),
+				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -190,10 +190,10 @@ fn make_admin() {
 		let other = User::create(
 			NewUser {
 				username:  String::from("somebody"),
-				password:  String::from("once"),
-				full_name: String::from("told me"),
-				email:     String::from("zeus"),
-				ssh_key:   Some(String::from("would be forever")),
+				password:  String::from("once told me"),
+				full_name: String::from("zeus"),
+				email:     String::from("would@be.forever"),
+				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -225,10 +225,10 @@ fn try_make_admin() {
 		let other = User::create(
 			NewUser {
 				username:  String::from("somebody"),
-				password:  String::from("once"),
-				full_name: String::from("told me"),
-				email:     String::from("zeus"),
-				ssh_key:   Some(String::from("would be forever")),
+				password:  String::from("once told me"),
+				full_name: String::from("zeus"),
+				email:     String::from("would@be.forever"),
+				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -261,7 +261,8 @@ fn create_user_form() {
 			.header(Accept::JSON)
 			.body(
 				"username=testuser&password=testpassword&full_name=abc&\
-				 email=hij@klm.op&ssh_key=qrs",
+				 email=hij@klm.op&ssh_key=ssh-rsa%20base64%3D%3D%20user@\
+				 hostname",
 			)
 			.dispatch();
 
@@ -286,7 +287,7 @@ fn create_user_json() {
 			.body(
 				"{\"username\": \"testuser\", \"password\": \"testpassword\", \
 				 \"full_name\": \"abc\", \"email\": \"hij@klm.op\", \
-				 \"ssh_key\": \"qrs\"}",
+				 \"ssh_key\": \"ssh-rsa qrs tuv@wxyz\"}",
 			)
 			.dispatch();
 
@@ -305,9 +306,9 @@ fn forgot_password() {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
-				username:  String::from("a"),
-				password:  String::from("b"),
-				full_name: String::from("c"),
+				username:  String::from("user"),
+				password:  String::from("password"),
+				full_name: String::from("name"),
 				email:     email.clone(),
 				ssh_key:   None,
 			},
@@ -403,9 +404,9 @@ fn forgot_password_non_existing_email() {
 		let email = String::from("test@example.com");
 		let _user = User::create(
 			NewUser {
-				username:  String::from("a"),
-				password:  String::from("b"),
-				full_name: String::from("c"),
+				username:  String::from("user"),
+				password:  String::from("password"),
+				full_name: String::from("name"),
 				email:     email.clone(),
 				ssh_key:   None,
 			},
@@ -437,9 +438,9 @@ fn reset_password_invalid_token() {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
-				username:  String::from("a"),
-				password:  String::from("b"),
-				full_name: String::from("c"),
+				username:  String::from("user"),
+				password:  String::from("password"),
+				full_name: String::from("name"),
 				email:     email.clone(),
 				ssh_key:   None,
 			},
@@ -489,11 +490,11 @@ fn register_user() {
 		assert_eq!(response.status(), Status::Ok);
 
 		let username = "somebody";
-		let password = "toucha";
-		let full_name = "ma";
+		let password = "toucha    ";
+		let full_name = "maa";
 		let email = "spaghet@zeus.ugent.be";
 
-		let response = http_client
+		let mut response = http_client
 			.post("/register")
 			.header(Accept::HTML)
 			.header(ContentType::Form)
@@ -503,6 +504,7 @@ fn register_user() {
 			))
 			.dispatch();
 
+		dbg!(response.body_string());
 		assert_eq!(response.status(), Status::Created);
 
 		let user = User::find_by_username(username, &db)

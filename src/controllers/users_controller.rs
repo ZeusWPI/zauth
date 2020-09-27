@@ -104,9 +104,15 @@ pub fn register(
 			),
 			json: Custom(Status::Created, Json(user)),
 		})),
-		Err(ZauthError::ValidationError(errors)) => Ok(Right(template! {
-			"users/registration_form.html";
-			errors: Option<ValidationErrors> = Some(errors),
+		Err(ZauthError::ValidationError(errors)) => Ok(Right(Accepter {
+			html: Custom(
+				Status::UnprocessableEntity,
+				template! {
+					"users/registration_form.html";
+					errors: Option<ValidationErrors> = Some(errors.clone()),
+				},
+			),
+			json: Custom(Status::UnprocessableEntity, Json(errors)),
 		})),
 		Err(other) => Err(other),
 	}
