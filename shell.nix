@@ -1,14 +1,14 @@
 let
   sources = import ./nix/sources.nix;
-  rust = import ./nix/rust.nix { inherit sources; };
-  pkgs = import sources.nixpkgs { };
+  pkgs = import sources.nixpkgs { overlays = [ (import sources.nixpkgs-mozilla) ]; };
+  rustnightly = pkgs.latest.rustChannels.stable.rust.override {
+    extensions = [ "rustfmt-preview" "rls-preview" ];
+  };
 in
 pkgs.mkShell {
   buildInputs = [
-    rust
-    pkgs.sqlite
-    pkgs.mariadb
+    rustnightly
+    pkgs.postgresql
+    pkgs.pgcli
   ];
-  LD_PRELOAD =
-    "${pkgs.mariadb}/lib/libmariadb.so";
 }
