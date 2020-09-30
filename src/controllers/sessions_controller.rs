@@ -2,6 +2,7 @@ use rocket::http::Cookies;
 use rocket::request::Form;
 use rocket::response::{Redirect, Responder};
 
+use crate::controllers::oauth_controller::AuthState;
 use crate::controllers::pages_controller::rocket_uri_macro_home_page;
 use crate::ephemeral::session::{Session, UserSession};
 use crate::errors::{Either, Result, ZauthError};
@@ -57,7 +58,12 @@ pub fn create_session(
 		},
 		Ok(user) => {
 			Session::add_to_cookies(user, &mut cookies);
-			Ok(Either::Left(Redirect::to("/")))
+			match AuthState::decode_b64(&form.state.unwrap_or_default()) {
+				Ok(user_auth_state) => {
+					Ok(Either::Left(Redirect::to(user_auth_state.redirect_uri)))
+				},
+				_ => Ok(Either::Left(Redirect::to("/"))),
+			}
 		},
 		Err(err) => Err(err),
 	}
