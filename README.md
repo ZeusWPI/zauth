@@ -1,4 +1,4 @@
-# Zauth
+# Zauth and an Amazing Projects
 
 The name is open for discussion.
 
