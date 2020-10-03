@@ -60,9 +60,14 @@ pub fn create_session(
 			Session::add_to_cookies(user, &mut cookies);
 			match AuthState::decode_b64(&form.state.unwrap_or_default()) {
 				Ok(user_auth_state) => {
-					Ok(Either::Left(Redirect::to(user_auth_state.redirect_uri)))
-				},
-				_ => Ok(Either::Left(Redirect::to("/"))),
+                    match user_auth_state.validate_auth_state(conn){
+                        Ok(redirect) => Ok(Either::Left(redirect)),
+                        Err(_err) => {
+                            Ok(Either::Left(Redirect::to("/failedstate")))
+                        }
+                    }
+                },
+				_ => Ok(Either::Left(Redirect::to("/test"))),
 			}
 		},
 		Err(err) => Err(err),

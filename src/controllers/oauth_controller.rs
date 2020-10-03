@@ -47,6 +47,24 @@ impl AuthState {
 		}
 	}
 
+    pub fn validate_auth_state(self, conn: DbConn) -> Result<Redirect> {
+        match Client::find_by_name(
+            &self.client_name,
+            &conn
+        ) {
+            Ok(client) => {
+                println!("{:?}", self);
+                println!("{:?}", client);
+                if client.redirect_uri_acceptable(&self.redirect_uri) {
+                    Ok(Redirect::to(self.redirect_uri))
+                } else {
+                    Err(ZauthError::not_found("client"))
+                }
+            }
+            Err(err) => Err(err)
+        }
+    }
+
 	pub fn encode_url(&self) -> String {
 		serde_urlencoded::to_string(self).unwrap()
 	}
