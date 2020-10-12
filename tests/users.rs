@@ -494,7 +494,7 @@ fn register_user() {
 		let full_name = "maa";
 		let email = "spaghet@zeus.ugent.be";
 
-		let mut response = http_client
+		let response = http_client
 			.post("/register")
 			.header(Accept::HTML)
 			.header(ContentType::Form)
@@ -504,7 +504,6 @@ fn register_user() {
 			))
 			.dispatch();
 
-		dbg!(response.body_string());
 		assert_eq!(response.status(), Status::Created);
 
 		let user = User::find_by_username(username, &db)
@@ -515,5 +514,73 @@ fn register_user() {
 			UserState::Pending,
 			"registered users should be pending"
 		);
+	});
+}
+
+#[test]
+fn validate_on_registration() {
+	common::as_visitor(|http_client, db| {
+		let response =
+			http_client.get("/register").header(Accept::HTML).dispatch();
+
+		assert_eq!(response.status(), Status::Ok);
+
+		let username = "somebody";
+		let password = "toucha    ";
+		let invalid_full_name = "?";
+		let email = "spaghet@zeus.ugent.be";
+
+		let user_count = User::all(&db).unwrap().len();
+
+		let response = http_client
+			.post("/register")
+			.header(Accept::HTML)
+			.header(ContentType::Form)
+			.body(format!(
+				"username={}&password={}&full_name={}&email={}",
+				username, password, invalid_full_name, email
+			))
+			.dispatch();
+
+		assert_eq!(response.status(), Status::UnprocessableEntity);
+		assert_eq!(
+			user_count,
+			User::all(&db).unwrap().len(),
+			"should not have created user"
+		)
+	});
+}
+
+#[test]
+fn validate_on_admin_create() {
+	common::as_visitor(|http_client, db| {
+		let response =
+			http_client.get("/register").header(Accept::HTML).dispatch();
+
+		assert_eq!(response.status(), Status::Ok);
+
+		let username = "somebody";
+		let password = "toucha    ";
+		let invalid_full_name = "?";
+		let email = "spaghet@zeus.ugent.be";
+
+		let user_count = User::all(&db).unwrap().len();
+
+		let response = http_client
+			.post("/register")
+			.header(Accept::HTML)
+			.header(ContentType::Form)
+			.body(format!(
+				"username={}&password={}&full_name={}&email={}",
+				username, password, invalid_full_name, email
+			))
+			.dispatch();
+
+		assert_eq!(response.status(), Status::UnprocessableEntity);
+		assert_eq!(
+			user_count,
+			User::all(&db).unwrap().len(),
+			"should not have created user"
+		)
 	});
 }
