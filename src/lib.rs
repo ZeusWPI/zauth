@@ -153,8 +153,8 @@ fn create_admin(
 				NewUser {
 					username:  username.clone(),
 					password:  password.clone(),
-					full_name: String::from(""),
-					email:     String::from(""),
+					full_name: String::from("Admin McAdmin"),
+					email:     String::from("admin@example.com"),
 					ssh_key:   None,
 				},
 				config.bcrypt_cost,
