@@ -7,6 +7,7 @@ use diesel::result::Error::NotFound;
 use lettre::Message;
 use std::io::Cursor;
 use std::sync::mpsc::{SendError, TrySendError};
+use validator::ValidationErrors;
 
 #[derive(Error, Debug)]
 pub enum ZauthError {
@@ -16,6 +17,8 @@ pub enum ZauthError {
 	Launch(#[from] LaunchError),
 	#[error("Not found: {0:?}")]
 	NotFound(String),
+	#[error("Validation error: {0:?}")]
+	ValidationError(#[from] ValidationErrors),
 	#[error("Request error {0:?}")]
 	RequestError(#[from] RequestError),
 	#[error("Authentication error {0:?}")]

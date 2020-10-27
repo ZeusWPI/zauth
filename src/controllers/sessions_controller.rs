@@ -51,7 +51,7 @@ pub fn create_session(
 		Err(ZauthError::LoginError(login_error)) => {
 			Ok(Either::Right(template! {
 				"session/login.html";
-				state: String = form.state.unwrap(),
+				state: String = form.state.unwrap_or("".to_string()),
 				error: Option<String> = Some(login_error.to_string()),
 			}))
 		},

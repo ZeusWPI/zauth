@@ -42,7 +42,7 @@ fn normal_flow() {
 				password:  String::from(user_password),
 				full_name: String::from("abc"),
 				email:     String::from("ghi@jkl.mno"),
-				ssh_key:   Some(String::from("pqrstuvwxyz")),
+				ssh_key:   Some(String::from("ssh-rsa pqrstuvwxyz")),
 			},
 			common::BCRYPT_COST,
 			&db,
