@@ -3,24 +3,23 @@ use rocket::request::Form;
 use rocket::response::{Redirect, Responder};
 
 use crate::controllers::pages_controller::rocket_uri_macro_home_page;
-use crate::ephemeral::session::{Session, UserSession};
+use crate::ephemeral::session::{stored_redirect_or, Session, UserSession};
 use crate::errors::{Either, Result, ZauthError};
 use crate::models::user::User;
 use crate::DbConn;
 
-#[get("/login?<state>")]
+#[get("/login")]
 pub fn new_session(
 	session: Option<UserSession>,
-	state: Option<String>,
+	cookies: Cookies,
 ) -> Either<Redirect, impl Responder<'static>>
 {
 	match session {
 		None => Either::Right(template! {
 			"session/login.html";
-			state: String = state.unwrap_or_default(),
 			error: Option<String> = None
 		}),
-		Some(_user_session) => Either::Left(Redirect::to(uri!(home_page))),
+		_ => Either::Left(stored_redirect_or(cookies, uri!(home_page))),
 	}
 }
 
@@ -36,7 +35,6 @@ pub fn delete_session(session: UserSession) -> impl Responder<'static> {
 pub struct LoginFormData {
 	username: String,
 	password: String,
-	state:    Option<String>,
 }
 
 #[post("/login", data = "<form>")]
@@ -51,13 +49,12 @@ pub fn create_session(
 		Err(ZauthError::LoginError(login_error)) => {
 			Ok(Either::Right(template! {
 				"session/login.html";
-				state: String = form.state.unwrap_or("".to_string()),
 				error: Option<String> = Some(login_error.to_string()),
 			}))
 		},
 		Ok(user) => {
-			Session::add_to_cookies(user, &mut cookies);
-			Ok(Either::Left(Redirect::to("/")))
+			Session::login(user, &mut cookies);
+			Ok(Either::Left(stored_redirect_or(cookies, uri!(home_page))))
 		},
 		Err(err) => Err(err),
 	}

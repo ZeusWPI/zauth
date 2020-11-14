@@ -87,8 +87,6 @@ fn assemble(rocket: Rocket) -> Rocket {
 				oauth_controller::authorize,
 				oauth_controller::grant_get,
 				oauth_controller::grant_post,
-				oauth_controller::login_get,
-				oauth_controller::login_post,
 				oauth_controller::token,
 				pages_controller::home_page,
 				sessions_controller::create_session,

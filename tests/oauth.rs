@@ -8,7 +8,6 @@ extern crate zauth;
 use self::serde_json::Value;
 use regex::Regex;
 use rocket::http::ContentType;
-use rocket::http::Cookie;
 use rocket::http::Header;
 use rocket::http::Status;
 
@@ -60,8 +59,8 @@ fn normal_flow() {
 		.expect("client");
 
 		// 1. User is redirected to OAuth server with request params given by
-		// the client    The OAuth server should respond with a redirect to
-		// the login page.
+		// the client
+		// The OAuth server should respond with a redirect the login page.
 		let authorize_url = format!(
 			"/oauth/authorize?response_type=code&redirect_uri={}&client_id={}&\
 			 state={}",
@@ -77,31 +76,20 @@ fn normal_flow() {
 			.get_one("Location")
 			.expect("Location header");
 
-		assert!(login_location.starts_with("/oauth/login"));
+		assert!(login_location.starts_with("/login"));
 
 		// 2. User requests the login page
-		let mut response = http_client.get(login_location).dispatch();
+		let response = http_client.get(login_location).dispatch();
 
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(response.content_type(), Some(ContentType::HTML));
 
-		let state_regex = Regex::new(
-			"<input type=\"hidden\" name=\"state\" value=\"([^\"]+)\">",
-		)
-		.unwrap();
-		let body = response.body_string().expect("response body");
-		let form_state = state_regex
-			.captures(&body)
-			.map(|c| c[1].to_string())
-			.expect("hidden state field");
-
 		// 3. User posts it credentials to the login path
-		let login_url = "/oauth/login";
+		let login_url = "/login";
 		let form_body = format!(
-			"username={}&password={}&state={}&remember_me=on",
+			"username={}&password={}",
 			url(user_username),
 			url(user_password),
-			form_state
 		);
 
 		let response = http_client
@@ -115,51 +103,22 @@ fn normal_flow() {
 			.headers()
 			.get_one("Location")
 			.expect("Location header");
+
 		assert!(grant_location.starts_with("/oauth/grant"));
-		let session_cookie_str = response
-			.headers()
-			.get_one("Set-Cookie")
-			.expect("Session cookie")
-			.to_owned();
-		let cookie_regex = Regex::new("^([^=]+)=([^;]+).*").unwrap();
-		let (cookie_name, cookie_content) = cookie_regex
-			.captures(&session_cookie_str)
-			.map(|c| (c[1].to_string(), urlencoding::decode(&c[2]).unwrap()))
-			.expect("session cookie");
 
 		// 4. User requests grant page
-		let mut response = http_client
-			.get(grant_location)
-			.cookie(Cookie::new(
-				cookie_name.to_string(),
-				cookie_content.to_string(),
-			))
-			.dispatch();
+		let response = http_client.get(grant_location).dispatch();
 
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(response.content_type(), Some(ContentType::HTML));
 
-		let state_regex = Regex::new(
-			"<input type=\"hidden\" name=\"state\" value=\"([^\"]+)\">",
-		)
-		.unwrap();
-		let body = response.body_string().expect("response body");
-		let form_state = state_regex
-			.captures(&body)
-			.map(|c| c[1].to_string())
-			.expect("hidden state field");
-
 		// 5. User posts to grant page
 		let grant_url = "/oauth/grant";
-		let grant_form_body = format!("state={}&grant=true", form_state);
+		let grant_form_body = String::from("grant=true");
 
 		let response = http_client
 			.post(grant_url)
 			.body(grant_form_body.clone())
-			.cookie(Cookie::new(
-				cookie_name.to_string(),
-				cookie_content.to_string(),
-			))
 			.header(ContentType::Form)
 			.dispatch();
 
@@ -181,6 +140,8 @@ fn normal_flow() {
 			.expect("authorization code");
 		let state = get_param("state", &redirect_uri_params).expect("state");
 
+		// The client state we've sent in the beginning should be included in
+		// the redirect back to the OAuth client
 		assert_eq!(
 			client_state,
 			urlencoding::decode(&state).expect("state decoded")

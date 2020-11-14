@@ -1,19 +1,23 @@
-use rocket::http::Cookies;
+use rocket::http::{Cookie, Cookies};
 use rocket::request::Form;
 use rocket::response::{Redirect, Responder};
 use rocket::State;
 use rocket_contrib::json::Json;
 use std::fmt::Debug;
 
-use crate::ephemeral::session::{Session, UserSession};
+use crate::ephemeral::session::UserSession;
 use crate::errors::Either::{Left, Right};
 use crate::errors::*;
 use crate::models::client::*;
 use crate::models::user::*;
 use crate::DbConn;
 
+use crate::ephemeral::session::ensure_logged_in_and_redirect;
+use crate::errors::OAuthError::InvalidCookie;
 use crate::http_authentication::BasicAuthentication;
 use crate::token_store::TokenStore;
+
+const OAUTH_COOKIE: &str = "ZAUTH_OAUTH";
 
 #[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
 pub struct AuthState {
@@ -31,6 +35,17 @@ impl AuthState {
 				format!("state={}", urlencoding::encode(s))
 			});
 		format!("{}?{}", self.redirect_uri, state_param)
+	}
+
+	pub fn from_cookies(mut cookies: Cookies) -> Result<Self> {
+		cookies
+			.get_private(OAUTH_COOKIE)
+			.and_then(|cookie| Self::decode_b64(cookie.value()).ok())
+			.ok_or(ZauthError::OAuth(InvalidCookie))
+	}
+
+	pub fn into_cookie(self) -> Result<Cookie<'static>> {
+		Ok(Cookie::new(OAUTH_COOKIE, self.encode_b64()?))
 	}
 
 	pub fn from_req(
@@ -51,18 +66,19 @@ impl AuthState {
 		serde_urlencoded::to_string(self).unwrap()
 	}
 
-	pub fn encode_b64(&self) -> EncodingResult<String> {
+	pub fn encode_b64(&self) -> Result<String> {
 		Ok(base64::encode_config(
-			&bincode::serialize(self)?,
+			&bincode::serialize(self).map_err(InternalError::from)?,
 			base64::URL_SAFE_NO_PAD,
 		))
 	}
 
-	pub fn decode_b64(state_str: &str) -> EncodingResult<AuthState> {
-		Ok(bincode::deserialize(&base64::decode_config(
-			state_str,
-			base64::URL_SAFE_NO_PAD,
-		)?)?)
+	pub fn decode_b64(state_str: &str) -> Result<AuthState> {
+		Ok(bincode::deserialize(
+			&base64::decode_config(state_str, base64::URL_SAFE_NO_PAD)
+				.map_err(InternalError::from)?,
+		)
+		.map_err(InternalError::from)?)
 	}
 }
 
@@ -77,6 +93,7 @@ pub struct AuthorizationRequest {
 
 #[get("/oauth/authorize?<req..>")]
 pub fn authorize(
+	mut cookies: Cookies,
 	req: Form<AuthorizationRequest>,
 	conn: DbConn,
 ) -> Result<Redirect>
@@ -88,14 +105,14 @@ pub fn authorize(
 		return Err(ZauthError::from(RequestError::ResponseTypeMismatch));
 	}
 
-	// TODO: actually do something with the errors
 	if let Ok(client) = Client::find_by_name(&req.client_id, &conn) {
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
 			let state = AuthState::from_req(client, req);
-			Ok(Redirect::to(uri!(login_get: state)))
+			cookies.add_private(state.into_cookie()?);
+			Ok(ensure_logged_in_and_redirect(cookies, uri!(grant_get)))
 		} else {
 			Err(AuthenticationError::Unauthorized(format!(
-				"client with id {} is not authorized to useredirect_uri '{}'",
+				"client with id {} is not authorized to use redirect_uri '{}'",
 				req.client_id, req.redirect_uri
 			))
 			.into())
@@ -110,58 +127,7 @@ pub fn authorize(
 }
 
 #[derive(FromForm, Debug)]
-pub struct LoginFormData {
-	username:    String,
-	password:    String,
-	remember_me: bool,
-	state:       String,
-}
-
-#[get("/oauth/login?<state..>")]
-pub fn login_get(state: Form<AuthState>) -> Result<impl Responder<'static>> {
-	let state = state.encode_b64()?;
-	Ok(template! {
-		"session/login.html";
-		state:         String = state,
-		error: Option<String> = None,
-	})
-}
-
-#[post("/oauth/login", data = "<form>")]
-pub fn login_post(
-	mut cookies: Cookies,
-	form: Form<LoginFormData>,
-	conn: DbConn,
-) -> Result<Either<Redirect, impl Responder<'static>>>
-{
-	let data = form.into_inner();
-	let state = AuthState::decode_b64(&data.state)?;
-
-	match User::find_and_authenticate(&data.username, &data.password, &conn) {
-		Err(error) => {
-			let err_msg: String;
-			match error {
-				ZauthError::LoginError(login_error) => {
-					err_msg = login_error.to_string()
-				},
-				_ => err_msg = LoginError::UsernamePasswordError.to_string(),
-			}
-			Ok(Either::Right(template! {
-				"session/login.html";
-				state: String = state.encode_b64()?,
-				error: Option<String> = Some(err_msg),
-			}))
-		},
-		Ok(user) => {
-			Session::add_to_cookies(user, &mut cookies);
-			Ok(Either::Left(Redirect::to(uri!(grant_get: state))))
-		},
-	}
-}
-
-#[derive(FromForm, Debug)]
 pub struct GrantFormData {
-	state: String,
 	grant: bool,
 }
 
@@ -173,24 +139,24 @@ pub struct UserToken {
 	pub redirect_uri: String,
 }
 
-#[get("/oauth/grant?<state..>")]
+#[get("/oauth/grant")]
 pub fn grant_get<'a>(
 	session: UserSession,
-	state: Form<AuthState>,
+	cookies: Cookies,
 	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
 ) -> Result<Either<impl Responder<'static>, impl Responder<'static>>>
 {
+	let state = AuthState::from_cookies(cookies)?;
 	if let Ok(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
 			Ok(Left(template! {
 				"oauth/grant.html";
 				client_name: String = state.client_name.clone(),
-				state:       String = state.encode_b64()?,
 			}))
 		} else {
 			Ok(Right(authorization_granted(
-				state.into_inner(),
+				state,
 				session.user,
 				token_store.inner(),
 			)))
@@ -203,12 +169,13 @@ pub fn grant_get<'a>(
 #[post("/oauth/grant", data = "<form>")]
 pub fn grant_post(
 	session: UserSession,
+	cookies: Cookies,
 	form: Form<GrantFormData>,
 	token_store: State<TokenStore<UserToken>>,
 ) -> Result<Redirect>
 {
 	let data = form.into_inner();
-	let state = AuthState::decode_b64(&data.state)?;
+	let state = AuthState::from_cookies(cookies)?;
 	if data.grant {
 		Ok(authorization_granted(
 			state,
