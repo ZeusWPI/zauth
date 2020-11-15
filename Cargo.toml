@@ -12,7 +12,7 @@ bincode = "1.0"
 pwhash = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.1"
-lettre = "0.10.0-alpha.1"
+lettre = "=0.10.0-alpha.1"
 urlencoding = "1.0"
 toml = "0.4"
 rand = "0.7"
