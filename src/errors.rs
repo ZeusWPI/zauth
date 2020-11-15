@@ -21,6 +21,8 @@ pub enum ZauthError {
 	ValidationError(#[from] ValidationErrors),
 	#[error("Request error {0:?}")]
 	RequestError(#[from] RequestError),
+	#[error("OAuth error: {0:?}")]
+	OAuth(#[from] OAuthError),
 	#[error("Authentication error {0:?}")]
 	AuthError(#[from] AuthenticationError),
 	#[error("Login error {0:?}")]
@@ -97,6 +99,10 @@ pub enum InternalError {
 	MailerStopped(#[from] SendError<Message>),
 	#[error("Mail queue full")]
 	MailQueueFull(#[from] TrySendError<Message>),
+	#[error("Bincode error")]
+	BincodeError(#[from] Box<bincode::ErrorKind>),
+	#[error("B64 decode error")]
+	Base64DecodeError(#[from] base64::DecodeError),
 }
 pub type InternalResult<T> = std::result::Result<T, InternalError>;
 
@@ -147,6 +153,15 @@ pub enum LaunchError {
 	InvalidEmail(#[from] lettre::address::AddressError),
 	#[error("Failed to create SMTP transport")]
 	SMTPError(#[from] lettre::transport::smtp::error::Error),
+}
+
+#[derive(Error, Debug)]
+pub enum OAuthError {
+	#[error(
+		"The cookie used for storing OAuth information is invalid or has \
+		 expired."
+	)]
+	InvalidCookie,
 }
 
 pub enum Either<R, E> {
