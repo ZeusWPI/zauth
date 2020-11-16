@@ -1,4 +1,4 @@
-use rocket::http::{Cookie, Cookies};
+use rocket::http::Cookies;
 use rocket::request::Form;
 use rocket::response::{Redirect, Responder};
 use rocket::State;
@@ -12,12 +12,12 @@ use crate::models::client::*;
 use crate::models::user::*;
 use crate::DbConn;
 
+use crate::ephemeral::cookieable::{CookieName, Cookieable};
 use crate::ephemeral::session::ensure_logged_in_and_redirect;
-use crate::errors::OAuthError::InvalidCookie;
 use crate::http_authentication::BasicAuthentication;
 use crate::token_store::TokenStore;
 
-const OAUTH_COOKIE: &str = "ZAUTH_OAUTH";
+const OAUTH_COOKIE: &'static str = "__Host-OAUTH";
 
 #[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
 pub struct AuthState {
@@ -37,17 +37,6 @@ impl AuthState {
 		format!("{}?{}", self.redirect_uri, state_param)
 	}
 
-	pub fn from_cookies(mut cookies: Cookies) -> Result<Self> {
-		cookies
-			.get_private(OAUTH_COOKIE)
-			.and_then(|cookie| Self::decode_b64(cookie.value()).ok())
-			.ok_or(ZauthError::OAuth(InvalidCookie))
-	}
-
-	pub fn into_cookie(self) -> Result<Cookie<'static>> {
-		Ok(Cookie::new(OAUTH_COOKIE, self.encode_b64()?))
-	}
-
 	pub fn from_req(
 		client: Client,
 		auth_req: AuthorizationRequest,
@@ -64,22 +53,13 @@ impl AuthState {
 	pub fn encode_url(&self) -> String {
 		serde_urlencoded::to_string(self).unwrap()
 	}
-
-	pub fn encode_b64(&self) -> Result<String> {
-		Ok(base64::encode_config(
-			&bincode::serialize(self).map_err(InternalError::from)?,
-			base64::URL_SAFE_NO_PAD,
-		))
-	}
-
-	pub fn decode_b64(state_str: &str) -> Result<AuthState> {
-		Ok(bincode::deserialize(
-			&base64::decode_config(state_str, base64::URL_SAFE_NO_PAD)
-				.map_err(InternalError::from)?,
-		)
-		.map_err(InternalError::from)?)
-	}
 }
+
+impl CookieName for AuthState {
+	const COOKIE_NAME: &'static str = OAUTH_COOKIE;
+}
+
+impl Cookieable for AuthState {}
 
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 pub struct AuthorizationRequest {
@@ -106,7 +86,9 @@ pub fn authorize(
 	if let Ok(client) = Client::find_by_name(&req.client_id, &conn) {
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
 			let state = AuthState::from_req(client, req);
-			cookies.add_private(state.into_cookie()?);
+			state
+				.into_cookies(&mut cookies)
+				.map_err(RequestError::from)?;
 			Ok(ensure_logged_in_and_redirect(cookies, uri!(grant_get)))
 		} else {
 			Err(AuthenticationError::Unauthorized(format!(
@@ -140,11 +122,12 @@ pub struct UserToken {
 #[get("/oauth/grant")]
 pub fn grant_get<'a>(
 	session: UserSession,
-	cookies: Cookies,
+	mut cookies: Cookies,
 	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
 ) -> Result<Either<impl Responder<'static>, impl Responder<'static>>> {
-	let state = AuthState::from_cookies(cookies)?;
+	let state: AuthState =
+		AuthState::from_cookies(&mut cookies).map_err(RequestError::from)?;
 	if let Ok(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
 			Ok(Left(template! {
@@ -166,12 +149,13 @@ pub fn grant_get<'a>(
 #[post("/oauth/grant", data = "<form>")]
 pub fn grant_post(
 	session: UserSession,
-	cookies: Cookies,
+	mut cookies: Cookies,
 	form: Form<GrantFormData>,
 	token_store: State<TokenStore<UserToken>>,
 ) -> Result<Redirect> {
 	let data = form.into_inner();
-	let state = AuthState::from_cookies(cookies)?;
+	let state =
+		AuthState::from_cookies(&mut cookies).map_err(RequestError::from)?;
 	if data.grant {
 		Ok(authorization_granted(
 			state,
