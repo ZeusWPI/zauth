@@ -1,6 +1,6 @@
 use rocket::data::{FromData, Outcome, Transform, Transformed};
 use rocket::http::{ContentType, Status};
-use rocket::request::Form;
+use rocket::request::{Form, LenientForm};
 use rocket::{Data, Request};
 use rocket_contrib::json::Json;
 
@@ -17,17 +17,17 @@ impl<T> Api<T> {
 
 pub enum ApiError<'a, T>
 where
-	Form<T>: FromData<'a>,
+	LenientForm<T>: FromData<'a>,
 	Json<T>: FromData<'a>,
 {
-	FormError(<Form<T> as FromData<'a>>::Error),
+	FormError(<LenientForm<T> as FromData<'a>>::Error),
 	JsonError(<Json<T> as FromData<'a>>::Error),
 	WasNeither,
 }
 
 impl<'a, T: 'a> FromData<'a> for Api<T>
 where
-	Form<T>: FromData<'a, Owned = String, Borrowed = str>,
+	LenientForm<T>: FromData<'a, Owned = String, Borrowed = str>,
 	Json<T>: FromData<'a, Owned = String, Borrowed = str>,
 {
 	type Borrowed = str;
@@ -40,7 +40,7 @@ where
 	) -> Transform<Outcome<Self::Owned, Self::Error>>
 	{
 		if request.content_type() == Some(&ContentType::Form) {
-			match Form::transform(request, data) {
+			match LenientForm::transform(request, data) {
 				Transform::Borrowed(o) => Transform::Borrowed(
 					o.map_failure(|(s, e)| (s, ApiError::FormError(e))),
 				),
@@ -85,7 +85,7 @@ where
 					}))
 				},
 			};
-			Form::from_data(request, outcome)
+			LenientForm::from_data(request, outcome)
 				.map(|v| Api {
 					inner: v.into_inner(),
 				})
