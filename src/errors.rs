@@ -3,6 +3,7 @@ use rocket::response::{self, Responder, Response};
 use rocket::Request;
 use thiserror::Error;
 
+use crate::ephemeral::cookieable::CookieError;
 use diesel::result::Error::NotFound;
 use lettre::Message;
 use std::io::Cursor;
@@ -20,19 +21,27 @@ pub enum ZauthError {
 	#[error("Validation error: {0:?}")]
 	ValidationError(#[from] ValidationErrors),
 	#[error("Request error {0:?}")]
-	RequestError(#[from] RequestError),
+	Request(#[from] RequestError),
 	#[error("OAuth error: {0:?}")]
 	OAuth(#[from] OAuthError),
 	#[error("Authentication error {0:?}")]
 	AuthError(#[from] AuthenticationError),
+	#[error("Forbidden {0:?}")]
+	Forbidden(&'static str),
 	#[error("Login error {0:?}")]
 	LoginError(#[from] LoginError),
+	#[error("Unavailable {0:?}")]
+	Unavailable(#[from] UnavailableError),
 	#[error("{0}")]
 	Custom(Status, String),
 }
 impl ZauthError {
 	pub fn not_found(what: &str) -> Self {
 		ZauthError::NotFound(what.to_string())
+	}
+
+	pub fn cookie_error(e: CookieError) -> Self {
+		ZauthError::Request(RequestError::CookieError(e))
 	}
 
 	pub fn expired() -> Self {
@@ -56,20 +65,15 @@ impl Responder<'static> for ZauthError {
 			ZauthError::AuthError(_) => {
 				builder.status(Status::Unauthorized);
 			},
+			ZauthError::Forbidden(_) => {
+				builder.status(Status::Forbidden);
+			},
 			_ => {},
 		}
 
 		Ok(builder
 			.sized_body(Cursor::new(format!("An error occured: {:?}", self)))
 			.finalize())
-		// Ok(match self {
-		// 	ZauthError::Custom(status, reason) => {
-		// 		Response::build().status(status)
-		// 	}
-		// 	_ => Response::build(),
-		// }
-		// .sized_body(Cursor::new(format!("An error occured: {:?}", self)))
-		// .finalize())
 	}
 }
 
@@ -84,9 +88,17 @@ impl From<diesel::result::Error> for ZauthError {
 pub type Result<T> = std::result::Result<T, ZauthError>;
 
 #[derive(Error, Debug)]
+pub enum UnavailableError {
+	#[error("Database unavailable")]
+	DatabaseUnavailable,
+}
+
+#[derive(Error, Debug)]
 pub enum InternalError {
 	#[error("Hash error")]
 	HashError(#[from] pwhash::error::Error),
+	#[error("Invalid session: {0:?}")]
+	InvalidSession(&'static str),
 	#[error("Database error")]
 	DatabaseError(#[from] diesel::result::Error),
 	#[error("Template error")]
@@ -99,10 +111,6 @@ pub enum InternalError {
 	MailerStopped(#[from] SendError<Message>),
 	#[error("Mail queue full")]
 	MailQueueFull(#[from] TrySendError<Message>),
-	#[error("Bincode error")]
-	BincodeError(#[from] Box<bincode::ErrorKind>),
-	#[error("B64 decode error")]
-	Base64DecodeError(#[from] base64::DecodeError),
 }
 pub type InternalResult<T> = std::result::Result<T, InternalError>;
 
@@ -119,10 +127,8 @@ pub type LoginResult<T> = std::result::Result<T, LoginError>;
 
 #[derive(Error, Debug)]
 pub enum RequestError {
-	#[error("Bindecode error")]
-	BinDecodeError(#[from] Box<bincode::ErrorKind>),
-	#[error("Base64 decode error")]
-	DecodeError(#[from] base64::DecodeError),
+	#[error("Error while processing cookies")]
+	CookieError(#[from] CookieError),
 	#[error("Invalid header (expected {expected:?}, found {found:?})")]
 	InvalidHeader { expected: String, found: String },
 	#[error("Only response_type=code is supported")]
@@ -142,7 +148,10 @@ pub enum AuthenticationError {
 	InvalidGrant(String),
 	#[error("Session expired")]
 	SessionExpired,
+	#[error("CSRF token validation failed")]
+	DetectedCSRF,
 }
+
 pub type AuthResult<T> = std::result::Result<T, AuthenticationError>;
 
 #[derive(Error, Debug)]

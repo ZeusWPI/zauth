@@ -4,7 +4,7 @@ use rocket::response::{Redirect, Responder};
 
 use crate::controllers::pages_controller::rocket_uri_macro_home_page;
 use crate::ephemeral::session::{stored_redirect_or, Session, UserSession};
-use crate::errors::{Either, Result, ZauthError};
+use crate::errors::{AuthenticationError, Either, Result, ZauthError};
 use crate::models::user::User;
 use crate::DbConn;
 
@@ -53,7 +53,7 @@ pub fn create_session(
 			}))
 		},
 		Ok(user) => {
-			Session::login(user, &mut cookies);
+			Session::login(user, &mut cookies)?;
 			Ok(Either::Left(stored_redirect_or(cookies, uri!(home_page))))
 		},
 		Err(err) => Err(err),
@@ -64,4 +64,9 @@ pub fn create_session(
 pub fn destroy_session(mut cookies: Cookies) -> Redirect {
 	Session::destroy(&mut cookies);
 	Redirect::to("/")
+}
+
+#[get("/csrf_detected")]
+pub fn csrf_detected() -> ZauthError {
+	ZauthError::AuthError(AuthenticationError::DetectedCSRF)
 }
