@@ -127,6 +127,8 @@ pub type LoginResult<T> = std::result::Result<T, LoginError>;
 
 #[derive(Error, Debug)]
 pub enum RequestError {
+	#[error("CSRF Error")]
+	CSRFError,
 	#[error("Error while processing cookies")]
 	CookieError(#[from] CookieError),
 	#[error("Invalid header (expected {expected:?}, found {found:?})")]

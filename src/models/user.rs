@@ -5,6 +5,7 @@ use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
 
+use crate::ephemeral::csrf::{CsrfAble, CsrfToken};
 use crate::models::user::UserState::{Active, Pending};
 use chrono::{NaiveDateTime, Utc};
 use lettre::Mailbox;
@@ -87,6 +88,13 @@ pub struct NewUser {
 	pub email:     String,
 	#[validate(custom = "validate_ssh_key_list")]
 	pub ssh_key:   Option<String>,
+	pub csrf:      CsrfToken,
+}
+
+impl CsrfAble for NewUser {
+	fn csrf_token(&self) -> &CsrfToken {
+		&self.csrf
+	}
 }
 
 #[derive(Serialize, Insertable, Debug, Clone)]
@@ -108,6 +116,13 @@ pub struct UserChange {
 	pub full_name: Option<String>,
 	pub email:     Option<String>,
 	pub ssh_key:   Option<String>,
+	pub csrf:      CsrfToken,
+}
+
+impl CsrfAble for UserChange {
+	fn csrf_token(&self) -> &CsrfToken {
+		&self.csrf
+	}
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]

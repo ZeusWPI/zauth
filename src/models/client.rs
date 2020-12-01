@@ -7,6 +7,7 @@ use crate::ConcreteConnection;
 
 use self::schema::clients;
 
+use crate::ephemeral::csrf::{CsrfAble, CsrfToken};
 use chrono::NaiveDateTime;
 
 const SECRET_LENGTH: usize = 64;
@@ -39,6 +40,13 @@ pub struct NewClient {
 	pub name:              String,
 	pub needs_grant:       bool,
 	pub redirect_uri_list: String,
+	pub csrf:              CsrfToken,
+}
+
+impl CsrfAble for NewClient {
+	fn csrf_token(&self) -> &CsrfToken {
+		&self.csrf
+	}
 }
 
 #[derive(Insertable, Debug, Clone)]

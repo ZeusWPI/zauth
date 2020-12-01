@@ -10,6 +10,7 @@ use crate::DbConn;
 use rand::{thread_rng, Rng};
 use rocket::http::uri::Origin;
 use rocket::response::Redirect;
+use std::ops::Deref;
 
 pub const SESSION_VALIDITY_MINUTES: i64 = 59;
 const REDIRECT_COOKIE: &str = "__Host-Redirect";
@@ -63,12 +64,15 @@ impl Session {
 		cookies.remove_private(Cookie::named(SESSION_COOKIE))
 	}
 
-	pub fn user(&self, conn: &DbConn) -> Result<User> {
+	pub fn user_id(&self) -> Result<i32> {
 		if Local::now() > self.expiry {
 			Err(ZauthError::expired())
-		} else {
-			User::find(self.user_id, conn)
 		}
+		Ok(self.user_id)
+	}
+
+	pub fn user(&self, conn: &DbConn) -> Result<User> {
+		User::find(self.user_id()?, conn)
 	}
 }
 
@@ -81,13 +85,14 @@ impl Cookieable for Session {}
 #[derive(Debug)]
 pub struct UserSession {
 	pub user: User,
+	session:  Session,
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for UserSession {
 	type Error = ZauthError;
 
 	fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
-		let session = request.guard::<Wrapped<Session>>()?;
+		let session: Session = request.guard::<Wrapped<Session>>()?.0;
 		let db = request.guard::<DbConn>().map_failure(|_| {
 			(
 				Status::ServiceUnavailable,
@@ -95,7 +100,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for UserSession {
 			)
 		})?;
 		match session.user(&db) {
-			Ok(user) => Outcome::Success(UserSession { user }),
+			Ok(user) => Outcome::Success(UserSession { user, session }),
 			_ => Outcome::Failure((
 				Status::InternalServerError,
 				ZauthError::Internal(InternalError::InvalidSession(
@@ -109,15 +114,21 @@ impl<'a, 'r> FromRequest<'a, 'r> for UserSession {
 #[derive(Debug)]
 pub struct AdminSession {
 	pub admin: User,
+	session:   Session,
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for AdminSession {
 	type Error = ZauthError;
 
 	fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
-		let user: User = request.guard::<UserSession>()?.user;
+		let user_session = request.guard::<UserSession>()?;
+		let user: User = user_session.user;
+		let session: Session = user_session.session;
 		if user.admin {
-			Outcome::Success(AdminSession { admin: user })
+			Outcome::Success(AdminSession {
+				admin: user,
+				session,
+			})
 		} else {
 			Outcome::Failure((
 				Status::Forbidden,

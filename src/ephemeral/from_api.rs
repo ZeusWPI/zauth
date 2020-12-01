@@ -1,3 +1,4 @@
+use crate::ephemeral::csrf::CsrfAble;
 use rocket::data::{FromData, Outcome, Transform, Transformed};
 use rocket::http::{ContentType, Status};
 use rocket::request::{Form, LenientForm};
@@ -27,6 +28,7 @@ where
 
 impl<'a, T: 'a> FromData<'a> for Api<T>
 where
+	T: CsrfAble,
 	LenientForm<T>: FromData<'a, Owned = String, Borrowed = str>,
 	Json<T>: FromData<'a, Owned = String, Borrowed = str>,
 {

@@ -33,7 +33,7 @@ pub trait Cookieable: DeserializeOwned + Serialize + CookieName {
 	}
 }
 
-pub struct Wrapped<T>(T);
+pub struct Wrapped<T>(pub(crate) T);
 
 impl<T> Deref for Wrapped<T> {
 	type Target = T;
