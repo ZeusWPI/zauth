@@ -1,4 +1,4 @@
-CREATE TYPE user_state AS ENUM ('pending', 'active', 'disabled');
+CREATE TYPE user_state AS ENUM ('pending_approval', 'pending_mail_confirmation', 'active', 'disabled');
 
 CREATE TABLE users
 (
@@ -11,7 +11,7 @@ CREATE TABLE users
     full_name               VARCHAR(255) NOT NULL,
     email                   VARCHAR(255) NOT NULL UNIQUE,
     ssh_key                 TEXT,
-    state                   user_state   NOT NULL DEFAULT 'pending',
+    state                   user_state   NOT NULL DEFAULT 'pending_approval',
     last_login              TIMESTAMP    NOT NULL,
     created_at              TIMESTAMP    NOT NULL DEFAULT NOW()
 );

@@ -511,8 +511,8 @@ fn register_user() {
 
 		assert_eq!(
 			user.state,
-			UserState::Pending,
-			"registered users should be pending"
+			UserState::PendingApproval,
+			"registered users should be pending for approval"
 		);
 	});
 }

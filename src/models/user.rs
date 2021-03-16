@@ -5,7 +5,7 @@ use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
 
-use crate::models::user::UserState::{Active, Pending};
+use crate::models::user::UserState::{Active, PendingApproval, PendingMailConfirmation};
 use chrono::{NaiveDateTime, Utc};
 use lettre::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
@@ -15,7 +15,8 @@ use validator::{Validate, ValidationError};
 
 #[derive(DbEnum, Debug, Serialize, Clone, PartialEq)]
 pub enum UserState {
-	Pending,
+	PendingApproval,
+	PendingMailConfirmation,
 	Active,
 	Disabled,
 }
@@ -23,7 +24,8 @@ pub enum UserState {
 impl fmt::Display for UserState {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match *self {
-			UserState::Pending => write!(f, "Pending"),
+			UserState::PendingApproval => write!(f, "Pending for admin approval"),
+			UserState::PendingMailConfirmation => write!(f, "Pending for mail confirmation"),
 			UserState::Active => write!(f, "Active"),
 			UserState::Disabled => write!(f, "Disabled"),
 		}
@@ -196,7 +198,7 @@ impl User {
 			full_name:       user.full_name,
 			email:           user.email,
 			ssh_key:         user.ssh_key,
-			state:           Pending,
+			state:           PendingApproval,
 			last_login:      Utc::now().naive_utc(),
 		};
 		Self::insert(user, conn)
@@ -288,9 +290,12 @@ impl User {
 			Ok(user) if !verify(password, &user.hashed_password) => {
 				Err(ZauthError::LoginError(LoginError::UsernamePasswordError))
 			},
-			Ok(user) if user.state == UserState::Pending => {
-				Err(ZauthError::LoginError(LoginError::AccountPendingError))
+			Ok(user) if user.state == UserState::PendingApproval => {
+				Err(ZauthError::LoginError(LoginError::AccountPendingApprovalError))
 			},
+			Ok(user) if user.state == UserState::PendingMailConfirmation => {
+				Err(ZauthError::LoginError(LoginError::AccountPendingMailConfirmationError))
+			}
 			Ok(user) if user.state == UserState::Disabled => {
 				Err(ZauthError::LoginError(LoginError::AccountDisabledError))
 			},

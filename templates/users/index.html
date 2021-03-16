@@ -1,7 +1,7 @@
 {% extends "base_logged_in.html" %}
 {% block content %}
 <h1>Users ({{ users.len() }})</h1>
-<table>
+<table style="overflow-x: auto">
     <tr>
         <th>Username</th>
         <th>Admin?</th>
@@ -30,7 +30,22 @@
                     Not configured
             {% endmatch %}
         </td>
-        <td>{{ user.state }}</td>
+        <td>
+            {% match user.state %}
+                {% when UserState::Active %}
+                    {% with color="green" %}
+                        {% include "colored_circle.html" %}
+                    {% endwith %}
+                {% when UserState::PendingApproval %}
+                    {% with color="orange" %}
+                        {% include "colored_circle.html" %}
+                    {% endwith %}
+                {% when UserState::Disabled %}
+                    {% with color="red" %}
+                        {% include "colored_circle.html" %}
+                    {% endwith %}
+            {% endmatch %}                
+        </td>
         <td>{{ user.last_login }}</td>
         <td>{{ user.created_at }}</td>
     </tr>
