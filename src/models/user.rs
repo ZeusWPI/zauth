@@ -5,7 +5,7 @@ use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
 
-use crate::models::user::UserState::{Active, PendingApproval, PendingMailConfirmation};
+use crate::models::user::UserState::{Active, PendingApproval};
 use chrono::{NaiveDateTime, Utc};
 use lettre::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};

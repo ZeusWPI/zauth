@@ -40,6 +40,10 @@
                     {% with color="orange" %}
                         {% include "colored_circle.html" %}
                     {% endwith %}
+                {% when UserState::PendingMailConfirmation %}
+                    {% with color="yellow" %}
+                        {% include "colored_circle.html" %}
+                    {% endwith %}
                 {% when UserState::Disabled %}
                     {% with color="red" %}
                         {% include "colored_circle.html" %}
