@@ -17,7 +17,7 @@
                 Update profile info
             </h3>
 
-            <form action="/users/{{user.id}}" method="POST">
+            <form id='profile-form' action="/users/{{user.id}}" method="POST">
                 <input type="hidden" name="_method" value="put"/>
 
                 <label for="username">Username</label>
@@ -36,7 +36,7 @@
                 <input id="ssh_key" name="ssh_key" type="text"
                        value="{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}"/>
 
-                <button type="submit">Update</button>
+                <button id='submit-button' type="submit" disabled>Update</button>
             </form>
         </div>
         <div class="column">
@@ -46,7 +46,23 @@
             <p>Coming soon!</p>
         </div>
     </div>
-</div>
+    <script>
+        formEquals = function (a, b) {
+            return JSON.stringify([...a.entries()]) === JSON.stringify([...b.entries()])
+        }
 
+        window.onload = function () {
+            let form = document.getElementById('profile-form');
+            let initialFormData = new FormData(form);
+            let submitButton = document.getElementById('submit-button')
 
-{% endblock content %}
+            form.addEventListener('input', function () {
+                if (formEquals(initialFormData, new FormData(form))) {
+                    submitButton.disabled = true;
+                } else {
+                    submitButton.disabled = false;
+                }
+            });
+        };
+    </script>
+</div>{% endblock content %}
