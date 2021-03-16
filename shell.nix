@@ -13,9 +13,16 @@ let
   };
 in
 pkgs.mkShell {
-  buildInputs = [
+  buildInputs = with pkgs; [
     rustNightlyTemp
-    pkgs.postgresql
-    pkgs.pgcli
+    postgresql
+    pgcli
+    diesel-cli
+    (
+      pkgs.writeShellScriptBin "start-dockers" ''
+        trap "systemd-run --user --no-block docker stop zauth-db" 0
+        docker run --name zauth-db -p 5432:5432 --rm -v zauth-db-data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=zauth -e POSTGRES_USER=zauth postgres:13-alpine -c log_statement=all
+        ''
+    )
   ];
 }

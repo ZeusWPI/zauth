@@ -37,35 +37,8 @@ The name is open for discussion.
 
 You can now start developing! A good way to start is to look at the routes defined in the [controllers](./src/controllers/).
 
-### Using `.envrc` for dev environment
+### Using Nix
 
-The snippet below can be used in a `.envrc` file in combination with `direnv` to
-automatically setup the dev environment needed to work on `zauth`. It does the
-following things:
+We have provided a [shell.nix](./shell.nix) for easy setup for Nix users. You can easily start a database server
 
-1. Create a `db` folder to store the Postgres data and config
-2. Adds a Postgres config to run on `localhost`
-3. Sets up a default user and the `zauth` user
-4. Run `postgres` in the directory to run a postgres server with above configuration
 
-```
-eval "$(direnv)"
-
-# Place the data directory inside the project directory
-export PGDATA="$(pwd)/db"
-# Place Postgres' Unix socket inside the data directory
-export PGHOST="$PGDATA"
-
-if [[ ! -d "$PGDATA" ]]; then
-        # If the data directory doesn't exist, create an empty one, and...
-        initdb
-        # ...configure it to listen only on the Unix socket, and...
-        cat >> "$PGDATA/postgresql.conf" <<-EOF
-                listen_addresses = 'localhost'
-                unix_socket_directories = '$PGHOST'
-        EOF
-        # ...create a database using the name Postgres defaults to.
-        echo "CREATE DATABASE $USER;" | postgres --single -E postgres
-        echo "CREATE USER zauth WITH PASSWORD 'zauth' CREATEDB;" | postgres --single -E postgres
-fi
-```
