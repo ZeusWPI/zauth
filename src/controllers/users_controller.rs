@@ -109,19 +109,35 @@ pub fn register_page<'r>() -> Result<impl Responder<'r, 'static>> {
 #[post("/register", data = "<user>")]
 pub async fn register<'r>(
 	user: Api<NewUser>,
-	conf: &State<Config>,
 	db: DbConn,
+	conf: &'r State<Config>,
+	mailer: &'r State<Mailer>,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
 	let pending =
 		User::create_pending(user.into_inner(), conf.bcrypt_cost, &db).await;
 	match pending {
-		Ok(user) => Ok(Left(Accepter {
-			html: Custom(
-				Status::Created,
-				template!("users/registration_success.html"),
-			),
-			json: Custom(Status::Created, Json(user)),
-		})),
+		Ok(user) => {
+			let user_list_url = uri!(list_users);
+			mailer.try_create(
+				&user, // TODO This need to be send to the admins.
+				String::from("[Zauth] New user registration"),
+				template!(
+				"mails/new_user_registration.txt";
+				name: String = user.username.to_string(),
+				user_list_url: String = user_list_url.to_string(),
+				)
+				.render()
+				.map_err(InternalError::from)?,
+			)?;
+
+			Ok(Left(Accepter {
+				html: Custom(
+					Status::Created,
+					template!("users/registration_success.html"),
+				),
+				json: Custom(Status::Created, Json(user)),
+			}))
+		},
 		Err(ZauthError::ValidationError(errors)) => Ok(Right(Accepter {
 			html: Custom(
 				Status::UnprocessableEntity,
