@@ -54,8 +54,7 @@ pub fn list_users(
 	conn: DbConn,
 ) -> Result<impl Responder<'static>> {
 	let users = User::all(&conn)?;
-	let users_pending_for_approval: Vec<User> =
-		User::find_by_pending(&conn)?;
+	let users_pending_for_approval: Vec<User> = User::find_by_pending(&conn)?;
 	Ok(Accepter {
 		html: template! {
 			"users/index.html";
