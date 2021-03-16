@@ -57,6 +57,7 @@ button {
 
 
 /*   NAVIGATION BAR    */
+
 .nav {
     margin-bottom: 1em;
 }
@@ -68,6 +69,7 @@ button {
     padding: 0;
     margin: 0;
 }
+
 .nav li {
     font-family: 'Oswald', sans-serif;
     font-size: 1.2em;
@@ -101,13 +103,11 @@ button {
         line-height: 50px;
         font-size: 1.4em;
     }
-
     /* Option 1 - Display Inline */
     .nav li {
         display: inline-block;
         margin-right: -4px;
     }
-
 }
 
 #center-inner {
@@ -118,17 +118,26 @@ button {
     /* border: 1px solid red; */
     width: 100%;
     display: flex;
-    justify-content: center; /* Horizontal center */
-    align-items: center; /* Vertical center */
+    /* Horizontal center */
+    justify-content: center;
+    /* Vertical center */
+    align-items: center;
 }
 
-.spoiler{
-    display:none;
+.spoiler {
+    display: none;
 }
-.sshkey{
+
+.sshkey {
     font-size: 14px;
     background-color: lightgrey;
 }
+
 .spoiler:target {
-    display:table-row
+    display: table-row
+}
+
+.centered {
+    text-align: center;
+    vertical-align: middle;
 }
