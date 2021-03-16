@@ -1,5 +1,13 @@
 {% extends "base_logged_in.html" %}
+
+{%- macro colored_circle(color) -%}
+<svg height="100" width="100">
+    <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="{{color}}" />
+</svg>
+{%- endmacro -%}
+
 {% block content %}
+
 <h1>Users ({{ users.len() }})</h1>
 <table style="overflow-x: auto">
     <tr>
@@ -33,21 +41,13 @@
         <td>
             {% match user.state %}
                 {% when UserState::Active %}
-                    {% with color="green" %}
-                        {% include "colored_circle.html" %}
-                    {% endwith %}
+                    {%- call colored_circle("green") -%}
                 {% when UserState::PendingApproval %}
-                    {% with color="orange" %}
-                        {% include "colored_circle.html" %}
-                    {% endwith %}
+                    {%- call colored_circle("orange") -%}
                 {% when UserState::PendingMailConfirmation %}
-                    {% with color="yellow" %}
-                        {% include "colored_circle.html" %}
-                    {% endwith %}
+                    {%- call colored_circle("yellow") -%}
                 {% when UserState::Disabled %}
-                    {% with color="red" %}
-                        {% include "colored_circle.html" %}
-                    {% endwith %}
+                    {%- call colored_circle("red") -%}
             {% endmatch %}                
         </td>
         <td>{{ user.last_login }}</td>
