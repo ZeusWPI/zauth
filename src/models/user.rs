@@ -24,8 +24,12 @@ pub enum UserState {
 impl fmt::Display for UserState {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match *self {
-			UserState::PendingApproval => write!(f, "Pending for admin approval"),
-			UserState::PendingMailConfirmation => write!(f, "Pending for mail confirmation"),
+			UserState::PendingApproval => {
+				write!(f, "Pending for admin approval")
+			},
+			UserState::PendingMailConfirmation => {
+				write!(f, "Pending for mail confirmation")
+			},
 			UserState::Active => write!(f, "Active"),
 			UserState::Disabled => write!(f, "Disabled"),
 		}
@@ -290,12 +294,14 @@ impl User {
 			Ok(user) if !verify(password, &user.hashed_password) => {
 				Err(ZauthError::LoginError(LoginError::UsernamePasswordError))
 			},
-			Ok(user) if user.state == UserState::PendingApproval => {
-				Err(ZauthError::LoginError(LoginError::AccountPendingApprovalError))
-			},
+			Ok(user) if user.state == UserState::PendingApproval => Err(
+				ZauthError::LoginError(LoginError::AccountPendingApprovalError),
+			),
 			Ok(user) if user.state == UserState::PendingMailConfirmation => {
-				Err(ZauthError::LoginError(LoginError::AccountPendingMailConfirmationError))
-			}
+				Err(ZauthError::LoginError(
+					LoginError::AccountPendingMailConfirmationError,
+				))
+			},
 			Ok(user) if user.state == UserState::Disabled => {
 				Err(ZauthError::LoginError(LoginError::AccountDisabledError))
 			},

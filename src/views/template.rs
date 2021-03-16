@@ -26,5 +26,5 @@ macro_rules! template {
 				)+
 			}
 		}
-	};
+	}
 }
