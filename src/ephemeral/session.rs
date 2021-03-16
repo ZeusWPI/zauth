@@ -17,8 +17,7 @@ const SESSION_COOKIE: &str = "ZAUTH_SESSION";
 pub fn ensure_logged_in_and_redirect(
 	mut cookies: Cookies,
 	uri: Origin,
-) -> Redirect
-{
+) -> Redirect {
 	cookies.add_private(Cookie::new(REDIRECT_COOKIE, uri.to_string()));
 	Redirect::to(uri!(new_session))
 }

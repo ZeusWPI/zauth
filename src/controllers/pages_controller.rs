@@ -12,8 +12,7 @@ use crate::DbConn;
 pub fn home_page(
 	session: Option<UserSession>,
 	conn: DbConn,
-) -> Result<Either<Redirect, impl Responder<'static>>>
-{
+) -> Result<Either<Redirect, impl Responder<'static>>> {
 	match session {
 		None => Ok(Either::Right(template! {
 			"pages/home.html";
