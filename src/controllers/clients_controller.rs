@@ -14,8 +14,7 @@ use crate::DbConn;
 pub fn list_clients(
 	conn: DbConn,
 	session: AdminSession,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let clients = Client::all(&conn)?;
 	Ok(Accepter {
 		html: template! {
@@ -32,8 +31,7 @@ pub fn create_client(
 	client: Api<NewClient>,
 	conn: DbConn,
 	_admin: AdminSession,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let client = Client::create(client.into_inner(), &conn)?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(list_clients)),

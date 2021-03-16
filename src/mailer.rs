@@ -25,8 +25,7 @@ impl Mailer {
 		user: &User,
 		subject: String,
 		text: String,
-	) -> Result<Message>
-	{
+	) -> Result<Message> {
 		Ok(Message::builder()
 			.to(user.try_into()?)
 			.subject(subject)
@@ -41,8 +40,7 @@ impl Mailer {
 		user: &User,
 		subject: String,
 		text: String,
-	) -> Result<()>
-	{
+	) -> Result<()> {
 		let email = self.build(user, subject, text)?;
 		self.queue
 			.try_send(email)
@@ -54,8 +52,7 @@ impl Mailer {
 		user: &User,
 		subject: String,
 		text: String,
-	) -> Result<()>
-	{
+	) -> Result<()> {
 		let mail = self.build(user, subject, text)?;
 
 		self.queue
@@ -85,8 +82,7 @@ impl Mailer {
 	fn stub_sender(
 		wait: Duration,
 		receiver: Receiver<Message>,
-	) -> impl FnOnce()
-	{
+	) -> impl FnOnce() {
 		move || {
 			while let Ok(mail) = receiver.recv() {
 				{
@@ -109,8 +105,7 @@ impl Mailer {
 		wait: Duration,
 		receiver: Receiver<Message>,
 		server: &str,
-	) -> Result<impl FnOnce()>
-	{
+	) -> Result<impl FnOnce()> {
 		let transport = SmtpTransport::relay(server)
 			.map_err(LaunchError::from)?
 			.build();

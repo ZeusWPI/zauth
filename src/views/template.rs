@@ -5,7 +5,7 @@ macro_rules! template {
 			use askama::Template;
 			#[derive(Template, Debug)]
 			#[template(path = $template_name)]
-			struct TemplateStruct {};
+			struct TemplateStruct {}
 			TemplateStruct{}
 		}
 	};

@@ -89,8 +89,8 @@ pub struct NewUser {
 	pub ssh_key:   Option<String>,
 }
 
-#[table_name = "users"]
 #[derive(Serialize, Insertable, Debug, Clone)]
+#[table_name = "users"]
 struct NewUserHashed {
 	username:        String,
 	hashed_password: String,
@@ -128,8 +128,7 @@ impl User {
 	pub fn find_by_username(
 		username: &str,
 		conn: &ConcreteConnection,
-	) -> Result<User>
-	{
+	) -> Result<User> {
 		users::table
 			.filter(users::username.eq(username))
 			.first(conn)
@@ -139,8 +138,7 @@ impl User {
 	pub fn find_by_email(
 		email: &str,
 		conn: &ConcreteConnection,
-	) -> Result<User>
-	{
+	) -> Result<User> {
 		users::table
 			.filter(users::email.eq(email))
 			.first(conn)
@@ -150,8 +148,7 @@ impl User {
 	pub fn find_by_token(
 		token: &str,
 		conn: &ConcreteConnection,
-	) -> Result<Option<User>>
-	{
+	) -> Result<Option<User>> {
 		match users::table
 			.filter(users::password_reset_token.eq(token))
 			.first::<Self>(conn)
@@ -173,8 +170,7 @@ impl User {
 		user: NewUser,
 		bcrypt_cost: u32,
 		conn: &ConcreteConnection,
-	) -> Result<User>
-	{
+	) -> Result<User> {
 		user.validate()?;
 		let user = NewUserHashed {
 			username:        user.username,
@@ -192,8 +188,7 @@ impl User {
 		user: NewUser,
 		bcrypt_cost: u32,
 		conn: &ConcreteConnection,
-	) -> Result<User>
-	{
+	) -> Result<User> {
 		user.validate()?;
 		let user = NewUserHashed {
 			username:        user.username,
@@ -223,8 +218,7 @@ impl User {
 		&mut self,
 		change: UserChange,
 		bcrypt_cost: u32,
-	) -> Result<()>
-	{
+	) -> Result<()> {
 		if let Some(username) = change.username {
 			self.username = username;
 		}
@@ -263,8 +257,7 @@ impl User {
 		new_password: &str,
 		bcrypt_cost: u32,
 		conn: &ConcreteConnection,
-	) -> Result<Self>
-	{
+	) -> Result<Self> {
 		self.hashed_password = hash(new_password, bcrypt_cost)?;
 		self.password_reset_token = None;
 		self.password_reset_expiry = None;
@@ -290,8 +283,7 @@ impl User {
 		username: &str,
 		password: &str,
 		conn: &ConcreteConnection,
-	) -> Result<User>
-	{
+	) -> Result<User> {
 		match Self::find_by_username(username, conn) {
 			Ok(user) if !verify(password, &user.hashed_password) => {
 				Err(ZauthError::LoginError(LoginError::UsernamePasswordError))
@@ -314,8 +306,7 @@ impl User {
 fn hash(
 	password: &str,
 	bcrypt_cost: u32,
-) -> crate::errors::InternalResult<String>
-{
+) -> crate::errors::InternalResult<String> {
 	let b: BcryptSetup = BcryptSetup {
 		salt:    None,
 		variant: None,

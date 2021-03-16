@@ -6,7 +6,7 @@ let
   };
   # the rls is missing on the nightly build of 2020-09-29, so pinning a date for the moment
   rustNightlyTemp = (pkgs.rustChannelOf{
-    date = "2020-09-28";
+    date = "2021-03-15";
     channel = "nightly";
   }).rust.override {
     extensions = [ "rustfmt-preview" "rls-preview" "rust-src" "rust-analyzer-preview" ];

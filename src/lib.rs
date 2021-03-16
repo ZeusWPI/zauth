@@ -141,8 +141,7 @@ fn create_admin(
 	rocket: Rocket,
 	config: Config,
 	password: String,
-) -> std::result::Result<Rocket, Rocket>
-{
+) -> std::result::Result<Rocket, Rocket> {
 	let username = String::from("admin");
 	let conn = DbConn::get_one(&rocket).expect("database connection");
 	let admin = User::find_by_username(&username, &conn)

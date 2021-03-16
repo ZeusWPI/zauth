@@ -29,8 +29,7 @@ pub fn show_user(
 	session: UserSession,
 	conn: DbConn,
 	id: i32,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let user = User::find(id, &conn)?;
 	// Check whether the current session is allowed to view this user
 	if session.user.admin || session.user.id == id {
@@ -53,8 +52,7 @@ pub fn show_user(
 pub fn list_users(
 	session: UserSession,
 	conn: DbConn,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let users = User::all(&conn)?;
 	Ok(Accepter {
 		html: template! {
@@ -72,8 +70,7 @@ pub fn create_user(
 	user: Api<NewUser>,
 	conn: DbConn,
 	config: State<Config>,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let user = User::create(user.into_inner(), config.bcrypt_cost, &conn)
 		.map_err(ZauthError::from)?;
 	Ok(Accepter {
@@ -94,8 +91,7 @@ pub fn register(
 	user: Api<NewUser>,
 	conf: State<Config>,
 	conn: DbConn,
-) -> Result<Either<impl Responder<'static>, impl Responder<'static>>>
-{
+) -> Result<Either<impl Responder<'static>, impl Responder<'static>>> {
 	match User::create_pending(user.into_inner(), conf.bcrypt_cost, &conn) {
 		Ok(user) => Ok(Left(Accepter {
 			html: Custom(
@@ -127,8 +123,7 @@ pub fn update_user(
 	conn: DbConn,
 ) -> Result<
 	Either<impl Responder<'static>, Custom<impl Debug + Responder<'static>>>,
->
-{
+> {
 	let mut user = User::find(id, &conn)?;
 	if session.user.id == user.id || session.user.admin {
 		user.change_with(change.into_inner(), conf.bcrypt_cost)?;
@@ -148,8 +143,7 @@ pub fn set_admin(
 	value: Api<ChangeAdmin>,
 	_session: AdminSession,
 	conn: DbConn,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let mut user = User::find(id, &conn)?;
 	user.admin = value.into_inner().admin;
 	let user = user.update(&conn)?;
@@ -174,8 +168,7 @@ pub fn forgot_password_post(
 	value: Form<ResetPassword>,
 	conn: DbConn,
 	mailer: State<Mailer>,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let for_email = value.into_inner().for_email;
 
 	let user = match User::find_by_email(&for_email, &conn) {
@@ -233,8 +226,7 @@ pub fn reset_password_post(
 	conn: DbConn,
 	conf: State<Config>,
 	mailer: State<Mailer>,
-) -> Result<impl Responder<'static>>
-{
+) -> Result<impl Responder<'static>> {
 	let form = form.into_inner();
 	if let Some(user) = User::find_by_token(&form.token, &conn)? {
 		match user.change_password(&form.new_password, conf.bcrypt_cost, &conn)
