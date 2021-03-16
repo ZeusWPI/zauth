@@ -66,6 +66,30 @@
     {% endfor %}
 </table>
 
+<h1>Users pending for verification ({{ users_pending_for_verification.len() }})</h1>
+<table style="overflow-x: auto">
+    <tr>
+        <th>Username</th>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Created at</th>
+        <th>Approve</th>
+    </tr>
+    {% for user in users_pending_for_verification %}
+    <tr>
+        <td><a href="/users/{{ user.id }}">{{ user.username }}</a></td>
+        <td>{{ user.full_name }}</td>
+        <td>{{ user.email }}</td>
+        <td title="{{user.created_at}}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
+        <td>
+            <form action="/users/{{ user.id }}/approve" method="post">
+                <button type="submit">Approve</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
 {% if current_user.admin %}
 <form action="/users" method="post">
     <label for="username">Username</label>

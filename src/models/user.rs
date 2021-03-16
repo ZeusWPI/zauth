@@ -172,6 +172,13 @@ impl User {
 		}
 	}
 
+	pub fn find_by_pending(conn: &ConcreteConnection) -> Result<Vec<User>> {
+		let pending_users = users::table
+			.filter(users::state.eq(UserState::PendingApproval))
+			.load::<User>(conn)?;
+		Ok(pending_users)
+	}
+
 	pub fn create(
 		user: NewUser,
 		bcrypt_cost: u32,

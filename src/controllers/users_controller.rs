@@ -54,11 +54,14 @@ pub fn list_users(
 	conn: DbConn,
 ) -> Result<impl Responder<'static>> {
 	let users = User::all(&conn)?;
+	let users_pending_for_verification: Vec<User> =
+		User::find_by_pending(&conn)?;
 	Ok(Accepter {
 		html: template! {
 			"users/index.html";
 			users: Vec<User> = users.clone(),
 			current_user: User = session.user,
+			users_pending_for_verification: Vec<User> = users_pending_for_verification.clone(),
 		},
 		json: Json(users),
 	})
@@ -147,6 +150,26 @@ pub fn set_admin(
 	let mut user = User::find(id, &conn)?;
 	user.admin = value.into_inner().admin;
 	let user = user.update(&conn)?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_user: user.id)),
+		json: Custom(Status::NoContent, ()),
+	})
+}
+
+
+#[post("/users/<id>/approve")]
+pub fn set_approved(
+	id: i32,
+	_session: AdminSession,
+	conn: DbConn,
+) -> Result<impl Responder<'static>> {
+	let mut user = User::find(id, &conn)?;
+
+	if user.state == UserState::PendingApproval {
+		user.state = UserState::PendingMailConfirmation;
+		user = user.update(&conn)?;
+	}
+
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user: user.id)),
 		json: Custom(Status::NoContent, ()),
