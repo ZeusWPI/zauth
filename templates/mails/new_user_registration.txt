@@ -1,0 +1,6 @@
+Hi admins
+
+A new user with name '{{name}}' has registered on Zauth. Please go to {{user_list_url}} to verify this registration.
+
+Kind regards
+The Zeus Authentication Server

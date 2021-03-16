@@ -37,8 +37,7 @@ where
 	fn transform(
 		request: &Request,
 		data: Data,
-	) -> Transform<Outcome<Self::Owned, Self::Error>>
-	{
+	) -> Transform<Outcome<Self::Owned, Self::Error>> {
 		if request.content_type() == Some(&ContentType::Form) {
 			match Form::transform(request, data) {
 				Transform::Borrowed(o) => Transform::Borrowed(
@@ -68,8 +67,7 @@ where
 	fn from_data(
 		request: &Request,
 		outcome: Transformed<'a, Self>,
-	) -> Outcome<Self, Self::Error>
-	{
+	) -> Outcome<Self, Self::Error> {
 		if request.content_type() == Some(&ContentType::Form) {
 			let outcome = match outcome {
 				Transform::Borrowed(o) => {

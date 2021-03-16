@@ -51,8 +51,7 @@ impl AuthState {
 	pub fn from_req(
 		client: Client,
 		auth_req: AuthorizationRequest,
-	) -> AuthState
-	{
+	) -> AuthState {
 		AuthState {
 			client_id:    client.id,
 			client_name:  client.name,
@@ -96,8 +95,7 @@ pub fn authorize(
 	mut cookies: Cookies,
 	req: Form<AuthorizationRequest>,
 	conn: DbConn,
-) -> Result<Redirect>
-{
+) -> Result<Redirect> {
 	let req = req.into_inner();
 	if !req.response_type.eq("code") {
 		// This was NotImplemented error, but it makes no sense for a authorise
@@ -145,8 +143,7 @@ pub fn grant_get<'a>(
 	cookies: Cookies,
 	token_store: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> Result<Either<impl Responder<'static>, impl Responder<'static>>>
-{
+) -> Result<Either<impl Responder<'static>, impl Responder<'static>>> {
 	let state = AuthState::from_cookies(cookies)?;
 	if let Ok(client) = Client::find(state.client_id, &conn) {
 		if client.needs_grant {
@@ -172,8 +169,7 @@ pub fn grant_post(
 	cookies: Cookies,
 	form: Form<GrantFormData>,
 	token_store: State<TokenStore<UserToken>>,
-) -> Result<Redirect>
-{
+) -> Result<Redirect> {
 	let data = form.into_inner();
 	let state = AuthState::from_cookies(cookies)?;
 	if data.grant {
@@ -191,8 +187,7 @@ fn authorization_granted(
 	state: AuthState,
 	user: User,
 	token_store: &TokenStore<UserToken>,
-) -> Redirect
-{
+) -> Redirect {
 	let authorization_code = token_store.create_token(UserToken {
 		user_id:      user.id,
 		username:     user.username.clone(),
@@ -247,8 +242,7 @@ pub fn token(
 	form: Form<TokenFormData>,
 	token_state: State<TokenStore<UserToken>>,
 	conn: DbConn,
-) -> Result<Json<TokenSuccess>>
-{
+) -> Result<Json<TokenSuccess>> {
 	let data = form.into_inner();
 	let token = data.code.clone();
 	let token_store = token_state.inner();

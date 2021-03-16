@@ -12,8 +12,7 @@ use crate::DbConn;
 pub fn new_session(
 	session: Option<UserSession>,
 	cookies: Cookies,
-) -> Either<Redirect, impl Responder<'static>>
-{
+) -> Either<Redirect, impl Responder<'static>> {
 	match session {
 		None => Either::Right(template! {
 			"session/login.html";
@@ -42,8 +41,7 @@ pub fn create_session(
 	form: Form<LoginFormData>,
 	mut cookies: Cookies,
 	conn: DbConn,
-) -> Result<Either<Redirect, impl Responder<'static>>>
-{
+) -> Result<Either<Redirect, impl Responder<'static>>> {
 	let form = form.into_inner();
 	match User::find_and_authenticate(&form.username, &form.password, &conn) {
 		Err(ZauthError::LoginError(login_error)) => {
