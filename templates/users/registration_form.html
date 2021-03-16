@@ -1,7 +1,6 @@
 {% extends "base_not_logged_in.html" %}
 {% block content %}
 <h1>Register</h1>
-
 <form action="/register" method="post">
     {% match errors %}
     {%  when Some with (errors) %}
@@ -14,7 +13,7 @@
     <label for="password">Password</label>
     <input id="password" name="password" type="password" required/>
 
-    <label for="full_name">First Name</label>
+    <label for="full_name">Full name</label>
     <input id="full_name" name="full_name" type="text" required/>
 
     <label for="email">Email</label>
