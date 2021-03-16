@@ -2488,7 +2488,7 @@ dependencies = [
  "maplit",
  "parking_lot 0.11.1",
  "pwhash",
- "rand 0.7.3",
+ "rand 0.8.3",
  "regex",
  "rocket",
  "rocket_contrib",
