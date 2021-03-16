@@ -54,14 +54,14 @@ pub fn list_users(
 	conn: DbConn,
 ) -> Result<impl Responder<'static>> {
 	let users = User::all(&conn)?;
-	let users_pending_for_verification: Vec<User> =
+	let users_pending_for_approval: Vec<User> =
 		User::find_by_pending(&conn)?;
 	Ok(Accepter {
 		html: template! {
 			"users/index.html";
 			users: Vec<User> = users.clone(),
 			current_user: User = session.user,
-			users_pending_for_verification: Vec<User> = users_pending_for_verification.clone(),
+			users_pending_for_approval: Vec<User> = users_pending_for_approval.clone(),
 		},
 		json: Json(users),
 	})
