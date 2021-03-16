@@ -156,7 +156,6 @@ pub fn set_admin(
 	})
 }
 
-
 #[post("/users/<id>/approve")]
 pub fn set_approved(
 	id: i32,
