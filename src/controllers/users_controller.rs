@@ -91,15 +91,31 @@ pub fn register(
 	user: Api<NewUser>,
 	conf: State<Config>,
 	conn: DbConn,
+	mailer: State<Mailer>,
 ) -> Result<Either<impl Responder<'static>, impl Responder<'static>>> {
 	match User::create_pending(user.into_inner(), conf.bcrypt_cost, &conn) {
-		Ok(user) => Ok(Left(Accepter {
-			html: Custom(
-				Status::Created,
-				template!("users/registration_success.html"),
-			),
-			json: Custom(Status::Created, Json(user)),
-		})),
+		Ok(user) => {
+			let user_list_url = uri!(list_users);
+			mailer.try_create(
+				&admin, // TODO This need to be send to the admins.
+				String::from("[Zauth] New user registration"),
+				template!(
+					"mails/new_user_registration.txt";
+					name: String = user.username.to_string(),
+					user_list_url: String = user_list_url.to_string(),
+				)
+				.render()
+				.map_err(InternalError::from)?,
+			)?;
+
+			Ok(Left(Accepter {
+				html: Custom(
+					Status::Created,
+					template!("users/registration_success.html"),
+				),
+				json: Custom(Status::Created, Json(user)),
+			}))
+		},
 		Err(ZauthError::ValidationError(errors)) => Ok(Right(Accepter {
 			html: Custom(
 				Status::UnprocessableEntity,
