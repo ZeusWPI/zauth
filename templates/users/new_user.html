@@ -1,0 +1,28 @@
+{% extends "base_logged_in.html" %}
+
+{% block content %}
+
+<h1>Create new user</h1>
+
+<p>This bypasses mail verification. Normal registrations should be done via the <a href="/register">register page</a></p>
+
+<form action="/users" method="post">
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text"/>
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password"/>
+
+    <label for="full_name">Full Name</label>
+    <input id="full_name" name="full_name" type="text"/>
+
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email"/>
+
+    <label for="ssh_key">ssh key</label>
+    <input id="ssh_key" name="ssh_key" type="text"/>
+
+    <button type="submit">Create</button>
+</form>
+
+{% endblock content %}

@@ -66,6 +66,15 @@ pub fn list_users(
 	})
 }
 
+#[get("/users/new")]
+pub fn create_user_page(
+	session: AdminSession,
+) -> Result<impl Responder<'static>> {
+	Ok(template! { "users/new_user.html";
+		current_user: User = session.admin,
+	})
+}
+
 #[post("/users", data = "<user>")]
 pub fn create_user(
 	_session: AdminSession,

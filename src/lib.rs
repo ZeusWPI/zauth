@@ -93,6 +93,7 @@ fn assemble(rocket: Rocket) -> Rocket {
 				sessions_controller::new_session,
 				sessions_controller::delete_session,
 				sessions_controller::destroy_session,
+				users_controller::create_user_page,
 				users_controller::create_user,
 				users_controller::register_page,
 				users_controller::register,

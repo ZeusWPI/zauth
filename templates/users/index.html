@@ -9,8 +9,18 @@
 
 {% block content %}
 
-<h1>Users ({{ users.len() }})</h1>
-<table style="overflow-x: auto">
+<div class="row">
+    <div class="column">
+        <h1>Users ({{ users.len() }})</h1>
+    </div>
+    <div class="column">
+        <div class="center-end-children">
+            <a class="button" href="/users/new">New user</a>
+        </div>
+    </div>
+</div>
+
+<table>
     <tr>
         <th>Username</th>
         <th>Admin?</th>
@@ -62,7 +72,7 @@
                 <td colspan="7" class="sshkey">{{val}}</td>
             </tr>
         {% when None %}
-    {% endmatch %} 
+    {% endmatch %}
     {% endfor %}
 </table>
 
@@ -114,6 +124,6 @@
 
     <button type="submit">Create</button>
 </form>
-{% endif %} 
+{% endif %}
 
 {% endblock content %}
