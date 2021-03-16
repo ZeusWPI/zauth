@@ -121,3 +121,14 @@ button {
     justify-content: center; /* Horizontal center */
     align-items: center; /* Vertical center */
 }
+
+.spoiler{
+    display:none;
+}
+.sshkey{
+    font-size: 14px;
+    background-color: lightgrey;
+}
+.spoiler:target {
+    display:table-row
+}

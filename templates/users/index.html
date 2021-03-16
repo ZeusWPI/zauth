@@ -1,8 +1,9 @@
 {% extends "base_logged_in.html" %}
 
-{%- macro colored_circle(color) -%}
-<svg height="100" width="100">
-    <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="{{color}}" />
+{%- macro colored_circle(color, tooltip) -%}
+<svg height="20" width="20">
+    <title>{{tooltip}}</title>
+    <circle cx="10" cy="10" r="8" stroke="{{color}}" stroke-width="3" fill="{{color}}" />
 </svg>
 {%- endmacro -%}
 
@@ -33,26 +34,35 @@
         <td>
             {% match user.ssh_key %}
                 {% when Some with (val) %}
-                    {{ val }}
+                    <a href="#spoiler-open-{{user.id}}" class="trigger open">View</a>
+                    <a href="#spoiler-close-{{user.id}}" class="trigger close">Close</a>
                 {% when None %}
-                    Not configured
+                    -
             {% endmatch %}
         </td>
         <td>
             {% match user.state %}
                 {% when UserState::Active %}
-                    {%- call colored_circle("green") -%}
+                    {%- call colored_circle("#80A66C", user.state) -%}
                 {% when UserState::PendingApproval %}
-                    {%- call colored_circle("orange") -%}
+                    {%- call colored_circle("#F2A950", user.state) -%}
                 {% when UserState::PendingMailConfirmation %}
-                    {%- call colored_circle("yellow") -%}
+                    {%- call colored_circle("yellow", user.state) -%}
                 {% when UserState::Disabled %}
-                    {%- call colored_circle("red") -%}
+                    {%- call colored_circle("#DD6761", user.state) -%}
             {% endmatch %}                
         </td>
-        <td>{{ user.last_login }}</td>
-        <td>{{ user.created_at }}</td>
+        <td title="{{user.last_login}}">{{ user.last_login.format("%d/%m/%y").to_string() }}</td>
+        <td title="{{user.created_at}}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
     </tr>
+    {% match user.ssh_key %}
+        {% when Some with (val) %}
+            <tr class="spoiler" id="spoiler-open-{{user.id}}">
+                <td>Key 1</td>
+                <td colspan="7" class="sshkey">{{val}}</td>
+            </tr>
+        {% when None %}
+    {% endmatch %}
     {% endfor %}
 </table>
 
