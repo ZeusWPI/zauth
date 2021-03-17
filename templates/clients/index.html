@@ -1,12 +1,23 @@
 {% extends "base_logged_in.html" %}
 {% block content %}
-<h1>Clients ({{ clients.len() }})</h1>
+
+<div class="row">
+    <div class="column">
+        <h1>Clients ({{ clients.len() }})</h1>
+    </div>
+    <div class="column">
+        <div class="center-end-children">
+            <a class="button" href="/clients/new">New client</a>
+        </div>
+    </div>
+</div>
+
 <table>
     <tr>
         <th>Name</th>
-        <th>secret</th>
-        <th>needs_grant</th>
-        <th>redirect_uri_list</th>
+        <th>Secret</th>
+        <th>Needs grant</th>
+        <th>Redirect uri list</th>
     </tr>
     {% for client in clients %}
     <tr>
@@ -16,23 +27,11 @@
         <td>{{ client.redirect_uri_list }}</td>
     </tr>
     {% endfor %}
+    {% if clients.len() == 0 %}
+    <tr class="centered">
+        <td colspan="4">No clients configured</td>
+    </tr>
+    {% endif %}
 </table>
-
-{% if current_user.admin %}
-<form action="/clients" method="post">
-    <fieldset>
-        <label for="name">Name</label>
-        <input type="text" placeholder="application name" id="name" name="name">
-        <label for="needs_grant">Needs_grant</label>
-        <input type="checkbox" id="needs_grant" name="needs_grant">
-        <label for="redirect_uri_list">Redirect Uri's</label>
-<!--        <input type="textarea" id="redirect_uri_list" name="redirect_uri_list">-->
-        <textarea id="redirect_uri_list" name="redirect_uri_list" rows="4" cols="50">
-            test
-        </textarea>
-        <button type="submit">Create</button>
-    </fieldset>
-</form>
-{% endif %}
 
 {% endblock content %}

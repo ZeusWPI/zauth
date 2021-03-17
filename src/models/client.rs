@@ -8,6 +8,8 @@ use crate::ConcreteConnection;
 use self::schema::clients;
 
 use chrono::NaiveDateTime;
+use validator::{Validate, ValidationError};
+
 
 const SECRET_LENGTH: usize = 64;
 
@@ -34,8 +36,9 @@ pub struct Client {
 	pub created_at:        NaiveDateTime,
 }
 
-#[derive(FromForm, Deserialize, Debug, Clone)]
+#[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewClient {
+	#[validate(length(min = 1, max = 80))]
 	pub name:              String,
 	pub needs_grant:       bool,
 	pub redirect_uri_list: String,
@@ -67,6 +70,7 @@ impl Client {
 		client: NewClient,
 		conn: &ConcreteConnection,
 	) -> Result<Client> {
+		client.validate()?;
 		let client = NewClientWithSecret {
 			name:              client.name,
 			needs_grant:       client.needs_grant,
@@ -75,11 +79,11 @@ impl Client {
 		};
 		let client = conn
 			.transaction(|| {
-				// Create a new user
+				// Create a new client
 				diesel::insert_into(clients::table)
 					.values(&client)
 					.execute(conn)?;
-				// Fetch the last created user
+				// Fetch the last created client
 				clients::table.order(clients::id.desc()).first(conn)
 			})
 			.map_err(ZauthError::from);

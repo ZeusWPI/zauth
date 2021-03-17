@@ -83,6 +83,7 @@ fn assemble(rocket: Rocket) -> Rocket {
 			routes![
 				favicon,
 				clients_controller::create_client,
+				clients_controller::create_client_page,
 				clients_controller::list_clients,
 				oauth_controller::authorize,
 				oauth_controller::grant_get,

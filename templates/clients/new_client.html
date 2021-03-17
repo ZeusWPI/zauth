@@ -1,0 +1,23 @@
+{% extends "base_logged_in.html" %}
+{% block content %}
+
+<h1>Create new client</h1>
+
+<p>Insert explanation about what everything means or what a client is?</p>
+
+<form action="/clients" method="post">
+    <fieldset>
+        <label for="name">Name</label>
+        <input type="text" placeholder="application name" id="name" name="name" required="required" minlength="1" maxlength="80">
+        <label for="needs_grant">Needs_grant</label>
+        <input type="checkbox" id="needs_grant" name="needs_grant">
+        <label for="redirect_uri_list">Redirect Uri's</label>
+<!--        <input type="textarea" id="redirect_uri_list" name="redirect_uri_list">-->
+        <textarea id="redirect_uri_list" name="redirect_uri_list" rows="4" cols="50">
+            test
+        </textarea>
+        <button type="submit">Create</button>
+    </fieldset>
+</form>
+
+{% endblock content %}

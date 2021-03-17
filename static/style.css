@@ -121,3 +121,17 @@ button {
     justify-content: center; /* Horizontal center */
     align-items: center; /* Vertical center */
 }
+
+.centered {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.center-end-children {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+
+    width: 100%;
+    height: 100%;
+} 

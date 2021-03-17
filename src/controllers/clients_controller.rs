@@ -26,6 +26,15 @@ pub fn list_clients(
 	})
 }
 
+#[get("/clients/new")]
+pub fn create_client_page(
+	session: AdminSession,
+) -> Result<impl Responder<'static>> {
+	Ok(template! { "clients/new_client.html";
+		current_user: User = session.admin,
+	})
+}
+
 #[post("/clients", data = "<client>")]
 pub fn create_client(
 	client: Api<NewClient>,
