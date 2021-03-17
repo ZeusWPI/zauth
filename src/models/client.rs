@@ -8,7 +8,7 @@ use crate::ConcreteConnection;
 use self::schema::clients;
 
 use chrono::NaiveDateTime;
-use validator::{Validate};
+use validator::Validate;
 
 const SECRET_LENGTH: usize = 64;
 
