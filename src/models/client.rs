@@ -71,7 +71,7 @@ impl Client {
 			.take(SECRET_LENGTH)
 			.collect()
 	}
-	
+
 	pub fn create(
 		client: NewClient,
 		conn: &ConcreteConnection,
