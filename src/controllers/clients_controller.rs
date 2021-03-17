@@ -7,7 +7,6 @@ use std::fmt::Debug;
 
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::AdminSession;
-use crate::errors::Either::{self, Left};
 use crate::errors::Result;
 use crate::models::client::*;
 use crate::models::user::User;
