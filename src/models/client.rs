@@ -10,7 +10,6 @@ use self::schema::clients;
 use chrono::NaiveDateTime;
 use validator::{Validate, ValidationError};
 
-
 const SECRET_LENGTH: usize = 64;
 
 mod schema {
@@ -26,7 +25,7 @@ mod schema {
 	}
 }
 
-#[derive(Serialize, Queryable, Debug, Clone)]
+#[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
 pub struct Client {
 	pub id:                i32,
 	pub name:              String,
@@ -53,6 +52,13 @@ pub struct NewClientWithSecret {
 	pub redirect_uri_list: String,
 }
 
+#[derive(FromForm, Deserialize, Debug, Clone)]
+pub struct ClientChange {
+	pub name:              Option<String>,
+	pub needs_grant:       Option<bool>,
+	pub redirect_uri_list: Option<String>,
+}
+
 impl Client {
 	pub fn all(conn: &ConcreteConnection) -> Result<Vec<Client>> {
 		let all_clients = clients::table.load::<Client>(conn)?;
@@ -65,7 +71,7 @@ impl Client {
 			.take(SECRET_LENGTH)
 			.collect()
 	}
-
+	
 	pub fn create(
 		client: NewClient,
 		conn: &ConcreteConnection,
@@ -88,6 +94,34 @@ impl Client {
 			})
 			.map_err(ZauthError::from);
 		return client;
+	}
+
+	pub fn change_with(&mut self, change: ClientChange) -> Result<()> {
+		if let Some(name) = change.name {
+			self.name = name;
+		}
+		if let Some(needs_grant) = change.needs_grant {
+			self.needs_grant = needs_grant;
+		}
+		if let Some(redirect_uri_list) = change.redirect_uri_list {
+			self.redirect_uri_list = redirect_uri_list
+		}
+		Ok(())
+	}
+
+	pub fn update(self, conn: &ConcreteConnection) -> Result<Self> {
+		let id = self.id;
+
+		conn.transaction(|| {
+			// Update a client
+			diesel::update(clients::table.find(id))
+				.set(self)
+				.execute(conn)?;
+
+			// Fetch the updated record
+			clients::table.find(id).first(conn)
+		})
+		.map_err(ZauthError::from)
 	}
 
 	pub fn find_by_name(

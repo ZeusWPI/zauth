@@ -1,9 +1,13 @@
+use rocket::http::Status;
 use rocket::response::status;
+use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use rocket_contrib::json::Json;
+use std::fmt::Debug;
 
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::AdminSession;
+use crate::errors::Either::{self, Left};
 use crate::errors::Result;
 use crate::models::client::*;
 use crate::models::user::User;
@@ -26,12 +30,51 @@ pub fn list_clients(
 	})
 }
 
+#[get("/clients/<id>/edit")]
+pub fn update_client_page(
+	id: i32,
+	session: AdminSession,
+	conn: DbConn,
+) -> Result<impl Responder<'static>> {
+	let client = Client::find(id, &conn)?;
+
+	Ok(template! { "clients/edit_client.html";
+		current_user: User = session.admin,
+		client: Option<Client> = Some(client.clone()),
+		title: String = "Update client".to_string(),
+		confirm_button: String = "Update".to_string(),
+		method: String = "put".to_string(),
+		action_url: String = format!("/clients/{}", client.id).to_string(),
+	})
+}
+
+#[put("/clients/<id>", data = "<change>")]
+pub fn update_client(
+	id: i32,
+	change: Api<ClientChange>,
+	_session: AdminSession,
+	conn: DbConn,
+) -> Result<impl Responder<'static>> {
+	let mut client = Client::find(id, &conn)?;
+	client.change_with(change.into_inner())?;
+	let _client = client.update(&conn)?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(list_clients)),
+		json: Custom(Status::NoContent, ()),
+	})
+}
+
 #[get("/clients/new")]
 pub fn create_client_page(
 	session: AdminSession,
 ) -> Result<impl Responder<'static>> {
-	Ok(template! { "clients/new_client.html";
+	Ok(template! { "clients/edit_client.html";
 		current_user: User = session.admin,
+		client: Option<Client> = None,
+		title: String = "Create new client".to_string(),
+		confirm_button: String = "Create".to_string(),
+		method: String = "post".to_string(),
+		action_url: String = "/clients".to_string(),
 	})
 }
 
