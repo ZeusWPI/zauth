@@ -110,7 +110,7 @@ pub type InternalResult<T> = std::result::Result<T, InternalError>;
 pub enum LoginError {
 	#[error("Username or password incorrect")]
 	UsernamePasswordError,
-	#[error("Account still pending for admin approval")]
+	#[error("Admin approval pending for this accountl")]
 	AccountPendingApprovalError,
 	#[error("Account pending for mail approval")]
 	AccountPendingMailConfirmationError,
