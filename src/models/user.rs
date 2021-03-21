@@ -25,7 +25,7 @@ impl fmt::Display for UserState {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match *self {
 			UserState::PendingApproval => {
-				write!(f, "Pending for admin approval")
+				write!(f, "Admin approval pending")
 			},
 			UserState::PendingMailConfirmation => {
 				write!(f, "Email confirmation pending")
