@@ -112,7 +112,7 @@ pub enum LoginError {
 	UsernamePasswordError,
 	#[error("Admin approval pending for this accountl")]
 	AccountPendingApprovalError,
-	#[error("Account pending for mail approval")]
+	#[error("Email confirmation pending for this account")]
 	AccountPendingMailConfirmationError,
 	#[error("Account disabled")]
 	AccountDisabledError,
