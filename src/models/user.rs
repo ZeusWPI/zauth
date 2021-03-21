@@ -28,7 +28,7 @@ impl fmt::Display for UserState {
 				write!(f, "Pending for admin approval")
 			},
 			UserState::PendingMailConfirmation => {
-				write!(f, "Pending for mail confirmation")
+				write!(f, "Email confirmation pending")
 			},
 			UserState::Active => write!(f, "Active"),
 			UserState::Disabled => write!(f, "Disabled"),
