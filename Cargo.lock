@@ -2499,7 +2499,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "threads_pool",
- "toml 0.4.10",
+ "toml 0.5.8",
  "urlencoding",
  "validator",
  "validator_derive",
