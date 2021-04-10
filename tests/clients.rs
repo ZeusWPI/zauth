@@ -10,16 +10,12 @@ mod common;
 use crate::common::url;
 
 #[test]
-fn create_client() {
+fn create_and_update_client() {
 	common::as_admin(|http_client, _db, _user| {
 		let client_name = "test";
 		let client_redirect_uri = "https://example.com/redirect";
 
-		let client_form = format!(
-			"name={}&needs_grant=true&redirect_uri_list={}",
-			url(&client_name),
-			url(&client_redirect_uri)
-		);
+		let client_form = format!("name={}", url(&client_name),);
 
 		let response = http_client
 			.post("/clients")

@@ -1,38 +1,43 @@
 {% extends "base_logged_in.html" %}
 {% block content %}
-<h1>Clients ({{ clients.len() }})</h1>
+
+<div class="row">
+    <div class="column">
+        <h1>Clients ({{ clients.len() }})</h1>
+        <p>An OAuth client is an application which can use our server for authentication. The client would send the user to our webpage to login and we then tell the client who the user is. Each application using this server should have its own client and maybe even a separate client for development purposes.
+        </p>
+    </div>
+    <div class="column">
+        <div class="center-end-children">
+            <form action="/clients" method="post">
+                <fieldset>
+                    <h2>New client</h2>
+                    <input id="name" name="name" type="text" placeholder="Application name" required/>
+                <button type="submit">Create</a>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>
+
 <table>
     <tr>
         <th>Name</th>
-        <th>secret</th>
-        <th>needs_grant</th>
-        <th>redirect_uri_list</th>
+        <th>Description</th>
+        <th>Needs grant</th>
     </tr>
     {% for client in clients %}
     <tr>
-        <td>{{ client.name }}</td>
-        <td>{{ client.secret }}</td>
+        <td><a href="/clients/{{client.id}}/edit">{{ client.name }}</a></td>
+        <td>{{ client.description }}</td>
         <td>{{ client.needs_grant }}</td>
-        <td>{{ client.redirect_uri_list }}</td>
     </tr>
     {% endfor %}
+    {% if clients.len() == 0 %}
+    <tr class="centered">
+        <td colspan="4">No clients configured</td>
+    </tr>
+    {% endif %}
 </table>
-
-{% if current_user.admin %}
-<form action="/clients" method="post">
-    <fieldset>
-        <label for="name">Name</label>
-        <input type="text" placeholder="application name" id="name" name="name">
-        <label for="needs_grant">Needs_grant</label>
-        <input type="checkbox" id="needs_grant" name="needs_grant">
-        <label for="redirect_uri_list">Redirect Uri's</label>
-<!--        <input type="textarea" id="redirect_uri_list" name="redirect_uri_list">-->
-        <textarea id="redirect_uri_list" name="redirect_uri_list" rows="4" cols="50">
-            test
-        </textarea>
-        <button type="submit">Create</button>
-    </fieldset>
-</form>
-{% endif %}
 
 {% endblock content %}
