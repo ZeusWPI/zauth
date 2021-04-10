@@ -15,6 +15,7 @@ in
 pkgs.mkShell {
   buildInputs = with pkgs; [
     rustNightlyTemp
+    cargo-watch
     postgresql
     pgcli
     diesel-cli
