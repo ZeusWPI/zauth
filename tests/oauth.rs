@@ -48,15 +48,17 @@ fn normal_flow() {
 		)
 		.expect("user");
 
-		let client = Client::create(
+		let mut client = Client::create(
 			NewClient {
-				name:              String::from(client_id),
-				needs_grant:       true,
-				redirect_uri_list: String::from(redirect_uri),
+				name: String::from(client_id),
 			},
 			&db,
 		)
-		.expect("client");
+		.expect("client created");
+
+		client.needs_grant = true;
+		client.redirect_uri_list = String::from(redirect_uri);
+		let client = client.update(&db).expect("client updated");
 
 		// 1. User is redirected to OAuth server with request params given by
 		// the client

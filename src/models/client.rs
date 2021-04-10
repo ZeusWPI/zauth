@@ -54,7 +54,7 @@ pub struct NewClientWithSecret {
 pub struct ClientChange {
 	pub name:              Option<String>,
 	pub needs_grant:       Option<bool>,
-    pub description:       Option<String>,
+	pub description:       Option<String>,
 	pub redirect_uri_list: Option<String>,
 }
 
