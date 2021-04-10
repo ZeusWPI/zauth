@@ -86,6 +86,14 @@ impl Client {
 		return client;
 	}
 
+	pub fn delete(
+		self,
+		conn: &ConcreteConnection,
+	) -> Result<()> {
+		diesel::delete(clients::table.find(self.id)).execute(conn).map_err(ZauthError::from)?;
+		Ok(())
+	}
+
 	pub fn find_by_name(
 		name: &str,
 		conn: &ConcreteConnection,
