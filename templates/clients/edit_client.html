@@ -2,9 +2,6 @@
 {% block content %}
 
 <h1>Update {{ client.name }}</h1>
-
-<p>Insert explanation about what everything means or what a client is?</p>
-
 <form action="/clients/{{ client.id }}" method="post">
     <fieldset>
         <input type="hidden" name="_method" value="put"/>
@@ -22,11 +19,14 @@
         <label for="description">Description</label>
         <textarea id="description" name="description" rows="4" cols="50" placeholder="Describe what the application does.">{{ client.description -}}</textarea>
 
+        <div title="When this is enabled, users have to confirm they want to share their information with the client. After logging in, they will see the name and description of the client. Users have to explicitly confirm in order to complete the OAuth flow.
+                    This should only be disabled for fully trusted applications.">
         <label for="needs_grant">Needs grant?</label>
         <input type="hidden" id="needs_grant" name="needs_grant" value="false">
         <input type="checkbox" id="needs_grant" name="needs_grant"
                     {% if client.needs_grant %} checked {% endif %}
                     >
+        </div>
 
         <label for="redirect_uri_list">Redirect URI's</label>
         <textarea id="redirect_uri_list" name="redirect_uri_list" rows="4" cols="50" placeholder="http://localhost:3000/auth/callback

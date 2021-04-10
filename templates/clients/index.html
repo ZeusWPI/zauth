@@ -4,14 +4,16 @@
 <div class="row">
     <div class="column">
         <h1>Clients ({{ clients.len() }})</h1>
+        <p>An OAuth client is an application which can use our server for authentication. The client would send the user to our webpage to login and we then tell the client who the user is. Each application using this server should have its own client and maybe even a separate client for development purposes.
+        </p>
     </div>
     <div class="column">
         <div class="center-end-children">
-
             <form action="/clients" method="post">
                 <fieldset>
-                    <input id="name" name="name" type="text" placeholder="Client name" required/>
-                <button type="submit">Create client</a>
+                    <h2>New client</h2>
+                    <input id="name" name="name" type="text" placeholder="Application name" required/>
+                <button type="submit">Create</a>
                 </fieldset>
             </form>
         </div>
