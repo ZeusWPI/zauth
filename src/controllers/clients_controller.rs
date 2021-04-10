@@ -65,7 +65,7 @@ pub fn delete_client(
 	_session: AdminSession,
 	conn: DbConn,
 ) -> Result<impl Responder<'static>> {
-	let mut client = Client::find(id, &conn)?;
+	let client = Client::find(id, &conn)?;
 	client.delete(&conn)?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(list_clients)),

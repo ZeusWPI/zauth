@@ -39,7 +39,6 @@ pub mod util;
 
 use crate::config::Config;
 use crate::controllers::*;
-use crate::models::user::*;
 use crate::token_store::TokenStore;
 use rocket::Rocket;
 use rocket_contrib::serve::StaticFiles;
@@ -119,14 +118,7 @@ fn assemble(rocket: Rocket) -> Rocket {
 		.attach(DbConn::fairing())
 		.attach(AdHoc::on_attach("Database Migrations", run_migrations));
 
-	if rocket.config().environment.is_dev() {
-		if let Ok(pw) = std::env::var("ZAUTH_ADMIN_PASSWORD") {
-			rocket = rocket
-				.attach(AdHoc::on_attach("Create admin user", |rocket| {
-					create_admin(rocket, config, pw)
-				}));
-		}
-	}
+	rocket = util::handle_dev_build(rocket, config);
 
 	rocket
 }
@@ -137,46 +129,6 @@ fn run_migrations(rocket: Rocket) -> std::result::Result<Rocket, Rocket> {
 		Ok(()) => Ok(rocket),
 		Err(e) => {
 			eprintln!("Failed to run database migrations: {:?}", e);
-			Err(rocket)
-		},
-	}
-}
-
-fn create_admin(
-	rocket: Rocket,
-	config: Config,
-	password: String,
-) -> std::result::Result<Rocket, Rocket> {
-	let username = String::from("admin");
-	let conn = DbConn::get_one(&rocket).expect("database connection");
-	let admin = User::find_by_username(&username, &conn)
-		.or_else(|_e| {
-			User::create(
-				NewUser {
-					username:  username.clone(),
-					password:  password.clone(),
-					full_name: String::from("Admin McAdmin"),
-					email:     String::from("admin@example.com"),
-					ssh_key:   None,
-				},
-				config.bcrypt_cost,
-				&conn,
-			)
-		})
-		.and_then(|mut user| {
-			user.admin = true;
-			user.update(&conn)
-		});
-	match admin {
-		Ok(_admin) => {
-			println!(
-				"Admin created with username \"{}\" and password \"{}\"",
-				username, password
-			);
-			Ok(rocket)
-		},
-		Err(e) => {
-			eprintln!("Error creating admin {:?}", e);
 			Err(rocket)
 		},
 	}
