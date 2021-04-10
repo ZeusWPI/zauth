@@ -50,7 +50,7 @@ pub fn show_user(
 
 #[get("/users")]
 pub fn list_users(
-	session: UserSession,
+	session: AdminSession,
 	conn: DbConn,
 ) -> Result<impl Responder<'static>> {
 	let users = User::all(&conn)?;
@@ -59,7 +59,7 @@ pub fn list_users(
 		html: template! {
 			"users/index.html";
 			users: Vec<User> = users.clone(),
-			current_user: User = session.user,
+			current_user: User = session.admin,
 			users_pending_for_approval: Vec<User> = users_pending_for_approval.clone(),
 		},
 		json: Json(users),
