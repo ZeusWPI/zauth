@@ -19,17 +19,18 @@
                value="{{ client.name }}"
                required>
 
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="4" cols="50" placeholder="Describe what the application does.">{{ client.description -}}</textarea>
+
         <label for="needs_grant">Needs grant?</label>
         <input type="hidden" id="needs_grant" name="needs_grant" value="false">
         <input type="checkbox" id="needs_grant" name="needs_grant"
                     {% if client.needs_grant %} checked {% endif %}
                     >
 
-        <label for="redirect_uri_list">Redirect Uri's</label>
-        <!--        <input type="textarea" id="redirect_uri_list" name="redirect_uri_list">-->
-        <textarea id="redirect_uri_list" name="redirect_uri_list" rows="4" cols="50">
-        {{- client.redirect_uri_list -}}
-        </textarea>
+        <label for="redirect_uri_list">Redirect URI's</label>
+        <textarea id="redirect_uri_list" name="redirect_uri_list" rows="4" cols="50" placeholder="http://localhost:3000/auth/callback
+https://example.com/auth/callback">{{- client.redirect_uri_list -}}</textarea>
 
         <button type="submit">Save</button>
     </fieldset>

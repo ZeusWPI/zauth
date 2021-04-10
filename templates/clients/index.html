@@ -21,16 +21,14 @@
 <table>
     <tr>
         <th>Name</th>
-        <th>Secret</th>
+        <th>Description</th>
         <th>Needs grant</th>
-        <th>Redirect uri list</th>
     </tr>
     {% for client in clients %}
     <tr>
         <td><a href="/clients/{{client.id}}/edit">{{ client.name }}</a></td>
-        <td>{{ client.secret }}</td>
+        <td>{{ client.description }}</td>
         <td>{{ client.needs_grant }}</td>
-        <td>{{ client.redirect_uri_list }}</td>
     </tr>
     {% endfor %}
     {% if clients.len() == 0 %}

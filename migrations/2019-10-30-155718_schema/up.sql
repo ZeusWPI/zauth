@@ -24,11 +24,12 @@ CREATE INDEX ix_users_email ON users (email);
 CREATE TABLE clients
 (
     id                SERIAL PRIMARY KEY,
-    name              VARCHAR(255) NOT NULL UNIQUE,
-    secret            VARCHAR(255) NOT NULL,
-    needs_grant       BOOLEAN      NOT NULL DEFAULT false,
-    redirect_uri_list TEXT         NOT NULL DEFAULT '',
-    created_at        TIMESTAMP    NOT NULL DEFAULT NOW()
+    name              VARCHAR(255)  NOT NULL UNIQUE,
+    description       TEXT          NOT NULL DEFAULT '',
+    secret            VARCHAR(255)  NOT NULL,
+    needs_grant       BOOLEAN       NOT NULL DEFAULT false,
+    redirect_uri_list TEXT          NOT NULL DEFAULT '',
+    created_at        TIMESTAMP     NOT NULL DEFAULT NOW()
 );
 
 CREATE VIEW postfix_view AS

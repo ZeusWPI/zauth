@@ -17,6 +17,7 @@ mod schema {
 		clients {
 			id -> Integer,
 			name -> Text,
+			description -> Text,
 			secret -> Text,
 			needs_grant -> Bool,
 			redirect_uri_list -> Text,
@@ -29,6 +30,7 @@ mod schema {
 pub struct Client {
 	pub id:                i32,
 	pub name:              String,
+	pub description:       String,
 	pub secret:            String,
 	pub needs_grant:       bool,
 	pub redirect_uri_list: String,
@@ -52,6 +54,7 @@ pub struct NewClientWithSecret {
 pub struct ClientChange {
 	pub name:              Option<String>,
 	pub needs_grant:       Option<bool>,
+    pub description:       Option<String>,
 	pub redirect_uri_list: Option<String>,
 }
 
@@ -96,6 +99,9 @@ impl Client {
 		}
 		if let Some(needs_grant) = change.needs_grant {
 			self.needs_grant = needs_grant;
+		}
+		if let Some(description) = change.description {
+			self.description = description;
 		}
 		if let Some(redirect_uri_list) = change.redirect_uri_list {
 			self.redirect_uri_list = redirect_uri_list
