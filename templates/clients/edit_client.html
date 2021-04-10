@@ -1,48 +1,37 @@
 {% extends "base_logged_in.html" %}
 {% block content %}
 
-<h1>{{title}}</h1>
+<h1>Update {{ client.name }}</h1>
 
 <p>Insert explanation about what everything means or what a client is?</p>
 
-<form action="{{ action_url }}" method="post">
+<form action="/clients/{{ client.id }}" method="post">
     <fieldset>
-        {% if method == "put" %}
-            <input type="hidden" name="_method" value="put"/>
-        {% endif %}
+        <input type="hidden" name="_method" value="put"/>
 
         <label for="name">Name</label>
-        <input type="text" placeholder="application name" id="name" name="name" required="required" minlength="1"
-            maxlength="80" 
-            {%- match client -%}
-                {%- when Some with (client) -%}
-                    value="{{ client.name }}"
-                {%- when None -%}
-            {%- endmatch -%}
-            >
+        <input type="text"
+               placeholder="Application name"
+               id="name"
+               name="name"
+               minlength="3"
+               maxlength="80"
+               value="{{ client.name }}"
+               required>
 
-        <label for="needs_grant">Needs_grant</label>
+        <label for="needs_grant">Needs grant?</label>
+        <input type="hidden" id="needs_grant" name="needs_grant" value="false">
         <input type="checkbox" id="needs_grant" name="needs_grant"
-            {%- match client -%}
-                {%- when Some with (client) -%}
-                    {% if client.needs_grant %}
-                        checked
-                    {% endif %}
-                {%- when None -%}
-            {%- endmatch -%}
-        >
+                    {% if client.needs_grant %} checked {% endif %}
+                    >
 
         <label for="redirect_uri_list">Redirect Uri's</label>
         <!--        <input type="textarea" id="redirect_uri_list" name="redirect_uri_list">-->
         <textarea id="redirect_uri_list" name="redirect_uri_list" rows="4" cols="50">
-            {%- match client -%}
-                {%- when Some with (client) -%}
-                    {{- client.redirect_uri_list -}}
-                {%- when None -%}
-            {%- endmatch -%}
+        {{- client.redirect_uri_list -}}
         </textarea>
 
-        <button type="submit">{{ confirm_button }}</button>
+        <button type="submit">Save</button>
     </fieldset>
 </form>
 

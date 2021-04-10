@@ -37,19 +37,15 @@ pub struct Client {
 
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewClient {
-	#[validate(length(min = 1, max = 80))]
-	pub name:              String,
-	pub needs_grant:       bool,
-	pub redirect_uri_list: String,
+	#[validate(length(min = 3, max = 80))]
+	pub name: String,
 }
 
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "clients"]
 pub struct NewClientWithSecret {
-	pub name:              String,
-	pub needs_grant:       bool,
-	pub secret:            String,
-	pub redirect_uri_list: String,
+	pub name:   String,
+	pub secret: String,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -78,10 +74,8 @@ impl Client {
 	) -> Result<Client> {
 		client.validate()?;
 		let client = NewClientWithSecret {
-			name:              client.name,
-			needs_grant:       client.needs_grant,
-			redirect_uri_list: client.redirect_uri_list,
-			secret:            Self::generate_random_secret(),
+			name:   client.name,
+			secret: Self::generate_random_secret(),
 		};
 		let client = conn
 			.transaction(|| {

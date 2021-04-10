@@ -39,11 +39,7 @@ pub fn update_client_page(
 
 	Ok(template! { "clients/edit_client.html";
 		current_user: User = session.admin,
-		client: Option<Client> = Some(client.clone()),
-		title: String = "Update client".to_string(),
-		confirm_button: String = "Update".to_string(),
-		method: String = "put".to_string(),
-		action_url: String = format!("/clients/{}", client.id).to_string(),
+		client: Client = client,
 	})
 }
 
@@ -63,20 +59,6 @@ pub fn update_client(
 	})
 }
 
-#[get("/clients/new")]
-pub fn create_client_page(
-	session: AdminSession,
-) -> Result<impl Responder<'static>> {
-	Ok(template! { "clients/edit_client.html";
-		current_user: User = session.admin,
-		client: Option<Client> = None,
-		title: String = "Create new client".to_string(),
-		confirm_button: String = "Create".to_string(),
-		method: String = "post".to_string(),
-		action_url: String = "/clients".to_string(),
-	})
-}
-
 #[post("/clients", data = "<client>")]
 pub fn create_client(
 	client: Api<NewClient>,
@@ -85,7 +67,7 @@ pub fn create_client(
 ) -> Result<impl Responder<'static>> {
 	let client = Client::create(client.into_inner(), &conn)?;
 	Ok(Accepter {
-		html: Redirect::to(uri!(list_clients)),
+		html: Redirect::to(uri!(update_client_page: client.id)),
 		json: status::Created(String::from("/client"), Some(Json(client))),
 	})
 }
