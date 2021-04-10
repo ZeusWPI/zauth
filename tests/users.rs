@@ -17,7 +17,7 @@ fn get_all_users() {
 
 	common::as_user(|http_client, _db, _user| {
 		let response = http_client.get("/users").dispatch();
-		assert_eq!(response.status(), Status::Ok);
+		assert_eq!(response.status(), Status::Forbidden);
 	});
 
 	common::as_admin(|http_client, _db, _admin| {
