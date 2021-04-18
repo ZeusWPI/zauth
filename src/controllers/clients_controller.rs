@@ -59,6 +59,20 @@ pub fn update_client(
 	})
 }
 
+#[delete("/clients/<id>")]
+pub fn delete_client(
+	id: i32,
+	_session: AdminSession,
+	conn: DbConn,
+) -> Result<impl Responder<'static>> {
+	let mut client = Client::find(id, &conn)?;
+	client.delete(&conn)?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(list_clients)),
+		json: Custom(Status::NoContent, ()),
+	})
+}
+
 #[post("/clients", data = "<client>")]
 pub fn create_client(
 	client: Api<NewClient>,
