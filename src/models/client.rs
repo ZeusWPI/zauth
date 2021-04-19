@@ -93,6 +93,15 @@ impl Client {
 		return client;
 	}
 
+	pub fn delete(&mut self, conn: &ConcreteConnection) -> Result<()> {
+		let id = self.id;
+
+		diesel::delete(clients::table.filter(clients::id.eq(id)))
+			.execute(conn)?;
+
+		Ok(())
+	}
+
 	pub fn change_with(&mut self, change: ClientChange) -> Result<()> {
 		if let Some(name) = change.name {
 			self.name = name;

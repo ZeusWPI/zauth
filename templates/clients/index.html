@@ -12,7 +12,7 @@
             <form action="/clients" method="post">
                 <fieldset>
                     <h2>New client</h2>
-                    <input id="name" name="name" type="text" placeholder="Application name" required/>
+                    <input id="name" name="name" type="text" placeholder="Application name" minlength="3" required/>
                 <button type="submit">Create</a>
                 </fieldset>
             </form>
@@ -25,12 +25,18 @@
         <th>Name</th>
         <th>Description</th>
         <th>Needs grant</th>
+        <th></th>
     </tr>
     {% for client in clients %}
     <tr>
         <td><a href="/clients/{{client.id}}/edit">{{ client.name }}</a></td>
         <td>{{ client.description }}</td>
         <td>{{ client.needs_grant }}</td>
+        <td><form action="/clients/{{client.id}}" method="POST">
+              <input type="hidden" name="_method" value="delete"/>
+              <button class="button button-outline button-black" type="submit">X</button>
+            </form>
+        </td>
     </tr>
     {% endfor %}
     {% if clients.len() == 0 %}
