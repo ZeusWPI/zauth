@@ -118,7 +118,9 @@ fn assemble(rocket: Rocket) -> Rocket {
 		.attach(DbConn::fairing())
 		.attach(AdHoc::on_attach("Database Migrations", run_migrations));
 
-	rocket = util::handle_dev_build(rocket, config);
+	if rocket.config().environment.is_dev() {
+		rocket = util::seed_database(rocket, config);
+	}
 
 	rocket
 }

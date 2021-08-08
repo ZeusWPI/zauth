@@ -8,7 +8,7 @@ pub fn random_token(token_length: usize) -> String {
 		.collect()
 }
 
-pub use dev::handle_dev_build;
+pub use dev::seed_database;
 
 mod dev {
 	use crate::config::Config;
@@ -18,62 +18,62 @@ mod dev {
 	use rocket::fairing::AdHoc;
 	use rocket::Rocket;
 
-	pub fn handle_dev_build(mut rocket: Rocket, config: Config) -> Rocket {
-		if rocket.config().environment.is_dev() {
-			if let Ok(_) = std::env::var("ZAUTH_EMPTY_DB") {
-				rocket = rocket
-					.attach(AdHoc::on_attach("Empty database", |rocket| {
-						delete_all(rocket)
-					}));
-			}
-
-			if let Ok(number) = std::env::var("ZAUTH_SEED_CLIENT") {
-				let amount = number.parse().unwrap_or_else(|_e| {
-					eprintln!(
-						"ZAUTH_SEED_DB=\"{}\" error, expected number, \
-						 defaulting to 10",
-						number
-					);
-					10
-				});
-				rocket = rocket
-					.attach(AdHoc::on_attach("Seed clients", move |rocket| {
-						seed_clients(rocket, amount)
-					}));
-			}
-
-			if let Ok(number) = std::env::var("ZAUTH_SEED_USER") {
-				let config_copy = config.clone();
-				let amount = number.parse().unwrap_or_else(|_e| {
-					eprintln!(
-						"ZAUTH_SEED_USER=\"{}\" error, expected number, \
-						 defaulting to 10",
-						number
-					);
-					10
-				});
-				rocket = rocket
-					.attach(AdHoc::on_attach("Seed users", move |rocket| {
-						seed_users(rocket, config_copy, amount)
-					}));
-			}
-
-			if let Ok(pw) = std::env::var("ZAUTH_ADMIN_PASSWORD") {
-				let config_copy = config.clone();
-
-				rocket = rocket
-					.attach(AdHoc::on_attach("Create admin user", |rocket| {
-						create_admin(rocket, config_copy, pw)
-					}));
-			}
-
-			if let Ok(client) = std::env::var("ZAUTH_CLIENT_NAME") {
-				rocket = rocket
-					.attach(AdHoc::on_attach("Create admin user", |rocket| {
-						create_client(rocket, client)
-					}));
-			}
+	pub fn seed_database(mut rocket: Rocket, config: Config) -> Rocket {
+		assert!(rocket.config().environment.is_dev());
+		if let Ok(_) = std::env::var("ZAUTH_EMPTY_DB") {
+			rocket = rocket
+				.attach(AdHoc::on_attach("Empty database", |rocket| {
+					delete_all(rocket)
+				}));
 		}
+
+		if let Ok(number) = std::env::var("ZAUTH_SEED_CLIENT") {
+			let amount = number.parse().unwrap_or_else(|_e| {
+				eprintln!(
+					"ZAUTH_SEED_DB=\"{}\" error, expected number, defaulting \
+					 to 10",
+					number
+				);
+				10
+			});
+			rocket = rocket
+				.attach(AdHoc::on_attach("Seed clients", move |rocket| {
+					seed_clients(rocket, amount)
+				}));
+		}
+
+		if let Ok(number) = std::env::var("ZAUTH_SEED_USER") {
+			let config_copy = config.clone();
+			let amount = number.parse().unwrap_or_else(|_e| {
+				eprintln!(
+					"ZAUTH_SEED_USER=\"{}\" error, expected number, \
+					 defaulting to 10",
+					number
+				);
+				10
+			});
+			rocket = rocket
+				.attach(AdHoc::on_attach("Seed users", move |rocket| {
+					seed_users(rocket, config_copy, amount)
+				}));
+		}
+
+		if let Ok(pw) = std::env::var("ZAUTH_ADMIN_PASSWORD") {
+			let config_copy = config.clone();
+
+			rocket = rocket
+				.attach(AdHoc::on_attach("Create admin user", |rocket| {
+					create_admin(rocket, config_copy, pw)
+				}));
+		}
+
+		if let Ok(client) = std::env::var("ZAUTH_CLIENT_NAME") {
+			rocket = rocket
+				.attach(AdHoc::on_attach("Create admin user", |rocket| {
+					create_client(rocket, client)
+				}));
+		}
+
 		rocket
 	}
 
