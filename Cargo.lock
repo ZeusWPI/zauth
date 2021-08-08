@@ -2481,7 +2481,7 @@ version = "0.1.0"
 dependencies = [
  "askama",
  "askama_rocket",
- "base64 0.12.3",
+ "base64 0.13.0",
  "bincode",
  "chrono",
  "diesel",
