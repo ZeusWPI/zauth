@@ -7,7 +7,7 @@ use std::fmt;
 
 use crate::models::user::UserState::{Active, PendingApproval};
 use chrono::{NaiveDateTime, Utc};
-use lettre::Mailbox;
+use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
 use std::convert::TryInto;

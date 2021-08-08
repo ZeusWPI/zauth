@@ -2,7 +2,8 @@ use crate::config::Config;
 use crate::errors::{InternalError, LaunchError, Result, ZauthError};
 use crate::models::user::User;
 
-use lettre::{Address, Mailbox, Message, SmtpTransport, Transport};
+use lettre::message::Mailbox;
+use lettre::{Address, Message, SmtpTransport, Transport};
 use parking_lot::{Condvar, Mutex};
 use std::convert::TryInto;
 use std::sync::mpsc;
