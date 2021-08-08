@@ -1,12 +1,11 @@
 use diesel::{self, prelude::*};
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
 
 use crate::errors::{AuthenticationError, Result, ZauthError};
 use crate::ConcreteConnection;
 
 use self::schema::clients;
 
+use crate::util::random_token;
 use chrono::NaiveDateTime;
 use validator::Validate;
 
@@ -65,10 +64,7 @@ impl Client {
 	}
 
 	fn generate_random_secret() -> String {
-		thread_rng()
-			.sample_iter(&Alphanumeric)
-			.take(SECRET_LENGTH)
-			.collect()
+		random_token(SECRET_LENGTH)
 	}
 
 	pub fn create(

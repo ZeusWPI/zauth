@@ -1,9 +1,12 @@
+use core::iter;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
 pub fn random_token(token_length: usize) -> String {
-	thread_rng()
-		.sample_iter(&Alphanumeric)
+	let mut rng = thread_rng();
+	iter::repeat(())
+		.map(|()| rng.sample(Alphanumeric))
+		.map(char::from)
 		.take(token_length)
 		.collect()
 }
