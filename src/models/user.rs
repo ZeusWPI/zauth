@@ -151,11 +151,10 @@ impl User {
 			.map_err(ZauthError::from)
 	}
 
-	pub fn delete(
-		self,
-		conn: &ConcreteConnection,
-	) -> Result<()> {
-		diesel::delete(users::table.find(self.id)).execute(conn).map_err(ZauthError::from)?;
+	pub fn delete(self, conn: &ConcreteConnection) -> Result<()> {
+		diesel::delete(users::table.find(self.id))
+			.execute(conn)
+			.map_err(ZauthError::from)?;
 		Ok(())
 	}
 

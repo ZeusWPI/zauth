@@ -124,10 +124,7 @@ impl Client {
 		.map_err(ZauthError::from)
 	}
 
-	pub fn delete(
-		self,
-		conn: &ConcreteConnection,
-	) -> Result<()> {
+	pub fn delete(self, conn: &ConcreteConnection) -> Result<()> {
 		diesel::delete(clients::table.find(self.id)).execute(conn)?;
 		Ok(())
 	}

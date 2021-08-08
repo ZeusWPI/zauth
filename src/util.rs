@@ -8,29 +8,32 @@ pub fn random_token(token_length: usize) -> String {
 		.collect()
 }
 
-
 pub use dev::handle_dev_build;
 
 mod dev {
-	use crate::DbConn;
 	use crate::config::Config;
 	use crate::models::client::*;
 	use crate::models::user::*;
-	use rocket::Rocket;
+	use crate::DbConn;
 	use rocket::fairing::AdHoc;
+	use rocket::Rocket;
 
-
-	pub fn handle_dev_build(mut rocket:Rocket, config:Config) -> Rocket {
+	pub fn handle_dev_build(mut rocket: Rocket, config: Config) -> Rocket {
 		if rocket.config().environment.is_dev() {
 			if let Ok(_) = std::env::var("ZAUTH_EMPTY_DB") {
-				rocket = rocket.attach(AdHoc::on_attach("Empty database", |rocket| {
-					delete_all(rocket)
-				}));
+				rocket = rocket
+					.attach(AdHoc::on_attach("Empty database", |rocket| {
+						delete_all(rocket)
+					}));
 			}
 
 			if let Ok(number) = std::env::var("ZAUTH_SEED_CLIENT") {
 				let amount = number.parse().unwrap_or_else(|_e| {
-					eprintln!("ZAUTH_SEED_DB=\"{}\" error, expected number, defaulting to 10", number);
+					eprintln!(
+						"ZAUTH_SEED_DB=\"{}\" error, expected number, \
+						 defaulting to 10",
+						number
+					);
 					10
 				});
 				rocket = rocket
@@ -42,7 +45,11 @@ mod dev {
 			if let Ok(number) = std::env::var("ZAUTH_SEED_USER") {
 				let config_copy = config.clone();
 				let amount = number.parse().unwrap_or_else(|_e| {
-					eprintln!("ZAUTH_SEED_USER=\"{}\" error, expected number, defaulting to 10", number);
+					eprintln!(
+						"ZAUTH_SEED_USER=\"{}\" error, expected number, \
+						 defaulting to 10",
+						number
+					);
 					10
 				});
 				rocket = rocket
@@ -112,18 +119,16 @@ mod dev {
 
 	fn create_client(
 		rocket: Rocket,
-		name: String
+		name: String,
 	) -> std::result::Result<Rocket, Rocket> {
 		let conn = DbConn::get_one(&rocket).expect("database connection");
-		let client = Client::find_by_name(&name, &conn)
-			.or_else(|_e| {
-				let mut new_client = Client::create(
-				NewClient { name }, &conn,
-				)?;
-				new_client.needs_grant = true;
-				new_client.redirect_uri_list = String::from("http://localhost:8000/trueclient/home");
-				new_client.update(&conn)
-			});
+		let client = Client::find_by_name(&name, &conn).or_else(|_e| {
+			let mut new_client = Client::create(NewClient { name }, &conn)?;
+			new_client.needs_grant = true;
+			new_client.redirect_uri_list =
+				String::from("http://localhost:8000/trueclient/home");
+			new_client.update(&conn)
+		});
 
 		match client {
 			Ok(client) => {
@@ -140,11 +145,19 @@ mod dev {
 		}
 	}
 
-	fn seed_users(rocket: Rocket, config: Config, amount: usize) -> std::result::Result<Rocket, Rocket> {
+	fn seed_users(
+		rocket: Rocket,
+		config: Config,
+		amount: usize,
+	) -> std::result::Result<Rocket, Rocket> {
 		let conn = DbConn::get_one(&rocket).expect("database connection");
 		for i in 0..amount {
 			let name = format!("seeded_user_{}", i);
-			let f = if i < amount/2 { User::create } else { User::create_pending };
+			let f = if i < amount / 2 {
+				User::create
+			} else {
+				User::create_pending
+			};
 			if let Err(e) = f(
 				NewUser {
 					username:  name.clone(),
@@ -164,20 +177,21 @@ mod dev {
 		Ok(rocket)
 	}
 
-	fn seed_clients(rocket: Rocket, amount: usize) -> std::result::Result<Rocket, Rocket> {
+	fn seed_clients(
+		rocket: Rocket,
+		amount: usize,
+	) -> std::result::Result<Rocket, Rocket> {
 		let conn = DbConn::get_one(&rocket).expect("database connection");
 
 		for i in 0..amount {
 			let name = format!("seeded_client_{}", i);
-			if let Err(e) = Client::find_by_name(&name, &conn)
-				.or_else(|_e| {
-					let mut new_client = Client::create(
-						NewClient { name }, &conn,
-					)?;
-					new_client.needs_grant =  i < amount / 2;
-					new_client.redirect_uri_list = format!("http://localhost:{}/trueclient/home", 8000+i);
-					new_client.update(&conn)
-					}) {
+			if let Err(e) = Client::find_by_name(&name, &conn).or_else(|_e| {
+				let mut new_client = Client::create(NewClient { name }, &conn)?;
+				new_client.needs_grant = i < amount / 2;
+				new_client.redirect_uri_list =
+					format!("http://localhost:{}/trueclient/home", 8000 + i);
+				new_client.update(&conn)
+			}) {
 				eprintln!("Error creating client {:?}", e);
 				break;
 			}
@@ -186,17 +200,26 @@ mod dev {
 		Ok(rocket)
 	}
 
-
 	fn delete_all(rocket: Rocket) -> std::result::Result<Rocket, Rocket> {
 		use crate::models::client::*;
 
 		let conn = DbConn::get_one(&rocket).expect("database connection");
-		let delete_users = User::all(&conn).and_then(|users| users.into_iter().map(|u| User::delete(u, &conn)).fold(Ok(()), Result::and));
+		let delete_users = User::all(&conn).and_then(|users| {
+			users
+				.into_iter()
+				.map(|u| User::delete(u, &conn))
+				.fold(Ok(()), Result::and)
+		});
 		if let Err(e) = delete_users {
 			eprintln!("Failed deleting users. {:?}", e);
 		}
 
-		let delete_clients = Client::all(&conn).and_then(|users| users.into_iter().map(|c| Client::delete(c, &conn)).fold(Ok(()), Result::and));
+		let delete_clients = Client::all(&conn).and_then(|users| {
+			users
+				.into_iter()
+				.map(|c| Client::delete(c, &conn))
+				.fold(Ok(()), Result::and)
+		});
 		if let Err(e) = delete_clients {
 			eprintln!("Failed deleting clients. {:?}", e);
 		}
