@@ -153,8 +153,8 @@ pub enum LaunchError {
 	BadConfigValueType(String),
 	#[error("Incorrect email address '{0}'")]
 	InvalidEmail(#[from] lettre::address::AddressError),
-	#[error("Failed to create SMTP transport")]
-	SMTPError(#[from] lettre::transport::smtp::error::Error),
+	#[error("Failed to create SMTP transport: '{0}'")]
+	SMTPError(#[from] lettre::transport::smtp::Error),
 }
 
 #[derive(Error, Debug)]

@@ -18,6 +18,8 @@ pkgs.mkShell {
     cargo-watch
     postgresql
     pgcli
+    openssl.dev
+    pkg-config
     diesel-cli
     (
       pkgs.writeShellScriptBin "start-dockers" ''
