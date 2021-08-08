@@ -1,20 +1,20 @@
-use rocket::http::{Cookie, Cookies};
-use rocket::request::Form;
+use rocket::form::Form;
+use rocket::http::{Cookie, CookieJar};
 use rocket::response::{Redirect, Responder};
+use rocket::serde::json::Json;
 use rocket::State;
-use rocket_contrib::json::Json;
 use std::fmt::Debug;
 
 use crate::ephemeral::session::UserSession;
 use crate::errors::Either::{Left, Right};
 use crate::errors::*;
+use crate::http_authentication::BasicAuthentication;
 use crate::models::client::*;
 use crate::models::user::*;
 use crate::DbConn;
 
 use crate::ephemeral::session::ensure_logged_in_and_redirect;
 use crate::errors::OAuthError::InvalidCookie;
-use crate::http_authentication::BasicAuthentication;
 use crate::token_store::TokenStore;
 
 const OAUTH_COOKIE: &str = "ZAUTH_OAUTH";
@@ -37,7 +37,7 @@ impl AuthState {
 		format!("{}?{}", self.redirect_uri, state_param)
 	}
 
-	pub fn from_cookies(mut cookies: Cookies) -> Result<Self> {
+	pub fn from_cookies(cookies: &CookieJar) -> Result<Self> {
 		cookies
 			.get_private(OAUTH_COOKIE)
 			.and_then(|cookie| Self::decode_b64(cookie.value()).ok())
@@ -91,19 +91,20 @@ pub struct AuthorizationRequest {
 }
 
 #[get("/oauth/authorize?<req..>")]
-pub fn authorize(
-	mut cookies: Cookies,
-	req: Form<AuthorizationRequest>,
-	conn: DbConn,
+pub async fn authorize(
+	cookies: &CookieJar<'_>,
+	req: AuthorizationRequest,
+	db: DbConn,
 ) -> Result<Redirect> {
-	let req = req.into_inner();
 	if !req.response_type.eq("code") {
 		// This was NotImplemented error, but it makes no sense for a authorise
 		// function not to return an AuthResult
 		return Err(ZauthError::from(RequestError::ResponseTypeMismatch));
 	}
 
-	if let Ok(client) = Client::find_by_name(&req.client_id, &conn) {
+	if let Ok(client) =
+		Client::find_by_name(req.client_id.to_owned(), &db).await
+	{
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
 			let state = AuthState::from_req(client, req);
 			cookies.add_private(state.into_cookie()?);
@@ -138,14 +139,14 @@ pub struct UserToken {
 }
 
 #[get("/oauth/grant")]
-pub fn grant_get<'a>(
+pub async fn grant_get<'r>(
 	session: UserSession,
-	cookies: Cookies,
-	token_store: State<TokenStore<UserToken>>,
-	conn: DbConn,
-) -> Result<Either<impl Responder<'static>, impl Responder<'static>>> {
+	cookies: &CookieJar<'_>,
+	token_store: &State<TokenStore<UserToken>>,
+	db: DbConn,
+) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
 	let state = AuthState::from_cookies(cookies)?;
-	if let Ok(client) = Client::find(state.client_id, &conn) {
+	if let Ok(client) = Client::find(state.client_id, &db).await {
 		if client.needs_grant {
 			Ok(Left(template! {
 				"oauth/grant.html";
@@ -166,9 +167,9 @@ pub fn grant_get<'a>(
 #[post("/oauth/grant", data = "<form>")]
 pub fn grant_post(
 	session: UserSession,
-	cookies: Cookies,
+	cookies: &CookieJar,
 	form: Form<GrantFormData>,
-	token_store: State<TokenStore<UserToken>>,
+	token_store: &State<TokenStore<UserToken>>,
 ) -> Result<Redirect> {
 	let data = form.into_inner();
 	let state = AuthState::from_cookies(cookies)?;
@@ -237,30 +238,33 @@ pub struct TokenFormData {
 }
 
 #[post("/oauth/token", data = "<form>")]
-pub fn token(
+pub async fn token(
 	auth: Option<BasicAuthentication>,
 	form: Form<TokenFormData>,
-	token_state: State<TokenStore<UserToken>>,
-	conn: DbConn,
+	token_state: &State<TokenStore<UserToken>>,
+	db: DbConn,
 ) -> Result<Json<TokenSuccess>> {
 	let data = form.into_inner();
 	let token = data.code.clone();
 	let token_store = token_state.inner();
 
-	let client = auth
+	let auth = auth
 		.map(|auth| (auth.user, auth.password))
 		.or_else(|| Some((data.client_id?, data.client_secret?)))
-		.ok_or(ZauthError::from(RequestError::InvalidRequest))
-		.and_then(|auth| {
-			Client::find_and_authenticate(&auth.0, &auth.1, &conn).map_err(
-				|e| match e {
-					ZauthError::AuthError(_) => ZauthError::AuthError(
-						AuthenticationError::Unauthorized(auth.0.to_string()),
-					),
-					e => e,
-				},
-			)
-		})?;
+		.ok_or(ZauthError::from(RequestError::InvalidRequest))?;
+
+	let client =
+		match Client::find_and_authenticate(auth.0.to_string(), &auth.1, &db)
+			.await
+		{
+			Ok(client) => client,
+			Err(ZauthError::AuthError(_)) => {
+				return Err(ZauthError::AuthError(
+					AuthenticationError::Unauthorized(auth.0),
+				))
+			},
+			Err(e) => return Err(e),
+		};
 
 	let token = token_store
 		.fetch_token(token)

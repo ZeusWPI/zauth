@@ -1,5 +1,8 @@
+#[macro_use]
+extern crate rocket;
 extern crate zauth;
 
-fn main() {
-	zauth::prepare().launch();
+#[launch]
+fn zauth() -> _ {
+	zauth::prepare()
 }

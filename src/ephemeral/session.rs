@@ -1,5 +1,6 @@
 use chrono::{DateTime, Duration, Local};
-use rocket::http::{Cookie, Cookies, Status};
+use rocket::http::{Cookie, CookieJar, Status};
+use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome, Request};
 use std::str::FromStr;
 
@@ -15,14 +16,14 @@ const REDIRECT_COOKIE: &str = "ZAUTH_REDIRECT";
 const SESSION_COOKIE: &str = "ZAUTH_SESSION";
 
 pub fn ensure_logged_in_and_redirect(
-	mut cookies: Cookies,
+	cookies: &CookieJar,
 	uri: Origin,
 ) -> Redirect {
 	cookies.add_private(Cookie::new(REDIRECT_COOKIE, uri.to_string()));
 	Redirect::to(uri!(new_session))
 }
 
-pub fn stored_redirect_or(mut cookies: Cookies, fallback: Origin) -> Redirect {
+pub fn stored_redirect_or(cookies: &CookieJar, fallback: Origin) -> Redirect {
 	let location: Origin =
 		if let Some(cookie) = cookies.get_private(REDIRECT_COOKIE) {
 			let stored = Origin::parse_owned(String::from(cookie.value())).ok();
@@ -48,22 +49,22 @@ impl Session {
 		}
 	}
 
-	pub fn login(user: User, cookies: &mut Cookies) {
+	pub fn login(user: User, cookies: &CookieJar) {
 		let session = Session::new(user);
 		let session_str = serde_urlencoded::to_string(session).unwrap();
 		let session_cookie = Cookie::new(SESSION_COOKIE, session_str);
 		cookies.add_private(session_cookie);
 	}
 
-	pub fn destroy(cookies: &mut Cookies) {
+	pub fn destroy(cookies: &CookieJar) {
 		cookies.remove_private(Cookie::named(SESSION_COOKIE))
 	}
 
-	pub fn user(&self, conn: &DbConn) -> Result<User> {
+	pub async fn user(&self, db: &DbConn) -> Result<User> {
 		if Local::now() > self.expiry {
 			Err(ZauthError::expired())
 		} else {
-			User::find(self.user_id, conn)
+			User::find(self.user_id, db).await
 		}
 	}
 }
@@ -76,10 +77,13 @@ impl FromStr for Session {
 	}
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for Session {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for Session {
 	type Error = &'static str;
 
-	fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
+	async fn from_request(
+		request: &'r Request<'_>,
+	) -> Outcome<Self, Self::Error> {
 		let session = request
 			.cookies()
 			.get_private(SESSION_COOKIE)
@@ -96,15 +100,19 @@ pub struct UserSession {
 	pub user: User,
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for UserSession {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for UserSession {
 	type Error = &'static str;
 
-	fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
-		let session = request.guard::<Session>()?;
-		let db = request.guard::<DbConn>().map_failure(|_| {
-			(Status::InternalServerError, "could not connect to database")
-		})?;
-		match session.user(&db) {
+	async fn from_request(
+		request: &'r Request<'_>,
+	) -> Outcome<Self, Self::Error> {
+		let session = try_outcome!(request.guard::<Session>().await);
+		let db =
+			try_outcome!(request.guard::<DbConn>().await.map_failure(|_| {
+				(Status::InternalServerError, "could not connect to database")
+			}));
+		match session.user(&db).await {
 			Ok(user) => Outcome::Success(UserSession { user }),
 			_ => Outcome::Failure((
 				Status::InternalServerError,
@@ -119,11 +127,15 @@ pub struct AdminSession {
 	pub admin: User,
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for AdminSession {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for AdminSession {
 	type Error = &'static str;
 
-	fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
-		let user: User = request.guard::<UserSession>()?.user;
+	async fn from_request(
+		request: &'r Request<'_>,
+	) -> Outcome<Self, Self::Error> {
+		let session = try_outcome!(request.guard::<UserSession>().await);
+		let user: User = session.user;
 		if user.admin {
 			Outcome::Success(AdminSession { admin: user })
 		} else {

@@ -8,11 +8,11 @@ pub struct Accepter<H, J> {
 	pub json: J,
 }
 
-fn not_acceptable() -> impl Responder<'static> {
+fn not_acceptable<'r>() -> impl Responder<'r, 'static> {
 	Custom(Status::NotAcceptable, template!("errors/406.html"))
 }
 
-fn preferred_media<'r>(request: &'r Request) -> Vec<&'r MediaType> {
+fn preferred_media<'r>(request: &'r Request<'_>) -> Vec<&'r MediaType> {
 	request
 		.accept()
 		.map(|accept| {
@@ -35,8 +35,12 @@ fn media_types_match(first: &MediaType, other: &MediaType) -> bool {
 	collide(first.top(), other.top()) && collide(first.sub(), other.sub())
 }
 
-impl<'r, H: Responder<'r>, J: Responder<'r>> Responder<'r> for Accepter<H, J> {
-	fn respond_to(self, request: &Request) -> response::Result<'r> {
+impl<'r, 'o: 'r, 'h: 'o, 'j: 'o, H, J> Responder<'r, 'o> for Accepter<H, J>
+where
+	H: Responder<'r, 'h>,
+	J: Responder<'r, 'j>,
+{
+	fn respond_to(self, request: &'r Request<'_>) -> response::Result<'o> {
 		let preferred = preferred_media(request);
 
 		// No 'Accept' header given, return HTML by default
@@ -62,13 +66,13 @@ impl<'r, H: Responder<'r>, J: Responder<'r>> Responder<'r> for Accepter<H, J> {
 mod test {
 	use super::*;
 	use rocket::http::{Accept, Header, Status};
-	use rocket::local::Client;
+	use rocket::local::blocking::Client;
 	use rocket::response::content::Html;
 	use rocket::response::Redirect;
-	use rocket_contrib::json::Json;
+	use rocket::serde::json::Json;
 
 	#[get("/simple")]
-	fn test_simple<'r>() -> impl Responder<'static> {
+	fn test_simple<'r>() -> impl Responder<'r, 'static> {
 		Accepter {
 			html: Html("<html><h1>Hello HTML"),
 			json: Json(vec!["hello json"]),
@@ -76,18 +80,20 @@ mod test {
 	}
 
 	#[get("/redirect")]
-	fn test_redirect<'r>() -> Accepter<Redirect, Redirect> {
+	fn test_redirect() -> Accepter<Redirect, Redirect> {
 		Accepter {
 			html: Redirect::to(uri!(test_simple)),
 			json: Redirect::to("/somewhere"),
 		}
 	}
 
+	#[launch]
+	fn rocket() -> _ {
+		rocket::build().mount("/", routes![test_simple, test_redirect])
+	}
+
 	fn client() -> Client {
-		Client::new(
-			rocket::ignite().mount("/", routes![test_simple, test_redirect]),
-		)
-		.unwrap()
+		Client::tracked(rocket()).expect("valid rocket")
 	}
 
 	#[test]
@@ -101,7 +107,7 @@ mod test {
 			Some("text/html; charset=utf-8")
 		);
 		assert!(response
-			.body_string()
+			.into_string()
 			.expect("html body")
 			.contains("Hello HTML"));
 	}
@@ -117,7 +123,7 @@ mod test {
 			Some("application/json")
 		);
 		assert_eq!(
-			response.body_string().expect("json body"),
+			response.into_string().expect("json body"),
 			"[\"hello json\"]"
 		);
 	}
@@ -153,7 +159,7 @@ mod test {
 			Some("text/html; charset=utf-8")
 		);
 		assert!(response
-			.body_string()
+			.into_string()
 			.expect("html body")
 			.contains("Hello HTML"));
 	}
@@ -174,7 +180,7 @@ mod test {
 			Some("application/json")
 		);
 		assert_eq!(
-			response.body_string().expect("json body"),
+			response.into_string().expect("json body"),
 			"[\"hello json\"]"
 		);
 	}

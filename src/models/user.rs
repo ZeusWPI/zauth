@@ -1,6 +1,6 @@
 use self::schema::users;
 use crate::errors::{InternalError, LoginError, Result, ZauthError};
-use crate::ConcreteConnection;
+use crate::DbConn;
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
@@ -10,6 +10,7 @@ use chrono::{NaiveDateTime, Utc};
 use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
+use rocket::serde::Serialize;
 use std::convert::TryInto;
 use validator::{Validate, ValidationError};
 
@@ -61,6 +62,7 @@ mod schema {
 #[derive(Validate, Serialize, AsChangeset, Queryable, Debug, Clone)]
 #[table_name = "users"]
 #[changeset_options(treat_none_as_null = "true")]
+#[serde(crate = "rocket::serde")]
 pub struct User {
 	pub id:                    i32,
 	#[validate(length(min = 3, max = 254))]
@@ -122,8 +124,9 @@ pub struct ChangeAdmin {
 }
 
 impl User {
-	pub fn all(conn: &ConcreteConnection) -> Result<Vec<User>> {
-		let all_users = users::table.load::<User>(conn)?;
+	pub async fn all(db: &DbConn) -> Result<Vec<User>> {
+		let all_users =
+			db.run(move |conn| users::table.load::<User>(conn)).await?;
 		Ok(all_users)
 	}
 
@@ -131,42 +134,49 @@ impl User {
 		matches!(self.state, Active)
 	}
 
-	pub fn find_by_username(
-		username: &str,
-		conn: &ConcreteConnection,
+	pub async fn find_by_username<'r>(
+		username: String,
+		db: &DbConn,
 	) -> Result<User> {
-		users::table
-			.filter(users::username.eq(username))
-			.first(conn)
-			.map_err(ZauthError::from)
+		db.run(move |conn| {
+			users::table
+				.filter(users::username.eq(username))
+				.first(conn)
+				.map_err(ZauthError::from)
+		})
+		.await
 	}
 
-	pub fn find_by_email(
-		email: &str,
-		conn: &ConcreteConnection,
-	) -> Result<User> {
-		users::table
-			.filter(users::email.eq(email))
-			.first(conn)
-			.map_err(ZauthError::from)
+	pub async fn find_by_email(email: String, db: &DbConn) -> Result<User> {
+		let query = users::table.filter(users::email.eq(email));
+		db.run(move |conn| query.first(conn).map_err(ZauthError::from))
+			.await
 	}
 
-	pub fn delete(self, conn: &ConcreteConnection) -> Result<()> {
-		diesel::delete(users::table.find(self.id))
-			.execute(conn)
-			.map_err(ZauthError::from)?;
+	pub async fn delete(self, db: &DbConn) -> Result<()> {
+		db.run(move |conn| {
+			diesel::delete(users::table.find(self.id))
+				.execute(conn)
+				.map_err(ZauthError::from)
+		})
+		.await?;
 		Ok(())
 	}
 
-	pub fn find_by_token(
-		token: &str,
-		conn: &ConcreteConnection,
+	pub async fn find_by_token<'r>(
+		token: String,
+		db: &DbConn,
 	) -> Result<Option<User>> {
-		match users::table
-			.filter(users::password_reset_token.eq(token))
-			.first::<Self>(conn)
-			.map_err(ZauthError::from)
-		{
+		let token = token.to_owned();
+		let result = db
+			.run(move |conn| {
+				users::table
+					.filter(users::password_reset_token.eq(token))
+					.first::<Self>(conn)
+			})
+			.await
+			.map_err(ZauthError::from);
+		match result {
 			Ok(user)
 				if Utc::now().naive_utc()
 					< user.password_reset_expiry.unwrap() =>
@@ -179,17 +189,21 @@ impl User {
 		}
 	}
 
-	pub fn find_by_pending(conn: &ConcreteConnection) -> Result<Vec<User>> {
-		let pending_users = users::table
-			.filter(users::state.eq(UserState::PendingApproval))
-			.load::<User>(conn)?;
+	pub async fn find_by_pending(db: &DbConn) -> Result<Vec<User>> {
+		let pending_users = db
+			.run(move |conn| {
+				users::table
+					.filter(users::state.eq(UserState::PendingApproval))
+					.load::<User>(conn)
+			})
+			.await?;
 		Ok(pending_users)
 	}
 
-	pub fn create(
+	pub async fn create(
 		user: NewUser,
 		bcrypt_cost: u32,
-		conn: &ConcreteConnection,
+		db: &DbConn,
 	) -> Result<User> {
 		user.validate()?;
 		let user = NewUserHashed {
@@ -201,13 +215,13 @@ impl User {
 			state:           Active,
 			last_login:      Utc::now().naive_utc(),
 		};
-		Self::insert(user, conn)
+		Self::insert(user, db).await
 	}
 
-	pub fn create_pending(
+	pub async fn create_pending(
 		user: NewUser,
 		bcrypt_cost: u32,
-		conn: &ConcreteConnection,
+		db: &DbConn,
 	) -> Result<User> {
 		user.validate()?;
 		let user = NewUserHashed {
@@ -219,19 +233,22 @@ impl User {
 			state:           PendingApproval,
 			last_login:      Utc::now().naive_utc(),
 		};
-		Self::insert(user, conn)
+		Self::insert(user, db).await
 	}
 
-	fn insert(user: NewUserHashed, conn: &ConcreteConnection) -> Result<User> {
-		conn.transaction(|| {
-			// Create a new user
-			diesel::insert_into(users::table)
-				.values(&user)
-				.execute(conn)?;
-			// Fetch the last created user
-			let user = users::table.order(users::id.desc()).first(conn)?;
-			Ok(user)
+	async fn insert(user: NewUserHashed, db: &DbConn) -> Result<User> {
+		db.run(move |conn| {
+			conn.transaction(|| {
+				// Create a new user
+				diesel::insert_into(users::table)
+					.values(&user)
+					.execute(conn)?;
+				// Fetch the last created user
+				let user = users::table.order(users::id.desc()).first(conn)?;
+				Ok(user)
+			})
 		})
+		.await
 	}
 
 	pub fn change_with(
@@ -257,55 +274,63 @@ impl User {
 		Ok(())
 	}
 
-	pub fn update(self, conn: &ConcreteConnection) -> Result<Self> {
+	pub async fn update(self, db: &DbConn) -> Result<Self> {
 		let id = self.id;
+		db.run(move |conn| {
+			conn.transaction(|| {
+				// Create a new user
+				diesel::update(users::table.find(id))
+					.set(self)
+					.execute(conn)?;
 
-		conn.transaction(|| {
-			// Create a new user
-			diesel::update(users::table.find(id))
-				.set(self)
-				.execute(conn)?;
-
-			// Fetch the updated record
-			users::table.find(id).first(conn)
+				// Fetch the updated record
+				users::table.find(id).first(conn)
+			})
 		})
+		.await
 		.map_err(ZauthError::from)
 	}
 
-	pub fn change_password(
+	pub async fn change_password(
 		mut self,
 		new_password: &str,
 		bcrypt_cost: u32,
-		conn: &ConcreteConnection,
+		db: &DbConn,
 	) -> Result<Self> {
 		self.hashed_password = hash(new_password, bcrypt_cost)?;
 		self.password_reset_token = None;
 		self.password_reset_expiry = None;
-		self.update(conn)
+		self.update(db).await
 	}
 
-	pub fn reload(self, conn: &ConcreteConnection) -> Result<User> {
-		Self::find(self.id, conn)
+	pub async fn reload(self, db: &DbConn) -> Result<User> {
+		Self::find(self.id, db).await
 	}
 
-	pub fn find(id: i32, conn: &ConcreteConnection) -> Result<User> {
-		users::table.find(id).first(conn).map_err(ZauthError::from)
+	pub async fn find(id: i32, db: &DbConn) -> Result<User> {
+		db.run(move |conn| {
+			users::table.find(id).first(conn).map_err(ZauthError::from)
+		})
+		.await
 	}
 
-	pub fn last(conn: &ConcreteConnection) -> Result<User> {
-		users::table
-			.order(users::id.desc())
-			.first(conn)
-			.map_err(ZauthError::from)
+	pub async fn last(db: &DbConn) -> Result<User> {
+		db.run(move |conn| {
+			users::table
+				.order(users::id.desc())
+				.first(conn)
+				.map_err(ZauthError::from)
+		})
+		.await
 	}
 
-	pub fn find_and_authenticate(
-		username: &str,
-		password: &str,
-		conn: &ConcreteConnection,
+	pub async fn find_and_authenticate(
+		username: String,
+		password: String,
+		db: &DbConn,
 	) -> Result<User> {
-		match Self::find_by_username(username, conn) {
-			Ok(user) if !verify(password, &user.hashed_password) => {
+		match Self::find_by_username(username, db).await {
+			Ok(user) if !verify(&password, &user.hashed_password) => {
 				Err(ZauthError::LoginError(LoginError::UsernamePasswordError))
 			},
 			Ok(user) if user.state == UserState::PendingApproval => Err(

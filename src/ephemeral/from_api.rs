@@ -1,115 +1,62 @@
-use rocket::data::{FromData, Outcome, Transform, Transformed};
-use rocket::http::{ContentType, Status};
-use rocket::request::Form;
-use rocket::{Data, Request};
-use rocket_contrib::json::Json;
+use rocket::data::{Data, FromData, Outcome};
+use rocket::form::Form;
+use rocket::http::ContentType;
+use rocket::http::Status;
+use rocket::serde::json::Json;
+use rocket::Request;
 
 #[derive(Debug)]
 pub struct Api<T> {
 	inner: T,
 }
 
-impl<T> Api<T> {
+impl<T: std::fmt::Debug> Api<T> {
 	pub fn into_inner(self) -> T {
 		self.inner
 	}
 }
 
-pub enum ApiError<'a, T>
+#[derive(Debug)]
+pub enum ApiError<'r, T>
 where
-	Form<T>: FromData<'a>,
-	Json<T>: FromData<'a>,
+	Form<T>: FromData<'r>,
+	Json<T>: FromData<'r>,
+	T: std::fmt::Debug,
 {
-	FormError(<Form<T> as FromData<'a>>::Error),
-	JsonError(<Json<T> as FromData<'a>>::Error),
+	FormError(<Form<T> as FromData<'r>>::Error),
+	JsonError(<Json<T> as FromData<'r>>::Error),
 	WasNeither,
 }
 
-impl<'a, T: 'a> FromData<'a> for Api<T>
+#[rocket::async_trait]
+impl<'r, T: 'r> FromData<'r> for Api<T>
 where
-	Form<T>: FromData<'a, Owned = String, Borrowed = str>,
-	Json<T>: FromData<'a, Owned = String, Borrowed = str>,
+	Form<T>: FromData<'r>,
+	Json<T>: FromData<'r>,
+	T: std::fmt::Debug,
 {
-	type Borrowed = str;
-	type Error = ApiError<'a, T>;
-	type Owned = String;
+	type Error = ApiError<'r, T>;
 
-	fn transform(
-		request: &Request,
-		data: Data,
-	) -> Transform<Outcome<Self::Owned, Self::Error>> {
+	async fn from_data(
+		request: &'r Request<'_>,
+		data: Data<'r>,
+	) -> Outcome<'r, Self> {
 		if request.content_type() == Some(&ContentType::Form) {
-			match Form::transform(request, data) {
-				Transform::Borrowed(o) => Transform::Borrowed(
-					o.map_failure(|(s, e)| (s, ApiError::FormError(e))),
-				),
-				Transform::Owned(o) => Transform::Owned(
-					o.map_failure(|(s, e)| (s, ApiError::FormError(e))),
-				),
-			}
-		} else if request.content_type() == Some(&ContentType::JSON) {
-			match Json::transform(request, data) {
-				Transform::Borrowed(o) => Transform::Borrowed(
-					o.map_failure(|(s, e)| (s, ApiError::JsonError(e))),
-				),
-				Transform::Owned(o) => Transform::Owned(
-					o.map_failure(|(s, e)| (s, ApiError::JsonError(e))),
-				),
-			}
-		} else {
-			Transform::Owned(Outcome::Failure((
-				Status::UnprocessableEntity,
-				ApiError::WasNeither,
-			)))
-		}
-	}
-
-	fn from_data(
-		request: &Request,
-		outcome: Transformed<'a, Self>,
-	) -> Outcome<Self, Self::Error> {
-		if request.content_type() == Some(&ContentType::Form) {
-			let outcome = match outcome {
-				Transform::Borrowed(o) => {
-					Transform::Borrowed(o.map_failure(|(s, e)| match e {
-						ApiError::FormError(e) => (s, e),
-						_ => unreachable!(),
-					}))
-				},
-				Transform::Owned(o) => {
-					Transform::Owned(o.map_failure(|(s, e)| match e {
-						ApiError::FormError(e) => (s, e),
-						_ => unreachable!(),
-					}))
-				},
-			};
-			Form::from_data(request, outcome)
+			Form::from_data(request, data)
+				.await
 				.map(|v| Api {
 					inner: v.into_inner(),
 				})
 				.map_failure(|(s, e)| (s, ApiError::FormError(e)))
 		} else if request.content_type() == Some(&ContentType::JSON) {
-			let outcome = match outcome {
-				Transform::Borrowed(o) => {
-					Transform::Borrowed(o.map_failure(|(s, e)| match e {
-						ApiError::JsonError(e) => (s, e),
-						_ => unreachable!(),
-					}))
-				},
-				Transform::Owned(o) => {
-					Transform::Owned(o.map_failure(|(s, e)| match e {
-						ApiError::JsonError(e) => (s, e),
-						_ => unreachable!(),
-					}))
-				},
-			};
-			Json::from_data(request, outcome)
+			Json::from_data(request, data)
+				.await
 				.map(|v| Api {
 					inner: v.into_inner(),
 				})
 				.map_failure(|(s, e)| (s, ApiError::JsonError(e)))
 		} else {
-			outcome.owned().map(|_| unreachable!())
+			Outcome::Failure((Status::NotAcceptable, ApiError::WasNeither))
 		}
 	}
 }

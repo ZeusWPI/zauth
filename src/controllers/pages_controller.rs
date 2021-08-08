@@ -9,18 +9,18 @@ use crate::models::user::User;
 use crate::DbConn;
 
 #[get("/")]
-pub fn home_page(
+pub async fn home_page<'r>(
 	session: Option<UserSession>,
-	conn: DbConn,
-) -> Result<Either<Redirect, impl Responder<'static>>> {
+	db: DbConn,
+) -> Result<Either<Redirect, impl Responder<'r, 'static>>> {
 	match session {
 		None => Ok(Either::Right(template! {
 			"pages/home.html";
-			clients:      Vec<Client>  = Client::all(&conn)?,
-			users:        Vec<User>    = User::all(&conn)?,
+			clients:      Vec<Client>  = Client::all(&db).await?,
+			users:        Vec<User>    = User::all(&db).await?,
 		})),
 		Some(session) => {
-			Ok(Either::Left(Redirect::to(uri!(show_user: session.user.id))))
+			Ok(Either::Left(Redirect::to(uri!(show_user(session.user.id)))))
 		},
 	}
 }

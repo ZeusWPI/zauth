@@ -40,8 +40,8 @@ impl ZauthError {
 	}
 }
 
-impl Responder<'static> for ZauthError {
-	fn respond_to(self, _: &Request) -> response::Result<'static> {
+impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
+	fn respond_to(self, _: &'r Request<'_>) -> response::Result<'o> {
 		let mut builder = Response::build();
 		match self {
 			ZauthError::Custom(status, _) => {
@@ -59,9 +59,8 @@ impl Responder<'static> for ZauthError {
 			_ => {},
 		}
 
-		Ok(builder
-			.sized_body(Cursor::new(format!("An error occured: {:?}", self)))
-			.finalize())
+		let body = format!("An error occured: {:?}", self);
+		Ok(builder.sized_body(body.len(), Cursor::new(body)).finalize())
 		// Ok(match self {
 		// 	ZauthError::Custom(status, reason) => {
 		// 		Response::build().status(status)
@@ -171,12 +170,12 @@ pub enum Either<R, E> {
 	Right(E),
 }
 
-impl<'r, R, E> Responder<'r> for Either<R, E>
+impl<'r, 'o: 'r, 'a: 'o, 'b: 'o, A, B> Responder<'r, 'r> for Either<A, B>
 where
-	R: Responder<'r>,
-	E: Responder<'r>,
+	A: Responder<'r, 'a>,
+	B: Responder<'r, 'b>,
 {
-	fn respond_to(self, req: &Request) -> rocket::response::Result<'r> {
+	fn respond_to(self, req: &'r Request<'_>) -> rocket::response::Result<'o> {
 		match self {
 			Self::Left(left) => left.respond_to(req),
 			Self::Right(right) => right.respond_to(req),
@@ -190,13 +189,14 @@ pub enum OneOf<X, Y, Z> {
 	Three(Z),
 }
 
-impl<'r, X, Y, Z> Responder<'r> for OneOf<X, Y, Z>
+impl<'r, 'o: 'r, 'x: 'o, 'y: 'o, 'z: 'o, X, Y, Z> Responder<'r, 'o>
+	for OneOf<X, Y, Z>
 where
-	X: Responder<'r>,
-	Y: Responder<'r>,
-	Z: Responder<'r>,
+	X: Responder<'r, 'x>,
+	Y: Responder<'r, 'y>,
+	Z: Responder<'r, 'z>,
 {
-	fn respond_to(self, req: &Request) -> rocket::response::Result<'r> {
+	fn respond_to(self, req: &'r Request<'_>) -> rocket::response::Result<'o> {
 		match self {
 			Self::One(one) => one.respond_to(req),
 			Self::Two(two) => two.respond_to(req),
