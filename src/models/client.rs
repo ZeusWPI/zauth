@@ -93,15 +93,6 @@ impl Client {
 		return client;
 	}
 
-	pub fn delete(&mut self, conn: &ConcreteConnection) -> Result<()> {
-		let id = self.id;
-
-		diesel::delete(clients::table.filter(clients::id.eq(id)))
-			.execute(conn)?;
-
-		Ok(())
-	}
-
 	pub fn change_with(&mut self, change: ClientChange) -> Result<()> {
 		if let Some(name) = change.name {
 			self.name = name;
@@ -131,6 +122,11 @@ impl Client {
 			clients::table.find(id).first(conn)
 		})
 		.map_err(ZauthError::from)
+	}
+
+	pub fn delete(self, conn: &ConcreteConnection) -> Result<()> {
+		diesel::delete(clients::table.find(self.id)).execute(conn)?;
+		Ok(())
 	}
 
 	pub fn find_by_name(
