@@ -22,4 +22,4 @@
 remote="$1"
 url="$2"
 
-cargo +nightly fmt -- --check
+cargo fmt -- --check
