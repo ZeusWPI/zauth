@@ -44,6 +44,7 @@ use rocket::{Build, Rocket};
 
 use crate::mailer::Mailer;
 use rocket::fairing::AdHoc;
+use rocket::figment::Figment;
 use rocket::fs::FileServer;
 
 use rocket_sync_db_pools::database;
@@ -58,7 +59,7 @@ pub fn favicon() -> &'static str {
 	""
 }
 
-pub fn prepare_custom(config: rocket::Config) -> Rocket<Build> {
+pub fn prepare_custom(config: Figment) -> Rocket<Build> {
 	assemble(rocket::custom(config))
 }
 
@@ -78,40 +79,39 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 			"/",
 			routes![
 				favicon,
-				/* clients_controller::list_clients,
-				 * clients_controller::update_client_page,
-				 * clients_controller::update_client,
-				 * clients_controller::create_client,
-				 * clients_controller::delete_client,
-				 * oauth_controller::authorize,
-				 * oauth_controller::grant_get,
-				 * oauth_controller::grant_post,
-				 * oauth_controller::token,
-				 * pages_controller::home_page,
-				 * sessions_controller::create_session,
-				 * sessions_controller::new_session,
-				 * sessions_controller::delete_session,
-				 * sessions_controller::destroy_session,
-				 * users_controller::create_user_page,
-				 * users_controller::create_user,
-				 * users_controller::register_page,
-				 * users_controller::register,
-				 * users_controller::current_user,
-				 * users_controller::show_user,
-				 * users_controller::list_users,
-				 * users_controller::update_user,
-				 * users_controller::set_admin,
-				 * users_controller::set_approved,
-				 * users_controller::forgot_password_get,
-				 * users_controller::forgot_password_post,
-				 * users_controller::reset_password_get,
-				 * users_controller::reset_password_post, */
+				clients_controller::list_clients,
+				clients_controller::update_client_page,
+				clients_controller::update_client,
+				clients_controller::create_client,
+				clients_controller::delete_client,
+				oauth_controller::authorize,
+				oauth_controller::grant_get,
+				oauth_controller::grant_post,
+				oauth_controller::token,
+				pages_controller::home_page,
+				sessions_controller::create_session,
+				sessions_controller::new_session,
+				sessions_controller::delete_session,
+				sessions_controller::destroy_session,
+				users_controller::create_user_page,
+				users_controller::create_user,
+				users_controller::register_page,
+				users_controller::register,
+				users_controller::current_user,
+				users_controller::show_user,
+				users_controller::list_users,
+				users_controller::update_user,
+				users_controller::set_admin,
+				users_controller::set_approved,
+				users_controller::forgot_password_get,
+				users_controller::forgot_password_post,
+				users_controller::reset_password_get,
+				users_controller::reset_password_post,
 			],
 		)
 		.mount("/static/", FileServer::from("static/"))
 		.manage(token_store)
 		.manage(mailer)
-		.manage(config.clone())
 		.attach(DbConn::fairing())
 		.attach(AdHoc::config::<Config>())
 		.attach(AdHoc::on_ignite("Database Migrations", run_migrations));

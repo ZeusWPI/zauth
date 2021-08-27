@@ -1,3 +1,5 @@
+#![feature(async_closure)]
+
 extern crate diesel;
 extern crate regex;
 extern crate rocket;
@@ -26,9 +28,9 @@ fn get_param(param_name: &str, query: &String) -> Option<String> {
 		.map(|c| c[1].to_string())
 }
 
-#[test]
-fn normal_flow() {
-	common::as_visitor(|http_client, db| {
+#[rocket::async_test]
+async fn normal_flow() {
+	common::as_visitor(async move |http_client, db| {
 		let redirect_uri = "https://example.com/redirect/me/here";
 		let client_id = "test";
 		let client_state = "anarchy (╯°□°)╯ ┻━┻";
@@ -46,6 +48,7 @@ fn normal_flow() {
 			common::BCRYPT_COST,
 			&db,
 		)
+		.await
 		.expect("user");
 
 		let mut client = Client::create(
@@ -54,11 +57,12 @@ fn normal_flow() {
 			},
 			&db,
 		)
+		.await
 		.expect("client created");
 
 		client.needs_grant = true;
 		client.redirect_uri_list = String::from(redirect_uri);
-		let client = client.update(&db).expect("client updated");
+		let client = client.update(&db).await.expect("client updated");
 
 		// 1. User is redirected to OAuth server with request params given by
 		// the client
@@ -70,7 +74,7 @@ fn normal_flow() {
 			url(client_id),
 			url(client_state)
 		);
-		let response = http_client.get(authorize_url).dispatch();
+		let response = http_client.get(authorize_url).dispatch().await;
 
 		assert_eq!(response.status(), Status::SeeOther);
 		let login_location = response
@@ -81,7 +85,7 @@ fn normal_flow() {
 		assert!(login_location.starts_with("/login"));
 
 		// 2. User requests the login page
-		let response = http_client.get(login_location).dispatch();
+		let response = http_client.get(login_location).dispatch().await;
 
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(response.content_type(), Some(ContentType::HTML));
@@ -98,7 +102,8 @@ fn normal_flow() {
 			.post(login_url)
 			.body(form_body)
 			.header(ContentType::Form)
-			.dispatch();
+			.dispatch()
+			.await;
 
 		assert_eq!(response.status(), Status::SeeOther);
 		let grant_location = response
@@ -109,7 +114,7 @@ fn normal_flow() {
 		assert!(grant_location.starts_with("/oauth/grant"));
 
 		// 4. User requests grant page
-		let response = http_client.get(grant_location).dispatch();
+		let response = http_client.get(grant_location).dispatch().await;
 
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(response.content_type(), Some(ContentType::HTML));
@@ -122,7 +127,8 @@ fn normal_flow() {
 			.post(grant_url)
 			.body(grant_form_body.clone())
 			.header(ContentType::Form)
-			.dispatch();
+			.dispatch()
+			.await;
 
 		assert_eq!(response.status(), Status::SeeOther);
 		let redirect_location = response
@@ -169,7 +175,7 @@ fn normal_flow() {
 			))
 			.body(form_body);
 
-		let mut response = req.dispatch();
+		let response = req.dispatch().await;
 
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(
@@ -177,7 +183,8 @@ fn normal_flow() {
 			ContentType::JSON
 		);
 
-		let response_body = response.body_string().expect("response body");
+		let response_body =
+			response.into_string().await.expect("response body");
 		let data: Value =
 			serde_json::from_str(&response_body).expect("response json values");
 
@@ -215,7 +222,7 @@ fn normal_flow() {
 			.header(ContentType::Form)
 			.body(form_body);
 
-		let mut response = req.dispatch();
+		let response = req.dispatch().await;
 
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(
@@ -223,7 +230,8 @@ fn normal_flow() {
 			ContentType::JSON
 		);
 
-		let response_body = response.body_string().expect("response body");
+		let response_body =
+			response.into_string().await.expect("response body");
 		let data: Value =
 			serde_json::from_str(&response_body).expect("response json values");
 
@@ -231,5 +239,6 @@ fn normal_flow() {
 		assert!(data["access_token"].is_string());
 		assert!(data["token_type"].is_string());
 		assert_eq!(data["token_type"], "???");
-	});
+	})
+	.await;
 }

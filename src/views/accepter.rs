@@ -63,7 +63,9 @@ where
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod test {
+
 	use super::*;
 	use rocket::http::{Accept, Header, Status};
 	use rocket::local::blocking::Client;
@@ -99,8 +101,7 @@ mod test {
 	#[test]
 	fn accept_html() {
 		let client = client();
-		let mut response =
-			client.get("/simple").header(Accept::HTML).dispatch();
+		let response = client.get("/simple").header(Accept::HTML).dispatch();
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(
 			response.headers().get("content-type").next(),
@@ -115,8 +116,7 @@ mod test {
 	#[test]
 	fn accept_json() {
 		let client = client();
-		let mut response =
-			client.get("/simple").header(Accept::JSON).dispatch();
+		let response = client.get("/simple").header(Accept::JSON).dispatch();
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(
 			response.headers().get("content-type").next(),
@@ -145,7 +145,7 @@ mod test {
 	#[test]
 	fn prefers_html() {
 		let client = client();
-		let mut response = client
+		let response = client
 			.get("/simple")
 			.header(Header::new(
 				"Accept",
@@ -167,7 +167,7 @@ mod test {
 	#[test]
 	fn prefers_json() {
 		let client = client();
-		let mut response = client
+		let response = client
 			.get("/simple")
 			.header(Header::new(
 				"Accept",
