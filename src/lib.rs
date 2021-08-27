@@ -28,6 +28,7 @@ extern crate validator_derive;
 pub mod views;
 pub mod config;
 pub mod controllers;
+pub mod db_seed;
 pub mod ephemeral;
 pub mod errors;
 pub mod http_authentication;
@@ -35,7 +36,6 @@ pub mod mailer;
 pub mod models;
 pub mod token_store;
 pub mod util;
-// pub mod db_seed;
 
 use crate::config::Config;
 use crate::controllers::*;

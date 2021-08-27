@@ -37,7 +37,7 @@ impl fmt::Display for UserState {
 	}
 }
 
-mod schema {
+pub mod schema {
 	table! {
 		use diesel::sql_types::*;
 		use crate::models::user::UserStateMapping;
