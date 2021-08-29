@@ -4,7 +4,7 @@ use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;
 use validator::ValidationErrors;
 
-use crate::config::Config;
+use crate::config::{AdminEmail, Config};
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::{
 	AdminSession, ClientOrUserSession, ClientSession, UserSession,
@@ -110,6 +110,7 @@ pub fn register_page<'r>() -> Result<impl Responder<'r, 'static>> {
 pub async fn register<'r>(
 	user: Api<NewUser>,
 	db: DbConn,
+	admin_email: &'r State<AdminEmail>,
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
@@ -119,7 +120,7 @@ pub async fn register<'r>(
 		Ok(user) => {
 			let user_list_url = uri!(list_users);
 			mailer.try_create(
-				&user, // TODO This need to be send to the admins.
+				admin_email.0.clone(),
 				String::from("[Zauth] New user registration"),
 				template!(
 				"mails/new_user_registration.txt";

@@ -2,6 +2,7 @@
 user_session_seconds = 604800              # 1 week
 client_session_seconds = 300               # 5 minutes
 authorization_token_seconds = 300          # 5 minutes
+admin_email = "admin@localhost"
 secure_token_length = 64
 bcrypt_cost = 12
 base_url = "http://localhost:8000"
@@ -20,6 +21,7 @@ url = "postgresql://zauth:zauth@localhost/zauth"
 
 [release]
 # Values you want to fill in for production use
+# admin_email = # Email address to send admin notifications to (e.g. admin@zeus.gent)
 # secret_key =  # used to encrypt cookies (generate a new one!)
 # base_url =    # URL where the application is hosten (e.g. https://auth.zeus.gent)
 # mail_from =   # From header to set when sending emails (e.g. zauth@zeus.gent)

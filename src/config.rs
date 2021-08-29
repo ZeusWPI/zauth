@@ -1,9 +1,11 @@
 use chrono::Duration;
+use lettre::message::Mailbox;
 use rocket::serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(crate = "rocket::serde")]
 pub struct Config {
+	pub admin_email: String,
 	pub user_session_seconds:        i64,
 	pub client_session_seconds:      i64,
 	pub authorization_token_seconds: i64,
@@ -29,3 +31,5 @@ impl Config {
 		Duration::seconds(self.authorization_token_seconds)
 	}
 }
+
+pub struct AdminEmail(pub Mailbox);

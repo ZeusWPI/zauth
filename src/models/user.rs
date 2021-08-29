@@ -11,7 +11,7 @@ use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
 use rocket::serde::Serialize;
-use std::convert::TryInto;
+use std::convert::TryFrom;
 use validator::{Validate, ValidationError};
 
 #[derive(DbEnum, Debug, Serialize, Clone, PartialEq)]
@@ -376,13 +376,13 @@ fn verify(password: &str, hash: &str) -> bool {
 	bcrypt::verify(password, &hash)
 }
 
-impl TryInto<Mailbox> for &User {
+impl TryFrom<&User> for Mailbox {
 	type Error = ZauthError;
 
-	fn try_into(self) -> Result<Mailbox> {
+	fn try_from(value: &User) -> Result<Mailbox> {
 		Ok(Mailbox::new(
-			Some(self.username.to_string()),
-			self.email.clone().parse().map_err(InternalError::from)?,
+			Some(value.username.to_string()),
+			value.email.clone().parse().map_err(InternalError::from)?,
 		))
 	}
 }

@@ -1,6 +1,5 @@
 use crate::config::Config;
 use crate::errors::{InternalError, LaunchError, Result, ZauthError};
-use crate::models::user::User;
 
 use lettre::message::Mailbox;
 use lettre::{Address, Message, SmtpTransport, Transport};
@@ -21,14 +20,14 @@ pub static STUB_MAILER_OUTBOX: (Mutex<Vec<Message>>, Condvar) =
 	(Mutex::new(vec![]), Condvar::new());
 
 impl Mailer {
-	pub fn build(
+	pub fn build<E: Into<ZauthError>, M: TryInto<Mailbox, Error = E>>(
 		&self,
-		user: &User,
+		receiver: M,
 		subject: String,
 		text: String,
 	) -> Result<Message> {
 		Ok(Message::builder()
-			.to(user.try_into()?)
+			.to(receiver.try_into().map_err(|e| e.into())?)
 			.subject(subject)
 			.from(Mailbox::new(None, self.from.clone()))
 			.body(text)
@@ -36,25 +35,32 @@ impl Mailer {
 			.into())
 	}
 
-	pub fn try_create(
+	/// Send an email, but fail when the mail queue is full.
+	///
+	/// Use this method for less important emails where abuse may be possible.
+	pub fn try_create<E: Into<ZauthError>, M: TryInto<Mailbox, Error = E>>(
 		&self,
-		user: &User,
+		receiver: M,
 		subject: String,
 		text: String,
 	) -> Result<()> {
-		let email = self.build(user, subject, text)?;
+		let email = self.build(receiver, subject, text)?;
 		self.queue
 			.try_send(email)
 			.map_err(|e| ZauthError::from(InternalError::from(e)))
 	}
 
-	pub fn create(
+	/// Send an email, but block when the mail queue is full.
+	///
+	/// Use this method only for important emails where the possibility for
+	/// abuse is minimal.
+	pub fn create<E: Into<ZauthError>, M: TryInto<Mailbox, Error = E>>(
 		&self,
-		user: &User,
+		receiver: M,
 		subject: String,
 		text: String,
 	) -> Result<()> {
-		let mail = self.build(user, subject, text)?;
+		let mail = self.build(receiver, subject, text)?;
 
 		self.queue
 			.send(mail)
