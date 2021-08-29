@@ -1,7 +1,7 @@
 use diesel::{self, prelude::*};
 
 use crate::errors::{AuthenticationError, Result, ZauthError};
-use crate::ConcreteConnection;
+use crate::DbConn;
 
 use self::schema::clients;
 
@@ -11,7 +11,7 @@ use validator::Validate;
 
 const SECRET_LENGTH: usize = 64;
 
-mod schema {
+pub mod schema {
 	table! {
 		clients {
 			id -> Integer,
@@ -58,8 +58,10 @@ pub struct ClientChange {
 }
 
 impl Client {
-	pub fn all(conn: &ConcreteConnection) -> Result<Vec<Client>> {
-		let all_clients = clients::table.load::<Client>(conn)?;
+	pub async fn all(db: &DbConn) -> Result<Vec<Client>> {
+		let all_clients = db
+			.run(move |conn| clients::table.load::<Client>(conn))
+			.await?;
 		Ok(all_clients)
 	}
 
@@ -67,17 +69,14 @@ impl Client {
 		random_token(SECRET_LENGTH)
 	}
 
-	pub fn create(
-		client: NewClient,
-		conn: &ConcreteConnection,
-	) -> Result<Client> {
+	pub async fn create(client: NewClient, db: &DbConn) -> Result<Client> {
 		client.validate()?;
 		let client = NewClientWithSecret {
 			name:   client.name,
 			secret: Self::generate_random_secret(),
 		};
-		let client = conn
-			.transaction(|| {
+		db.run(move |conn| {
+			conn.transaction(|| {
 				// Create a new client
 				diesel::insert_into(clients::table)
 					.values(&client)
@@ -85,8 +84,9 @@ impl Client {
 				// Fetch the last created client
 				clients::table.order(clients::id.desc()).first(conn)
 			})
-			.map_err(ZauthError::from);
-		return client;
+			.map_err(ZauthError::from)
+		})
+		.await
 	}
 
 	pub fn change_with(&mut self, change: ClientChange) -> Result<()> {
@@ -105,37 +105,44 @@ impl Client {
 		Ok(())
 	}
 
-	pub fn update(self, conn: &ConcreteConnection) -> Result<Self> {
+	pub async fn update(self, db: &DbConn) -> Result<Self> {
 		let id = self.id;
+		db.run(move |conn| {
+			conn.transaction(|| {
+				// Update a client
+				diesel::update(clients::table.find(id))
+					.set(self)
+					.execute(conn)?;
 
-		conn.transaction(|| {
-			// Update a client
-			diesel::update(clients::table.find(id))
-				.set(self)
-				.execute(conn)?;
-
-			// Fetch the updated record
-			clients::table.find(id).first(conn)
+				// Fetch the updated record
+				clients::table.find(id).first(conn)
+			})
+			.map_err(ZauthError::from)
 		})
-		.map_err(ZauthError::from)
+		.await
 	}
 
-	pub fn delete(self, conn: &ConcreteConnection) -> Result<()> {
-		diesel::delete(clients::table.find(self.id)).execute(conn)?;
+	pub async fn delete(self, db: &DbConn) -> Result<()> {
+		db.run(move |conn| {
+			diesel::delete(clients::table.find(self.id)).execute(conn)
+		})
+		.await?;
 		Ok(())
 	}
 
-	pub fn find_by_name(
-		name: &str,
-		conn: &ConcreteConnection,
-	) -> Result<Client> {
-		let client =
-			clients::table.filter(clients::name.eq(name)).first(conn)?;
+	pub async fn find_by_name(name: String, db: &DbConn) -> Result<Client> {
+		let client = db
+			.run(move |conn| {
+				clients::table.filter(clients::name.eq(name)).first(conn)
+			})
+			.await?;
 		Ok(client)
 	}
 
-	pub fn find(id: i32, conn: &ConcreteConnection) -> Result<Client> {
-		let client = clients::table.find(id).first(conn)?;
+	pub async fn find(id: i32, db: &DbConn) -> Result<Client> {
+		let client = db
+			.run(move |conn| clients::table.find(id).first(conn))
+			.await?;
 		Ok(client)
 	}
 
@@ -145,12 +152,12 @@ impl Client {
 			.any(|uri| uri == redirect_uri)
 	}
 
-	pub fn find_and_authenticate(
-		name: &str,
+	pub async fn find_and_authenticate(
+		name: String,
 		secret: &str,
-		conn: &ConcreteConnection,
+		db: &DbConn,
 	) -> Result<Client> {
-		let client = Self::find_by_name(name, conn)?;
+		let client = Self::find_by_name(name, db).await?;
 		if client.secret == secret {
 			Ok(client)
 		} else {

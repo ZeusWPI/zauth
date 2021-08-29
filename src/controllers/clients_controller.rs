@@ -2,7 +2,7 @@ use rocket::http::Status;
 use rocket::response::status;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
-use rocket_contrib::json::Json;
+use rocket::serde::json::Json;
 use std::fmt::Debug;
 
 use crate::ephemeral::from_api::Api;
@@ -14,11 +14,11 @@ use crate::views::accepter::Accepter;
 use crate::DbConn;
 
 #[get("/clients")]
-pub fn list_clients(
-	conn: DbConn,
+pub async fn list_clients<'r>(
+	db: DbConn,
 	session: AdminSession,
-) -> Result<impl Responder<'static>> {
-	let clients = Client::all(&conn)?;
+) -> Result<impl Responder<'r, 'static>> {
+	let clients = Client::all(&db).await?;
 	Ok(Accepter {
 		html: template! {
 			"clients/index.html";
@@ -30,12 +30,12 @@ pub fn list_clients(
 }
 
 #[get("/clients/<id>/edit")]
-pub fn update_client_page(
+pub async fn update_client_page<'r>(
 	id: i32,
 	session: AdminSession,
-	conn: DbConn,
-) -> Result<impl Responder<'static>> {
-	let client = Client::find(id, &conn)?;
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let client = Client::find(id, &db).await?;
 
 	Ok(template! { "clients/edit_client.html";
 		current_user: User = session.admin,
@@ -44,15 +44,15 @@ pub fn update_client_page(
 }
 
 #[put("/clients/<id>", data = "<change>")]
-pub fn update_client(
+pub async fn update_client<'r>(
 	id: i32,
 	change: Api<ClientChange>,
 	_session: AdminSession,
-	conn: DbConn,
-) -> Result<impl Responder<'static>> {
-	let mut client = Client::find(id, &conn)?;
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let mut client = Client::find(id, &db).await?;
 	client.change_with(change.into_inner())?;
-	let _client = client.update(&conn)?;
+	client.update(&db).await?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(list_clients)),
 		json: Custom(Status::NoContent, ()),
@@ -60,13 +60,13 @@ pub fn update_client(
 }
 
 #[delete("/clients/<id>")]
-pub fn delete_client(
+pub async fn delete_client<'r>(
 	id: i32,
 	_session: AdminSession,
-	conn: DbConn,
-) -> Result<impl Responder<'static>> {
-	let client = Client::find(id, &conn)?;
-	client.delete(&conn)?;
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let client = Client::find(id, &db).await?;
+	client.delete(&db).await?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(list_clients)),
 		json: Custom(Status::NoContent, ()),
@@ -74,14 +74,14 @@ pub fn delete_client(
 }
 
 #[post("/clients", data = "<client>")]
-pub fn create_client(
+pub async fn create_client<'r>(
 	client: Api<NewClient>,
-	conn: DbConn,
+	db: DbConn,
 	_admin: AdminSession,
-) -> Result<impl Responder<'static>> {
-	let client = Client::create(client.into_inner(), &conn)?;
+) -> Result<impl Responder<'r, 'static>> {
+	let client = Client::create(client.into_inner(), &db).await?;
 	Ok(Accepter {
-		html: Redirect::to(uri!(update_client_page: client.id)),
-		json: status::Created(String::from("/client"), Some(Json(client))),
+		html: Redirect::to(uri!(update_client_page(client.id))),
+		json: status::Created::new(String::from("/client")).body(Json(client)),
 	})
 }

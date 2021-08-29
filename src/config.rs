@@ -1,42 +1,14 @@
-use pwhash::bcrypt;
-use std::convert::TryFrom;
-use toml::de::Error;
+use rocket::serde::Deserialize;
 
-macro_rules! config_options {
-    ($($name:ident: $type:ty = $default:expr),+$(,)?) => {
-    	#[derive(Debug, Clone)]
-    	pub struct Config {
-			$(
-				pub $name: $type,
-			)+
-    	}
-    	impl TryFrom<&rocket::Config> for Config {
-			type Error = Error;
-
-			fn try_from(config: &rocket::Config) -> Result<Self, Self::Error> {
-				Ok(Config {
-					$(
-						$name: {
-							if let Some(value) = config.extras.get("$name") {
-							 	value.to_owned().try_into()?
-							} else {
-								$default
-							}
-						},
-					)+
-				})
-			}
-		}
-    };
+#[derive(Debug, Deserialize, Clone)]
+#[serde(crate = "rocket::serde")]
+pub struct Config {
+	pub authorization_token_validity_seconds: usize,
+	pub secure_token_length: usize,
+	pub bcrypt_cost: u32,
+	pub base_url: String,
+	pub mail_queue_size: usize,
+	pub mail_queue_wait_seconds: u64,
+	pub mail_from: String,
+	pub mail_server: String,
 }
-
-config_options!(
-	authorization_token_validity_seconds: usize = 300,
-	secure_token_length: usize = 64,
-	bcrypt_cost: u32 = bcrypt::DEFAULT_COST,
-	base_url: &'static str = "http://localhost:8000",
-	mail_queue_size: usize = 32,
-	mail_queue_wait_seconds: u64 = 1,
-	mail_from: &'static str = "zauth@localhost",
-	mail_server: &'static str = "stub"
-);

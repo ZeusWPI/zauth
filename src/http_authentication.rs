@@ -1,7 +1,7 @@
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 
-use rocket::Outcome;
+use rocket::outcome::Outcome;
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -33,11 +33,12 @@ impl FromStr for BasicAuthentication {
 	}
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for BasicAuthentication {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for BasicAuthentication {
 	type Error = String;
 
-	fn from_request(
-		request: &'a Request<'r>,
+	async fn from_request(
+		request: &'r Request<'_>,
 	) -> request::Outcome<Self, Self::Error> {
 		let headers: Vec<_> = request.headers().get("Authorization").collect();
 		if headers.is_empty() {

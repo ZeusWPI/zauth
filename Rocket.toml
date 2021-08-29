@@ -1,11 +1,22 @@
-[development.databases.postgresql_database]
-url = "postgresql://zauth:zauth@localhost/zauth"
+[default]
+authorization_token_validity_seconds = 300
+secure_token_length = 64
+bcrypt_cost = 12
+base_url = "http://localhost:8000"
+mail_queue_size = 32
+mail_queue_wait_seconds = 1
+mail_from = "zauth@localhost"
+mail_server = "stub"
 
-[development]
+[debug]
 secret_key = "1vwCFFPSdQya895gNiO556SzmfShG6MokstgttLvwjw="
 bcrypt_cost = 4
+seed_database = true
 
-[production]
+[debug.databases.postgresql_database]
+url = "postgresql://zauth:zauth@localhost/zauth"
+
+[release]
 # Values you want to fill in for production use
 # secret_key =  # used to encrypt cookies (generate a new one!)
 # base_url =    # URL where the application is hosten (e.g. https://auth.zeus.gent)
@@ -14,5 +25,5 @@ bcrypt_cost = 4
 
 # See src/config.rs for all the possible config values and their defaults
 
-[production.databases.postgresql_database]
+[release.databases.postgresql_database]
 url = "postgresql://zauth:zauth@database/zauth"

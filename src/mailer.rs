@@ -65,10 +65,11 @@ impl Mailer {
 		let wait = Duration::from_secs(config.mail_queue_wait_seconds);
 		let (sender, recv) = mpsc::sync_channel(config.mail_queue_size);
 
-		match config.mail_server {
-			"stub" => thread::spawn(Self::stub_sender(wait, recv)),
-			server => thread::spawn(Self::smtp_sender(wait, recv, server)?),
-		};
+		if config.mail_server == "stub" {
+			thread::spawn(Self::stub_sender(wait, recv));
+		} else {
+			thread::spawn(Self::smtp_sender(wait, recv, &config.mail_server)?);
+		}
 
 		Ok(Mailer {
 			from:  config

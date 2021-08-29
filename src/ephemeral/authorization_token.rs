@@ -1,19 +1,20 @@
 use regex::Regex;
 use rocket::http::Status;
+use rocket::outcome::Outcome;
 use rocket::request::{self, FromRequest, Request};
-use rocket::Outcome;
 
 #[derive(Serialize)]
 pub struct AuthorizationToken {
 	username: String,
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for AuthorizationToken {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for AuthorizationToken {
 	type Error = String;
 
-	fn from_request(
-		request: &'a Request<'r>,
-	) -> request::Outcome<AuthorizationToken, String> {
+	async fn from_request(
+		request: &'r Request<'_>,
+	) -> request::Outcome<Self, Self::Error> {
 		let headers: Vec<_> = request.headers().get("Authorization").collect();
 		if headers.is_empty() {
 			let msg = String::from("Authorization header missing");

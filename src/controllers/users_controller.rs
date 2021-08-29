@@ -1,7 +1,6 @@
 use rocket::http::Status;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
-use rocket_contrib::json::Json;
 use std::fmt::Debug;
 use validator::ValidationErrors;
 
@@ -16,7 +15,8 @@ use crate::views::accepter::Accepter;
 use crate::{util, DbConn};
 use askama::Template;
 use chrono::{Duration, Utc};
-use rocket::request::Form;
+use rocket::form::Form;
+use rocket::serde::json::Json;
 use rocket::State;
 
 #[get("/current_user")]
@@ -25,12 +25,12 @@ pub fn current_user(session: UserSession) -> Json<User> {
 }
 
 #[get("/users/<id>")]
-pub fn show_user(
+pub async fn show_user<'r>(
 	session: UserSession,
-	conn: DbConn,
+	db: DbConn,
 	id: i32,
-) -> Result<impl Responder<'static>> {
-	let user = User::find(id, &conn)?;
+) -> Result<impl Responder<'r, 'static>> {
+	let user = User::find(id, &db).await?;
 	// Check whether the current session is allowed to view this user
 	if session.user.admin || session.user.id == id {
 		Ok(Accepter {
@@ -49,12 +49,13 @@ pub fn show_user(
 }
 
 #[get("/users")]
-pub fn list_users(
+pub async fn list_users<'r>(
 	session: AdminSession,
-	conn: DbConn,
-) -> Result<impl Responder<'static>> {
-	let users = User::all(&conn)?;
-	let users_pending_for_approval: Vec<User> = User::find_by_pending(&conn)?;
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let users = User::all(&db).await?;
+	let users_pending_for_approval: Vec<User> =
+		User::find_by_pending(&db).await?;
 	Ok(Accepter {
 		html: template! {
 			"users/index.html";
@@ -67,43 +68,46 @@ pub fn list_users(
 }
 
 #[get("/users/new")]
-pub fn create_user_page(
+pub fn create_user_page<'r>(
 	session: AdminSession,
-) -> Result<impl Responder<'static>> {
+) -> Result<impl Responder<'r, 'static>> {
 	Ok(template! { "users/new_user.html";
 		current_user: User = session.admin,
 	})
 }
 
 #[post("/users", data = "<user>")]
-pub fn create_user(
+pub async fn create_user<'r>(
 	_session: AdminSession,
 	user: Api<NewUser>,
-	conn: DbConn,
-	config: State<Config>,
-) -> Result<impl Responder<'static>> {
-	let user = User::create(user.into_inner(), config.bcrypt_cost, &conn)
+	db: DbConn,
+	config: &State<Config>,
+) -> Result<impl Responder<'r, 'static>> {
+	let user = User::create(user.into_inner(), config.bcrypt_cost, &db)
+		.await
 		.map_err(ZauthError::from)?;
 	Ok(Accepter {
-		html: Redirect::to(uri!(show_user: user.id)),
+		html: Redirect::to(uri!(show_user(user.id))),
 		json: Json(user),
 	})
 }
 
 #[get("/register")]
-pub fn register_page() -> Result<impl Responder<'static>> {
+pub fn register_page<'r>() -> Result<impl Responder<'r, 'static>> {
 	Ok(
 		template! { "users/registration_form.html"; errors: Option<ValidationErrors> = None },
 	)
 }
 
 #[post("/register", data = "<user>")]
-pub fn register(
+pub async fn register<'r>(
 	user: Api<NewUser>,
-	conf: State<Config>,
-	conn: DbConn,
-) -> Result<Either<impl Responder<'static>, impl Responder<'static>>> {
-	match User::create_pending(user.into_inner(), conf.bcrypt_cost, &conn) {
+	conf: &State<Config>,
+	db: DbConn,
+) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
+	let pending =
+		User::create_pending(user.into_inner(), conf.bcrypt_cost, &db).await;
+	match pending {
 		Ok(user) => Ok(Left(Accepter {
 			html: Custom(
 				Status::Created,
@@ -126,21 +130,24 @@ pub fn register(
 }
 
 #[put("/users/<id>", data = "<change>")]
-pub fn update_user(
+pub async fn update_user<'r>(
 	id: i32,
 	change: Api<UserChange>,
 	session: UserSession,
-	conf: State<Config>,
-	conn: DbConn,
+	conf: &State<Config>,
+	db: DbConn,
 ) -> Result<
-	Either<impl Responder<'static>, Custom<impl Debug + Responder<'static>>>,
+	Either<
+		impl Responder<'r, 'static>,
+		Custom<impl Debug + Responder<'r, 'static>>,
+	>,
 > {
-	let mut user = User::find(id, &conn)?;
+	let mut user = User::find(id, &db).await?;
 	if session.user.id == user.id || session.user.admin {
 		user.change_with(change.into_inner(), conf.bcrypt_cost)?;
-		let user = user.update(&conn)?;
+		let user = user.update(&db).await?;
 		Ok(Left(Accepter {
-			html: Redirect::to(uri!(show_user: user.id)),
+			html: Redirect::to(uri!(show_user(user.id))),
 			json: Custom(Status::NoContent, ()),
 		}))
 	} else {
@@ -149,42 +156,42 @@ pub fn update_user(
 }
 
 #[post("/users/<id>/admin", data = "<value>")]
-pub fn set_admin(
+pub async fn set_admin<'r>(
 	id: i32,
 	value: Api<ChangeAdmin>,
 	_session: AdminSession,
-	conn: DbConn,
-) -> Result<impl Responder<'static>> {
-	let mut user = User::find(id, &conn)?;
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let mut user = User::find(id, &db).await?;
 	user.admin = value.into_inner().admin;
-	let user = user.update(&conn)?;
+	let user = user.update(&db).await?;
 	Ok(Accepter {
-		html: Redirect::to(uri!(show_user: user.id)),
+		html: Redirect::to(uri!(show_user(user.id))),
 		json: Custom(Status::NoContent, ()),
 	})
 }
 
 #[post("/users/<id>/approve")]
-pub fn set_approved(
+pub async fn set_approved<'r>(
 	id: i32,
 	_session: AdminSession,
-	conn: DbConn,
-) -> Result<impl Responder<'static>> {
-	let mut user = User::find(id, &conn)?;
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let mut user = User::find(id, &db).await?;
 
 	if user.state == UserState::PendingApproval {
 		user.state = UserState::PendingMailConfirmation;
-		user = user.update(&conn)?;
+		user = user.update(&db).await?;
 	}
 
 	Ok(Accepter {
-		html: Redirect::to(uri!(show_user: user.id)),
+		html: Redirect::to(uri!(show_user(user.id))),
 		json: Custom(Status::NoContent, ()),
 	})
 }
 
 #[get("/users/forgot_password")]
-pub fn forgot_password_get() -> impl Responder<'static> {
+pub fn forgot_password_get<'r>() -> impl Responder<'r, 'static> {
 	template! { "users/forgot_password.html" }
 }
 
@@ -194,14 +201,14 @@ pub struct ResetPassword {
 }
 
 #[post("/users/forgot_password", data = "<value>")]
-pub fn forgot_password_post(
+pub async fn forgot_password_post<'r>(
 	value: Form<ResetPassword>,
-	conn: DbConn,
-	mailer: State<Mailer>,
-) -> Result<impl Responder<'static>> {
+	db: DbConn,
+	mailer: &State<Mailer>,
+) -> Result<impl Responder<'r, 'static>> {
 	let for_email = value.into_inner().for_email;
 
-	let user = match User::find_by_email(&for_email, &conn) {
+	let user = match User::find_by_email(for_email.to_owned(), &db).await {
 		Ok(user) if user.is_active() => Ok(Some(user)),
 		Ok(_user) => Ok(None),
 		Err(ZauthError::NotFound(_)) => Ok(None),
@@ -212,10 +219,10 @@ pub fn forgot_password_post(
 		user.password_reset_token = Some(util::random_token(32));
 		user.password_reset_expiry =
 			Some(Utc::now().naive_utc() + Duration::days(1));
-		let user = user.update(&conn)?;
+		let user = user.update(&db).await?;
 
 		let token = user.password_reset_token.as_ref().unwrap();
-		let reset_url = uri!(reset_password_get: token);
+		let reset_url = uri!(reset_password_get(token));
 		mailer.try_create(
 			&user,
 			String::from("[Zauth] You've requested a password reset"),
@@ -236,7 +243,7 @@ pub fn forgot_password_post(
 }
 
 #[get("/users/reset_password/<token>")]
-pub fn reset_password_get(token: String) -> impl Responder<'static> {
+pub fn reset_password_get<'r>(token: String) -> impl Responder<'r, 'static> {
 	template! {
 		"users/reset_password_form.html";
 		token: String = token,
@@ -251,16 +258,18 @@ pub struct PasswordReset {
 }
 
 #[post("/users/reset_password", data = "<form>")]
-pub fn reset_password_post(
+pub async fn reset_password_post<'r, 'o: 'r>(
 	form: Form<PasswordReset>,
-	conn: DbConn,
-	conf: State<Config>,
-	mailer: State<Mailer>,
-) -> Result<impl Responder<'static>> {
+	db: DbConn,
+	conf: &'r State<Config>,
+	mailer: &'r State<Mailer>,
+) -> Result<impl Responder<'r, 'o>> {
 	let form = form.into_inner();
-	if let Some(user) = User::find_by_token(&form.token, &conn)? {
-		match user.change_password(&form.new_password, conf.bcrypt_cost, &conn)
-		{
+	if let Some(user) = User::find_by_token(form.token.to_owned(), &db).await? {
+		let changed = user
+			.change_password(&form.new_password, conf.bcrypt_cost, &db)
+			.await;
+		match changed {
 			Ok(user) => {
 				let body = template!(
 					"mails/password_reset_success.txt";
