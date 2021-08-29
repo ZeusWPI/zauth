@@ -37,18 +37,18 @@ pub mod models;
 pub mod token_store;
 pub mod util;
 
-use crate::config::Config;
-use crate::controllers::*;
-use crate::token_store::TokenStore;
-use rocket::{Build, Rocket};
-
-use crate::mailer::Mailer;
 use rocket::fairing::AdHoc;
 use rocket::figment::Figment;
 use rocket::fs::FileServer;
-
+use rocket::{Build, Rocket};
 use rocket_sync_db_pools::database;
 use rocket_sync_db_pools::diesel::PgConnection;
+
+use crate::config::Config;
+use crate::controllers::*;
+use crate::db_seed::Seeder;
+use crate::mailer::Mailer;
+use crate::token_store::TokenStore;
 
 #[database("postgresql_database")]
 pub struct DbConn(PgConnection);
@@ -114,7 +114,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 		.manage(mailer)
 		.attach(DbConn::fairing())
 		.attach(AdHoc::config::<Config>())
-		.attach(AdHoc::on_ignite("Database Migrations", run_migrations));
+		.attach(AdHoc::on_ignite("Database preparation", prepare_database));
 
 	// if rocket.config().environment.is_dev() {
 	// rocket = util::seed_database(rocket, config);
@@ -123,16 +123,28 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 	rocket
 }
 
-async fn run_migrations(rocket: Rocket<Build>) -> Rocket<Build> {
+async fn prepare_database(rocket: Rocket<Build>) -> Rocket<Build> {
 	// This macro from `diesel_migrations` defines an `embedded_migrations`
 	// module containing a function named `run` that runs the migrations in the
 	// specified directory, initializing the database.
 	embed_migrations!("migrations");
 
+	eprintln!("Requesting a database connection.");
 	let db = DbConn::get_one(&rocket).await.expect("database connection");
+	eprintln!("Running migrations.");
 	db.run(|conn| embedded_migrations::run(conn))
 		.await
 		.expect("diesel migrations");
+
+	if rocket.figment().profile() == "debug" {
+		eprintln!("Seeding database.");
+		let config: Config = rocket.figment().extract().expect("config");
+		let seeder = Seeder::from_env();
+		seeder
+			.run(config.bcrypt_cost, &db)
+			.await
+			.expect("database seed");
+	}
 
 	rocket
 }

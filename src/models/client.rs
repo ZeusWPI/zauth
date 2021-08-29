@@ -11,7 +11,7 @@ use validator::Validate;
 
 const SECRET_LENGTH: usize = 64;
 
-mod schema {
+pub mod schema {
 	table! {
 		clients {
 			id -> Integer,
