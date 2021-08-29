@@ -11,7 +11,7 @@ askama = { git = "https://github.com/djc/askama.git", rev = "8142963", features 
 askama_rocket = { git = "https://github.com/djc/askama.git", rev = "8142963" }
 base64 = "0.13"
 bincode = "1.0"
-pwhash = "0.3"
+pwhash = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.1"
 lettre = { version = "0.10.0-rc.3", features = ["builder", "smtp-transport"] }
