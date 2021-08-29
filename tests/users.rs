@@ -557,15 +557,19 @@ async fn register_user() {
 		let email = "spaghet@zeus.ugent.be";
 		let not_a_robot = true;
 
-		let response = http_client
-			.post("/register")
-			.header(Accept::HTML)
-			.header(ContentType::Form)
-			.body(format!(
+		let response =
+			common::expect_mail_to(vec!["admin@localhost"], async || {
+				http_client
+					.post("/register")
+					.header(Accept::HTML)
+					.header(ContentType::Form)
+					.body(format!(
 				"username={}&password={}&full_name={}&email={}&not_a_robot={}",
 				username, password, full_name, email, not_a_robot
-			))
-			.dispatch()
+					))
+					.dispatch()
+					.await
+			})
 			.await;
 
 		assert_eq!(response.status(), Status::Created);
