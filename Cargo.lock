@@ -115,7 +115,7 @@ dependencies = [
  "quote",
  "serde",
  "syn",
- "toml 0.5.8",
+ "toml",
 ]
 
 [[package]]
@@ -597,7 +597,7 @@ dependencies = [
  "atomic",
  "pear",
  "serde",
- "toml 0.5.8",
+ "toml",
  "uncased",
  "version_check",
 ]
@@ -2428,15 +2428,6 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.4.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "758664fc71a3a69038656bee8b6be6477d2a6c315a6b81f7081f591bffa4111f"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "toml"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a31142970826733df8241ef35dc040ef98c679ab14d7c3e54d827099b3acecaa"
@@ -2776,7 +2767,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "threads_pool",
- "toml 0.4.10",
+ "toml",
  "urlencoding",
  "validator",
  "validator_derive",

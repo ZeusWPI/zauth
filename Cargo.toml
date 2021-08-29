@@ -16,7 +16,7 @@ chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.1"
 lettre = { version = "0.10.0-rc.3", features = ["builder", "smtp-transport"] }
 urlencoding = "1.0"
-toml = "0.4"
+toml = "0.5"
 rand = "0.8"
 regex = "1.0"
 rocket = { version = "0.5.0-rc.1", features = [ "json", "secrets" ] }
