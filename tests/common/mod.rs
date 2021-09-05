@@ -31,7 +31,7 @@ static DB_LOCK: Mutex<()> = Mutex::new(());
 pub const BCRYPT_COST: u32 = 4;
 
 pub fn url(content: &str) -> String {
-	urlencoding::encode(content)
+	urlencoding::encode(content).into_owned()
 }
 
 async fn reset_db(db: &DbConn) {
