@@ -130,3 +130,17 @@ pub async fn create_client<'r>(
 		json: status::Created::new(String::from("/client")).body(Json(client)),
 	})
 }
+
+#[post("/clients/<id>/generate_secret")]
+pub async fn generate_secret<'r>(
+	id: i32,
+	_session: AdminSession,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let client = Client::find(id, &db).await?;
+	let client = client.generate_secret(&db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(update_client_page(client.id))),
+		json: Custom(Status::NoContent, ()),
+	})
+}
