@@ -41,8 +41,14 @@ The name is open for discussion.
     - `ZAUTH_SEED_USER=100` to create 100 users, some are active, some are pending (always creates the same users)
     - `ZAUTH_SEED_CLIENT=100` to create 100 clients, some need a grant, others don't (always creates the same clients)
 
-
 You can now start developing! A good way to start is to look at the routes defined in the [controllers](./src/controllers/).
+
+### Testing the OAuth2 flow
+
+There are tests trying out the OAuth2 flow which can be run with `cargo test`.
+
+You can also test the OAuth2 flow manually by running the flask application in
+`test_client/client.py`.
 
 ### Using Nix
 
