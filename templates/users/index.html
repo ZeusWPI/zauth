@@ -1,107 +1,194 @@
 {% extends "base_logged_in.html" %}
 
+<!-- Macro for showing the user's state -->
 {%- macro colored_circle(color, tooltip) -%}
-<svg height="20" width="20">
-    <title>{{tooltip}}</title>
-    <circle cx="10" cy="10" r="8" stroke="{{color}}" stroke-width="3" fill="{{color}}" />
-</svg>
+	<svg height="20" width="20">
+		<title>{{ tooltip }}</title>
+		<circle cx="10" cy="10" r="8" stroke="{{ color }}" stroke-width="3" fill="{{ color }}" />
+	</svg>
 {%- endmacro -%}
 
+<!-- Content -->
 {% block content %}
+	<!-- Users -->
+	<div class="card card-content">
 
-<div class="row">
-    <div class="column">
-        <h1>Users ({{ users.len() }})</h1>
-    </div>
-    <div class="column">
-        <div class="center-end-children">
-            <a class="button" href="/users/new">New user</a>
-        </div>
-    </div>
-</div>
+		<!-- Title -->
+		<div class="columns is-justify-content-space-between">
+			<div class="column is-narrow">
+				<div class="title">Users ({{ users.len() }})</div>
+			</div>
 
-<table>
-    <tr>
-        <th>Username</th>
-        <th>Admin?</th>
-        <th>Full Name</th>
-        <th>Email</th>
-        <th>SSH key</th>
-        <th>State</th>
-        <th>Last login</th>
-        <th>Created at</th>
-    </tr>
-    {% for user in users %}
-    <tr>
-        <td><a href="/users/{{ user.id }}">{{ user.username }}</a></td>
-        {% if user.admin %}
-        <td><b>Yes</b></td>
-        {% else %}
-        <td>No</td>
-        {% endif%}
-        <td>{{ user.full_name }}</td>
-        <td>{{ user.email }}</td>
-        <td>
-            {% match user.ssh_key %}
-                {% when Some with (val) %}
-                    <a href="#spoiler-open-{{user.id}}" class="trigger open">View</a>
-                    <a href="#spoiler-close-{{user.id}}" class="trigger close">Close</a>
-                {% when None %}
-                    -
-            {% endmatch %}
-        </td>
-        <td>
-            {% match user.state %}
-                {% when UserState::Active %}
-                    {%- call colored_circle("#80A66C", user.state) -%}
-                {% when UserState::PendingApproval %}
-                    {%- call colored_circle("#F2A950", user.state) -%}
-                {% when UserState::PendingMailConfirmation %}
-                    {%- call colored_circle("#FFFF00", user.state) -%}
-                {% when UserState::Disabled %}
-                    {%- call colored_circle("#DD6761", user.state) -%}
-            {% endmatch %}
-        </td>
-        <td title="{{user.last_login}}">{{ user.last_login.format("%d/%m/%y").to_string() }}</td>
-        <td title="{{user.created_at}}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
-    </tr>
-    {% match user.ssh_key %}
-        {% when Some with (val) %}
-            <tr class="spoiler" id="spoiler-open-{{user.id}}">
-                <td>Key 1</td>
-                <td colspan="7" class="sshkey">{{val}}</td>
-            </tr>
-        {% when None %}
-    {% endmatch %} 
-    {% endfor %}
-</table>
+			<div class="column is-narrow">
+				<a class="button is-primary" href="/users/new">New user</a>
+			</div>
+		</div>
 
-<h1>Users pending for Approval ({{ users_pending_for_approval.len() }})</h1>
-<table style="overflow-x: auto">
-    <tr>
-        <th>Username</th>
-        <th>Full Name</th>
-        <th>Email</th>
-        <th>Created at</th>
-        <th>Approve</th>
-    </tr>
-    {% for user in users_pending_for_approval %}
-    <tr>
-        <td><a href="/users/{{ user.id }}">{{ user.username }}</a></td>
-        <td>{{ user.full_name }}</td>
-        <td>{{ user.email }}</td>
-        <td title="{{user.created_at}}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
-        <td>
-            <form action="/users/{{ user.id }}/approve" method="post">
-                <button type="submit">Approve</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %} 
-    {% if users_pending_for_approval.len() == 0 %}
-    <tr class="centered">
-        <td colspan="8">No users needing approval</td>
-    </tr>
-    {% endif %}
-</table>
+		<!-- Table -->
+		<table class="table table--responsive table--responsive--labels is-fullwidth">
+			<thead>
+				<tr>
+					<th>Username</th>
+					<th>Admin</th>
+					<th>Full Name</th>
+					<th>Email</th>
+					<th>SSH key</th>
+					<th>State</th>
+					<th>Last login</th>
+					<th>Created at</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for user in users %}
+					<tr>
+
+						<!-- Username -->
+						<td data-label="Username">
+							<a href="/users/{{ user.id }}">{{ user.username }}</a>
+						</td>
+
+						<!-- Is Admin -->
+						{% if user.admin %}
+							<td class="has-text-success" data-label="Admin">
+								<b>Yes</b>
+							</td>
+						{% else %}
+							<td class="has-text-error" data-label="Admin">
+								No
+							</td>
+						{% endif%}
+
+						<!-- Fullname -->
+						<td data-label="Fullname">{{ user.full_name }}</td>
+
+						<!-- Email -->
+						<td data-label="Email">{{ user.email }}</td>
+
+						<!-- SSH Keys -->
+						<td data-label="SSH Keys">
+							{% match user.ssh_key %}
+								{% when Some with (val) %}
+									<a class="button is-small is-light" href="#ssh-key-{{ user.id }}">View</a>
+								{% when None %}
+
+								N/A
+							{% endmatch %}
+        		</td>
+
+						<!-- State -->
+						<td data-label="State">
+							{% match user.state %}
+								{% when UserState::Active %}
+									{%- call colored_circle("#80A66C", user.state) -%}
+								{% when UserState::PendingApproval %}
+									{%- call colored_circle("#F2A950", user.state) -%}
+								{% when UserState::PendingMailConfirmation %}
+									{%- call colored_circle("#FFFF00", user.state) -%}
+								{% when UserState::Disabled %}
+									{%- call colored_circle("#DD6761", user.state) -%}
+							{% endmatch %}
+						</td>
+
+						<!-- Last Login -->
+						<td data-label="Last Login" title="{{ user.last_login }}">{{ user.last_login.format("%d/%m/%y").to_string() }}</td>
+
+						<!-- Created at -->
+        		<td data-label="Created at" title="{{ user.created_at }}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
+					</tr>
+
+					<!-- SSH Key Spoiler -->
+					{% match user.ssh_key %}
+						{% when Some with (val) %}
+							<div class="modal modal-target" id="ssh-key-{{ user.id }}">
+								<a class="modal-background" href="#"></a>
+
+								<div class="modal-card">
+
+									<!-- Header -->
+									<header class="modal-card-head">
+										<!-- Title -->
+										<div class="modal-card-title">SSH Keys for {{ user.username }}</div>
+										<!-- Close -->
+										<a class="delete" href="#"></a>
+									</header>
+
+									<!-- Content -->
+									<section class="modal-card-body">
+										<div class="field">
+											<label class="label">SSH Keys</label>
+											<textarea class="textarea" placeholder="SSH Keys" value="{{ val }}" readonly></textarea>
+										</div>
+									</section>
+
+									<!-- Footer -->
+									<footer class="modal-card-foot is-justify-content-flex-end">
+										<a class="button is-danger is-light" href="#">Close</a>
+									</footer>
+								</div>
+							</div>
+						{% when None %}
+					{% endmatch %}
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	<!-- Users pending approval -->
+	<div class="card card-content mt-5">
+
+		<!-- Title -->
+		<div class="columns is-justify-content-space-between">
+			<div class="column is-narrow">
+				<div class="title">	Users pending for Approval ({{ users_pending_for_approval.len() }})</div>
+			</div>
+		</div>
+
+		<!-- Table -->
+		<table class="table table--responsive table--responsive--labels is-fullwidth">
+			<thead>
+				<tr>
+					<th>Username</th>
+					<th>Full Name</th>
+					<th>Email</th>
+					<th>Created at</th>
+					<th>Approve</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for user in users_pending_for_approval %}
+					<tr>
+						<!-- Username -->
+						<td data-label="Username">
+							<a href="/users/{{ user.id }}">{{ user.username }}</a>
+						</td>
+
+						<!-- Fullname -->
+						<td data-label="Fullname">{{ user.full_name }}</td>
+
+						<!-- Email -->
+						<td data-label="Email">{{ user.email }}</td>
+
+						<!-- Created at -->
+						<td data-label="Created at" title="{{ user.created_at }}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
+
+						<!-- Approve -->
+						<td>
+							<form action="/users/{{ user.id }}/approve" method="post">
+								<button class="button is-success is-small" type="submit">Approve</button>
+							</form>
+						</td>
+					</tr>
+				{% endfor %}
+
+				<!-- Placeholder -->
+				{% if users_pending_for_approval.len() == 0 %}
+					<tr>
+						<td colspan="8">No users needing approval</td>
+					</tr>
+				{% endif %}
+			</tbody>
+		</table>
+	</div>
 {% endblock content %}

@@ -13,6 +13,10 @@ $radius: 8px;
 $card-radius: 16px;
 $card-background-color: #fff;
 
+$modal-card-head-background-color: white;
+$modal-card-head-border-bottom: 2px solid whitesmoke;
+$modal-card-foot-border-top: 2px solid whitesmoke;
+
 // Custom variables
 
 // Include Bulma SCSS
@@ -162,9 +166,62 @@ body {
 // Modal using :target (without JavaScript)
 .modal-target {
   display: none;
+  transition: opacity 0.5s ease-in-out;
 
   &:target {
+    @extend .is-active;
     display: block;
+  }
+}
+
+// Responsive table
+.table--responsive {
+  width: 100%;
+
+  @include until($tablet) {
+    &--labels {
+      td {
+        text-align: right !important;
+
+        &::before {
+          content: attr(data-label);
+          float: left;
+          font-weight: bold;
+        }
+      }
+    }
+
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: block;
+
+      &:first-child {
+        border-top: 2px solid whitesmoke;
+      }
+    }
+
+    td {
+      display: block;
+      padding: 0.4rem 0;
+      width: 100%;
+      border-bottom: none;
+
+      .table--responsive--labels {
+        text-align: right !important;
+      }
+
+      &:first-child {
+        padding-top: 0.6em;
+      }
+
+      &:last-child {
+        padding-bottom: 0.6em;
+        border-bottom: 2px solid whitesmoke;
+      }
+    }
   }
 }
 
