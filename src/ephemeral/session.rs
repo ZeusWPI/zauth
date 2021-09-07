@@ -115,7 +115,7 @@ impl<'r> FromRequest<'r> for UserSession {
 		match session.user(&db).await {
 			Ok(user) => Outcome::Success(UserSession { user }),
 			_ => Outcome::Failure((
-				Status::InternalServerError,
+				Status::Unauthorized,
 				"user not found for valid session",
 			)),
 		}
