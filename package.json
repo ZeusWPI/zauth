@@ -13,10 +13,8 @@
     "url": "git+https://github.com/ZeusWPI/zauth.git"
   },
   "license": "MIT",
-  "dependencies": {
-    "bulma": "^0.9.3"
-  },
   "devDependencies": {
-    "sass": "^1.39.0"
+    "sass": "^1.39.0",
+    "bulma": "^0.9.3"
   }
 }
