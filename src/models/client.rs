@@ -101,6 +101,9 @@ impl Client {
 		}
 		if let Some(redirect_uri_list) = change.redirect_uri_list {
 			self.redirect_uri_list = redirect_uri_list
+				.split_whitespace()
+				.collect::<Vec<&str>>()
+				.join("\n")
 		}
 		Ok(())
 	}
