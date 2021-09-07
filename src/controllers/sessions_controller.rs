@@ -2,8 +2,11 @@ use rocket::form::Form;
 use rocket::response::{Redirect, Responder};
 
 use crate::controllers::pages_controller::rocket_uri_macro_home_page;
-use crate::ephemeral::session::{stored_redirect_or, Session, UserSession};
+use crate::ephemeral::session::{
+	stored_redirect_or, SessionCookie, UserSession,
+};
 use crate::errors::{Either, Result, ZauthError};
+use crate::models::session::Session;
 use crate::models::user::User;
 use crate::DbConn;
 use rocket::http::CookieJar;
@@ -51,7 +54,8 @@ pub async fn create_session<'r>(
 			}))
 		},
 		Ok(user) => {
-			Session::login(user, cookies);
+			let session = Session::create(&user, &db).await?;
+			SessionCookie::new(session).login(cookies);
 			Ok(Either::Left(stored_redirect_or(cookies, uri!(home_page))))
 		},
 		Err(err) => Err(err),
@@ -59,7 +63,11 @@ pub async fn create_session<'r>(
 }
 
 #[post("/logout")]
-pub fn destroy_session(cookies: &CookieJar) -> Redirect {
-	Session::destroy(cookies);
-	Redirect::to("/")
+pub async fn destroy_session<'r>(
+	session: UserSession,
+	cookies: &'r CookieJar<'_>,
+	db: DbConn,
+) -> Result<Redirect> {
+	session.destroy(cookies, &db).await?;
+	Ok(Redirect::to("/"))
 }
