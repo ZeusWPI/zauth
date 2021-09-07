@@ -21,8 +21,6 @@ pub enum ZauthError {
 	NotFound(String),
 	#[error("Validation error: {0:?}")]
 	ValidationError(#[from] ValidationErrors),
-	#[error("Request error {0:?}")]
-	RequestError(#[from] RequestError),
 	#[error("OAuth error: {0:?}")]
 	OAuth(#[from] OAuthError),
 	#[error("Authentication error {0:?}")]
@@ -66,9 +64,9 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 				}.respond_to(request)?);
 			},
 			_ => {
-				builder.status(Status::InternalServerError);
+				builder.status(Status::NotImplemented);
 				builder.merge(Accepter {
-					html: template!("errors/500.html"),
+					html: template!("errors/501.html", error: String = format!("{:?}", self)),
 					json: Json("")
 				}.respond_to(request)?);
 			},
@@ -122,22 +120,6 @@ pub enum LoginError {
 	#[error("Account disabled")]
 	AccountDisabledError,
 }
-pub type LoginResult<T> = std::result::Result<T, LoginError>;
-
-#[derive(Error, Debug)]
-pub enum RequestError {
-	#[error("Bindecode error")]
-	BinDecodeError(#[from] Box<bincode::ErrorKind>),
-	#[error("Base64 decode error")]
-	DecodeError(#[from] base64::DecodeError),
-	#[error("Invalid header (expected {expected:?}, found {found:?})")]
-	InvalidHeader { expected: String, found: String },
-	#[error("Only response_type=code is supported")]
-	ResponseTypeMismatch,
-	#[error("Invalid request")]
-	InvalidRequest,
-}
-pub type EncodingResult<T> = std::result::Result<T, RequestError>;
 
 #[derive(Error, Debug)]
 pub enum AuthenticationError {
@@ -169,6 +151,10 @@ pub enum OAuthError {
 		 expired."
 	)]
 	InvalidCookie,
+	#[error("Only response_type=code is supported")]
+	ResponseTypeMismatch,
+	#[error("Invalid request")]
+	InvalidRequest,
 }
 
 pub enum Either<R, E> {
