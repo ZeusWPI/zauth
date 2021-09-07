@@ -36,9 +36,7 @@
 					name="description"
 					rows="4"
 					cols="50"
-					placeholder="Describe what the application does.">
-					{{ client.description -}}
-				</textarea>
+					placeholder="Describe what the application does.">{{ client.description -}}</textarea>
 			</div>
 
 			<!-- Needs Grant -->
@@ -56,15 +54,9 @@
 			<!-- Redirect URI's -->
 			<div class="field">
 				<label class="label">Redirect URI's</label>
-        <textarea
-					class="textarea"
-					name="redirect_uri_list"
-					rows="4"
-					cols="50"
-					placeholder="http://localhost:3000/auth/callback\nhttps://example.com/auth/callback"
-				>
-					{{- client.redirect_uri_list -}}
-				</textarea>
+        <textarea class="textarea" name="redirect_uri_list" rows="4" cols="50" placeholder="http://localhost:3000/auth/callback
+https://example.com/auth/callback"
+				>{{- client.redirect_uri_list -}}</textarea>
 			</div>
 
       <button class="button is-primary" type="submit">Save</button>
