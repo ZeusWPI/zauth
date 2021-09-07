@@ -44,6 +44,7 @@ async fn normal_flow() {
 				full_name: String::from("abc"),
 				email:     String::from("ghi@jkl.mno"),
 				ssh_key:   Some(String::from("ssh-rsa pqrstuvwxyz")),
+				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
 			&db,

@@ -95,6 +95,9 @@ pub struct NewUser {
 	pub email:     String,
 	#[validate(custom = "validate_ssh_key_list")]
 	pub ssh_key:   Option<String>,
+	#[validate(custom(function= "validate_not_a_robot"))]
+	#[serde(default="const_false")]
+	pub not_a_robot: bool,
 }
 
 #[derive(Serialize, Insertable, Debug, Clone)]
@@ -397,4 +400,16 @@ fn validate_ssh_key_list(
 		}
 	}
 	Ok(())
+}
+
+fn validate_not_a_robot(not_a_robot: &bool) -> std::result::Result<(), ValidationError> {
+	if !not_a_robot {
+		return Err(ValidationError::new("Non-human registration is currently not supported by the digital interface. Please interface with an aidmin."))
+	}
+	Ok(())
+}
+
+/// used as a default for not_a_robot field
+fn const_false() -> bool {
+	false
 }

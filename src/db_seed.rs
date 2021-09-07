@@ -125,6 +125,7 @@ impl Seeder {
 				full_name: format!("Test user {}", i),
 				email:     format!("user{}@example.com", i),
 				ssh_key:   None,
+				not_a_robot: true,
 			};
 			if i % 2 == 0 {
 				User::create(new_user, bcrypt_cost, &db).await?;
@@ -152,6 +153,7 @@ impl Seeder {
 					full_name: String::from("Admin McAdmin"),
 					email:     String::from("admin@example.com"),
 					ssh_key:   None,
+					not_a_robot: true,
 				},
 				bcrypt_cost,
 				&db,
