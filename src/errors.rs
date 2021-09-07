@@ -5,9 +5,11 @@ use thiserror::Error;
 
 use diesel::result::Error::NotFound;
 use lettre::Message;
-use std::io::Cursor;
+use rocket::serde::json::Json;
 use std::sync::mpsc::{SendError, TrySendError};
 use validator::ValidationErrors;
+
+use crate::views::accepter::Accepter;
 
 #[derive(Error, Debug)]
 pub enum ZauthError {
@@ -27,8 +29,6 @@ pub enum ZauthError {
 	AuthError(#[from] AuthenticationError),
 	#[error("Login error {0:?}")]
 	LoginError(#[from] LoginError),
-	#[error("{0}")]
-	Custom(Status, String),
 }
 impl ZauthError {
 	pub fn not_found(what: &str) -> Self {
@@ -41,34 +41,40 @@ impl ZauthError {
 }
 
 impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
-	fn respond_to(self, _: &'r Request<'_>) -> response::Result<'o> {
+	fn respond_to(self, request: &'r Request<'_>) -> response::Result<'o> {
 		let mut builder = Response::build();
 		match self {
-			ZauthError::Custom(status, _) => {
-				builder.status(status);
-			},
 			ZauthError::NotFound(_) => {
 				builder.status(Status::NotFound);
+				builder.merge(Accepter {
+					html: template!("errors/404.html"),
+					json: Json("")
+				}.respond_to(request)?);
 			},
 			ZauthError::Internal(_) => {
 				builder.status(Status::InternalServerError);
+				builder.merge(Accepter {
+					html: template!("errors/500.html"),
+					json: Json("")
+				}.respond_to(request)?);
 			},
 			ZauthError::AuthError(_) => {
 				builder.status(Status::Unauthorized);
+				builder.merge(Accepter {
+					html: template!("errors/401.html"),
+					json: Json("")
+				}.respond_to(request)?);
 			},
-			_ => {},
-		}
+			_ => {
+				builder.status(Status::InternalServerError);
+				builder.merge(Accepter {
+					html: template!("errors/500.html"),
+					json: Json("")
+				}.respond_to(request)?);
+			},
+		};
 
-		let body = format!("An error occured: {:?}", self);
-		Ok(builder.sized_body(body.len(), Cursor::new(body)).finalize())
-		// Ok(match self {
-		// 	ZauthError::Custom(status, reason) => {
-		// 		Response::build().status(status)
-		// 	}
-		// 	_ => Response::build(),
-		// }
-		// .sized_body(Cursor::new(format!("An error occured: {:?}", self)))
-		// .finalize())
+		Ok(builder.finalize())
 	}
 }
 
