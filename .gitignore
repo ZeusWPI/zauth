@@ -2,3 +2,5 @@ target/
 *.rs.bk
 db/*
 .envrc
+static/dist/
+node_modules/
