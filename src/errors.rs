@@ -38,6 +38,13 @@ impl ZauthError {
 	}
 }
 
+#[derive(Serialize)]
+struct JsonError {
+	error: &'static str,
+	status: u16,
+	message: Option<String>,
+}
+
 impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 	fn respond_to(self, request: &'r Request<'_>) -> response::Result<'o> {
 		let mut builder = Response::build();
@@ -46,28 +53,28 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 				builder.status(Status::NotFound);
 				builder.merge(Accepter {
 					html: template!("errors/404.html"),
-					json: Json("")
+					json: Json(JsonError { error: "not found".into(), status: 404, message: None }),
 				}.respond_to(request)?);
 			},
-			ZauthError::Internal(_) => {
+			ZauthError::Internal(e) => {
 				builder.status(Status::InternalServerError);
 				builder.merge(Accepter {
-					html: template!("errors/500.html"),
-					json: Json("")
+					html: template!("errors/500.html"; error: String = format!("{:?}", e)),
+					json: Json(JsonError { error: "internal server error", status: 500, message: Some(format!("{:?}", e)) }),
 				}.respond_to(request)?);
 			},
 			ZauthError::AuthError(_) => {
 				builder.status(Status::Unauthorized);
 				builder.merge(Accepter {
 					html: template!("errors/401.html"),
-					json: Json("")
+					json: Json(JsonError { error: "unauthorized", status: 401, message: None }),
 				}.respond_to(request)?);
 			},
 			_ => {
 				builder.status(Status::NotImplemented);
 				builder.merge(Accepter {
-					html: template!("errors/501.html", error: String = format!("{:?}", self)),
-					json: Json("")
+					html: template!("errors/501.html"; error: String = format!("{:?}", self)),
+					json: Json(JsonError { error: "not implemented", status: 501, message: Some(format!("{:?}", self)) }),
 				}.respond_to(request)?);
 			},
 		};
