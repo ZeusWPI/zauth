@@ -1,0 +1,10 @@
+// Bulma variable overrides
+$primary: #ff6600;
+$radius-small: 8px;
+$radius: 8px;
+$card-radius: 16px;
+
+// Custom variables
+
+// Include Bulma SCSS
+@import '../../node_modules/bulma/bulma.sass'
