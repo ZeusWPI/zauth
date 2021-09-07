@@ -86,17 +86,17 @@ pub struct User {
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
 	#[validate(length(min = 3, max = 254))]
-	pub username:  String,
+	pub username:    String,
 	#[validate(length(min = 8))]
-	pub password:  String,
+	pub password:    String,
 	#[validate(length(min = 3, max = 254))]
-	pub full_name: String,
+	pub full_name:   String,
 	#[validate(email)]
-	pub email:     String,
+	pub email:       String,
 	#[validate(custom = "validate_ssh_key_list")]
-	pub ssh_key:   Option<String>,
-	#[validate(custom(function= "validate_not_a_robot"))]
-	#[serde(default="const_false")]
+	pub ssh_key:     Option<String>,
+	#[validate(custom(function = "validate_not_a_robot"))]
+	#[serde(default = "const_false")]
 	pub not_a_robot: bool,
 }
 
@@ -402,9 +402,14 @@ fn validate_ssh_key_list(
 	Ok(())
 }
 
-fn validate_not_a_robot(not_a_robot: &bool) -> std::result::Result<(), ValidationError> {
+fn validate_not_a_robot(
+	not_a_robot: &bool,
+) -> std::result::Result<(), ValidationError> {
 	if !not_a_robot {
-		return Err(ValidationError::new("Non-human registration is currently not supported by the digital interface. Please interface with an aidmin."))
+		return Err(ValidationError::new(
+			"Non-human registration is currently not supported by the digital \
+			 interface. Please interface with an aidmin.",
+		));
 	}
 	Ok(())
 }
