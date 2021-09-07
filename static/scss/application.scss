@@ -1,12 +1,17 @@
 // Bulma variable overrides
 $primary: #ff6600;
-$radius-small: 8px;
-$radius: 8px;
-$card-radius: 16px;
-$card-background-color: #fff;
-$family-sans-serif: "Inter",sans-serif;
 $text: #172940;
 $link: $primary;
+$title-color: $text;
+// $subtitle-color: $grey-light;
+
+$family-sans-serif: "Inter",sans-serif;
+
+$radius-small: 8px;
+$radius: 8px;
+
+$card-radius: 16px;
+$card-background-color: #fff;
 
 // Custom variables
 
@@ -44,15 +49,25 @@ body {
 
 // Navbar
 .navbar {
-  background-color: transparent;
+
+  &.is-raised {
+    box-shadow: $card-shadow;
+  }
+
+  &.is-transparent {
+    background-color: transparent;
+
+    * {
+      color: $primary !important;
+
+      &:hover {
+        color: darken($primary, 10%) !important;
+      }
+    }
+  }
 
   &-item {
     font-weight: bold;
-    color: $primary;
-
-    &:hover {
-      color: darken($primary, 10%) !important;
-    }
   }
 
   &-title {
@@ -60,7 +75,6 @@ body {
     @extend .title;
     @extend .is-size-5;
     margin-bottom: 0 !important;
-    color: $primary;
   }
 
   &-burger {
@@ -74,6 +88,15 @@ body {
       font-size: 1.5rem;
     }
   }
+}
+
+// Base form layout
+.form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.7rem;
+  width: 100%;
 }
 
 // Login & register page
@@ -106,11 +129,7 @@ body {
     }
 
     &-form {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 0.7rem;
-      width: 100%;
+      @extend .form;
       margin-bottom: 1rem;
     }
 
@@ -118,6 +137,34 @@ body {
     &-register {
       color: $grey-light;
     }
+  }
+}
+
+// Profile page
+.profile {
+  &-title {
+    font-size: $size-2;
+    font-weight: 900;
+  }
+
+  &-subtitle {
+    color: $grey-light;
+    font-size: $size-5;
+  }
+
+  &-edit {
+    &-form {
+      @extend .form;
+    }
+  }
+}
+
+// Modal using :target (without JavaScript)
+.modal-target {
+  display: none;
+
+  &:target {
+    display: block;
   }
 }
 
@@ -135,8 +182,8 @@ body {
   width: 100%;
 
   &--main {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
 
     @include until($desktop) {
       padding-left: 0.75rem;
