@@ -148,7 +148,7 @@ impl Client {
 
 	pub fn redirect_uri_acceptable(&self, redirect_uri: &str) -> bool {
 		self.redirect_uri_list
-			.split('\n')
+			.lines()
 			.any(|uri| uri == redirect_uri)
 	}
 
