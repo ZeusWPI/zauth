@@ -1,12 +1,26 @@
 {% extends "layout.html" %}
 {% block nav %}
 
-<nav class="nav">
-  <ul>
-    <li><a href="/">Home</a></li>
-    <li><a href="/login">Login</a></li>
-    <li><a href="/register">Register</a></li>
-  </ul>
+<nav class="navbar">
+  <div class="container">
+    <!-- Brand -->
+    <div class="navbar-brand">
+      <a class="navbar-title" href="/">Zauth</a>
+    </div>
+
+    <!-- Menu -->
+    <div class="navbar-menu">
+
+      <div class="navbar-start">
+      </div>
+
+      <div class="navbar-end">
+        <a class="navbar-item" href="/">Home</a>
+        <a class="navbar-item" href="/login">Login</a>
+        <a class="navbar-item" href="/register">Register</a>
+      </div>
+    </div>
+  </div>
 </nav>
 
 {% endblock nav %}

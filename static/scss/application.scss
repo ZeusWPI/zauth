@@ -3,8 +3,144 @@ $primary: #ff6600;
 $radius-small: 8px;
 $radius: 8px;
 $card-radius: 16px;
+$card-background-color: #fff;
+$family-sans-serif: "Inter",sans-serif;
+$text: #172940;
+$link: $primary;
 
 // Custom variables
 
 // Include Bulma SCSS
-@import '../../node_modules/bulma/bulma.sass'
+@import '../../node_modules/bulma/bulma.sass';
+
+/**
+ * Base styles
+ */
+
+html {
+  height: 100%;
+  width: 100%;
+  background-color: $white-bis;
+  overflow-y: auto;
+}
+
+body {
+  // Prevent blue highlights on elements on mobile
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  // Select text with a primary color background
+  ::selection,
+  ::-moz-selection {
+    background: $primary;
+    color: $white;
+  }
+}
+
+/**
+ * Application
+ */
+
+// Navbar
+.navbar {
+  background-color: transparent;
+
+  &-item {
+    font-weight: bold;
+    color: $primary;
+
+    &:hover {
+      color: darken($primary, 10%) !important;
+    }
+  }
+
+  &-title {
+    @extend .navbar-item;
+    @extend .title;
+    @extend .is-size-5;
+    margin-bottom: 0 !important;
+    color: $primary;
+  }
+
+  &-burger {
+    @include until($desktop) {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    i {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+// Login & register page
+.login,
+.register {
+  margin: auto;
+
+  &-logo {
+    width: 60%;
+    display: block;
+    margin: auto;
+    margin-bottom: 2rem;
+
+    img {
+      width: 100%;
+    }
+  }
+
+  &-card {
+    @extend .card;
+    @extend .card-content;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &-title {
+      font-size: $size-3;
+      font-weight: 900;
+      margin-bottom: 1.5rem;
+    }
+
+    &-form {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.7rem;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    &-login,
+    &-register {
+      color: $grey-light;
+    }
+  }
+}
+
+/**
+ * Overrides
+ */
+
+// Change the card's background color
+.card {
+  background-color: $card-background-color;
+}
+
+// Add padding to container on mobile
+.container {
+  width: 100%;
+
+  &--main {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+
+    @include until($desktop) {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
+}
