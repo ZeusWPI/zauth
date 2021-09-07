@@ -5,9 +5,11 @@ use thiserror::Error;
 
 use diesel::result::Error::NotFound;
 use lettre::Message;
-use std::io::Cursor;
+use rocket::serde::json::Json;
 use std::sync::mpsc::{SendError, TrySendError};
 use validator::ValidationErrors;
+
+use crate::views::accepter::Accepter;
 
 #[derive(Error, Debug)]
 pub enum ZauthError {
@@ -19,16 +21,12 @@ pub enum ZauthError {
 	NotFound(String),
 	#[error("Validation error: {0:?}")]
 	ValidationError(#[from] ValidationErrors),
-	#[error("Request error {0:?}")]
-	RequestError(#[from] RequestError),
 	#[error("OAuth error: {0:?}")]
 	OAuth(#[from] OAuthError),
 	#[error("Authentication error {0:?}")]
 	AuthError(#[from] AuthenticationError),
 	#[error("Login error {0:?}")]
 	LoginError(#[from] LoginError),
-	#[error("{0}")]
-	Custom(Status, String),
 }
 impl ZauthError {
 	pub fn not_found(what: &str) -> Self {
@@ -40,35 +38,87 @@ impl ZauthError {
 	}
 }
 
+#[derive(Serialize)]
+struct JsonError {
+	error:   &'static str,
+	status:  u16,
+	message: Option<String>,
+}
+
 impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
-	fn respond_to(self, _: &'r Request<'_>) -> response::Result<'o> {
+	fn respond_to(self, request: &'r Request<'_>) -> response::Result<'o> {
 		let mut builder = Response::build();
+		let debug = request.rocket().figment().profile() == "debug";
 		match self {
-			ZauthError::Custom(status, _) => {
-				builder.status(status);
-			},
 			ZauthError::NotFound(_) => {
 				builder.status(Status::NotFound);
+				builder.merge(
+					Accepter {
+						html: template!("errors/404.html"),
+						json: Json(JsonError {
+							error:   "not found",
+							status:  404,
+							message: None,
+						}),
+					}
+					.respond_to(request)?,
+				);
 			},
-			ZauthError::Internal(_) => {
+			ZauthError::Internal(e) => {
+				let message = if debug {
+					format!("{:?}", e)
+				} else {
+					"Check the logs for the actual error.".to_string()
+				};
 				builder.status(Status::InternalServerError);
+				builder.merge(
+					Accepter {
+						html: template!("errors/500.html"; error: String = message.clone()),
+						json: Json(JsonError {
+							error:   "internal server error",
+							status:  500,
+							message: Some(message),
+						}),
+					}
+					.respond_to(request)?,
+				);
 			},
 			ZauthError::AuthError(_) => {
 				builder.status(Status::Unauthorized);
+				builder.merge(
+					Accepter {
+						html: template!("errors/401.html"),
+						json: Json(JsonError {
+							error:   "unauthorized",
+							status:  401,
+							message: None,
+						}),
+					}
+					.respond_to(request)?,
+				);
 			},
-			_ => {},
-		}
+			_ => {
+				let message = if debug {
+					format!("{:?}", self)
+				} else {
+					"Check the logs for the actual error.".to_string()
+				};
+				builder.status(Status::NotImplemented);
+				builder.merge(
+					Accepter {
+						html: template!("errors/501.html"; error: String = message.clone()),
+						json: Json(JsonError {
+							error:   "not implemented",
+							status:  501,
+							message: Some(message),
+						}),
+					}
+					.respond_to(request)?,
+				);
+			},
+		};
 
-		let body = format!("An error occured: {:?}", self);
-		Ok(builder.sized_body(body.len(), Cursor::new(body)).finalize())
-		// Ok(match self {
-		// 	ZauthError::Custom(status, reason) => {
-		// 		Response::build().status(status)
-		// 	}
-		// 	_ => Response::build(),
-		// }
-		// .sized_body(Cursor::new(format!("An error occured: {:?}", self)))
-		// .finalize())
+		Ok(builder.finalize())
 	}
 }
 
@@ -116,22 +166,6 @@ pub enum LoginError {
 	#[error("Account disabled")]
 	AccountDisabledError,
 }
-pub type LoginResult<T> = std::result::Result<T, LoginError>;
-
-#[derive(Error, Debug)]
-pub enum RequestError {
-	#[error("Bindecode error")]
-	BinDecodeError(#[from] Box<bincode::ErrorKind>),
-	#[error("Base64 decode error")]
-	DecodeError(#[from] base64::DecodeError),
-	#[error("Invalid header (expected {expected:?}, found {found:?})")]
-	InvalidHeader { expected: String, found: String },
-	#[error("Only response_type=code is supported")]
-	ResponseTypeMismatch,
-	#[error("Invalid request")]
-	InvalidRequest,
-}
-pub type EncodingResult<T> = std::result::Result<T, RequestError>;
 
 #[derive(Error, Debug)]
 pub enum AuthenticationError {
@@ -163,6 +197,10 @@ pub enum OAuthError {
 		 expired."
 	)]
 	InvalidCookie,
+	#[error("Only response_type=code is supported")]
+	ResponseTypeMismatch,
+	#[error("Invalid request")]
+	InvalidRequest,
 }
 
 pub enum Either<R, E> {

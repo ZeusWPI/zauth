@@ -21,6 +21,8 @@ pkgs.mkShell {
     openssl.dev
     pkg-config
     diesel-cli
+    python3
+    python3Packages.flask
     (
       pkgs.writeShellScriptBin "start-dockers" ''
         trap "systemd-run --user --no-block docker stop zauth-db" 0

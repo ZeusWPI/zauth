@@ -99,7 +99,7 @@ pub async fn authorize(
 	if !req.response_type.eq("code") {
 		// This was NotImplemented error, but it makes no sense for a authorise
 		// function not to return an AuthResult
-		return Err(ZauthError::from(RequestError::ResponseTypeMismatch));
+		return Err(ZauthError::from(OAuthError::ResponseTypeMismatch));
 	}
 
 	if let Ok(client) =
@@ -251,7 +251,7 @@ pub async fn token(
 	let auth = auth
 		.map(|auth| (auth.user, auth.password))
 		.or_else(|| Some((data.client_id?, data.client_secret?)))
-		.ok_or(ZauthError::from(RequestError::InvalidRequest))?;
+		.ok_or(ZauthError::from(OAuthError::InvalidRequest))?;
 
 	let client =
 		match Client::find_and_authenticate(auth.0.to_string(), &auth.1, &db)
