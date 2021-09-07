@@ -166,7 +166,6 @@ body {
 // Modal using :target (without JavaScript)
 .modal-target {
   display: none;
-  transition: opacity 0.5s ease-in-out;
 
   &:target {
     @extend .is-active;

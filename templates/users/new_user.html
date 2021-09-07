@@ -1,28 +1,47 @@
 {% extends "base_logged_in.html" %}
 
+<!-- Content -->
 {% block content %}
+	<div class="card card-content">
 
-<h1>Create new user</h1>
+		<!-- Title -->
+		<div class="title">
+			Create new user
+		</div>
 
-<p>This bypasses mail verification. Normal registrations should be done via the <a href="/register">register page</a></p>
+		<!-- Subtitle -->
+		<div class="subtitle">
+			This bypasses mail verification. Normal registrations should be done via the <a href="/register">register page</a>.
+		</div>
 
-<form action="/users" method="post">
-    <label for="username">Username</label>
-    <input id="username" name="username" type="text"/>
+		<!-- Form -->
+		<form class="form" action="/users" method="post">
+			<div class="field">
+				<label class="label">Username</label>
+				<input class="input" name="username" type="text" placeholder="Username" required />
+			</div>
 
-    <label for="password">Password</label>
-    <input id="password" name="password" type="password"/>
+			<div class="field">
+				<label class="label">Full Name</label>
+				<input class="input" name="full_name" type="text" placeholder="Full Name" required />
+			</div>
 
-    <label for="full_name">Full Name</label>
-    <input id="full_name" name="full_name" type="text"/>
+			<div class="field">
+				<label class="label">Email</label>
+				<input class="input" name="email" type="email" placeholder="Email" required />
+			</div>
 
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email"/>
+			<div class="field">
+				<label class="label">Password</label>
+				<input class="input" name="password" type="password" placeholder="Password" required />
+			</div>
 
-    <label for="ssh_key">ssh key</label>
-    <input id="ssh_key" name="ssh_key" type="text"/>
+			<div class="field">
+				<label class="label">SSH Keys</label>
+				<textarea class="textarea" placeholder="SSH Keys"></textarea>
+			</div>
 
-    <button type="submit">Create</button>
-</form>
-
+      <button class="button is-primary" type="submit">Create</button>
+		</form>
+	</div>
 {% endblock content %}
