@@ -17,6 +17,7 @@ use crate::common::zauth::models::user::*;
 use crate::common::zauth::DbConn;
 use lettre::Address;
 use rocket::http::{ContentType, Status};
+use rocket::tokio::time::sleep;
 use std::future::Future;
 use std::thread;
 use std::time::Duration;
@@ -160,7 +161,7 @@ where
 	let (mailbox, _condvar) = &STUB_MAILER_OUTBOX;
 	let outbox_size = { mailbox.lock().len() };
 	let result: T = run().await;
-	thread::sleep(Duration::from_secs(1));
+	sleep(Duration::from_secs(1));
 	assert_eq!(
 		outbox_size,
 		mailbox.lock().len(),

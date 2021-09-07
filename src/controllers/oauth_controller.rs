@@ -155,11 +155,10 @@ pub async fn grant_get<'r>(
 				client_name: String = state.client_name.clone(),
 			}))
 		} else {
-			Ok(Right(authorization_granted(
-				state,
-				session.user,
-				token_store.inner(),
-			)))
+			Ok(Right(
+				authorization_granted(state, session.user, token_store.inner())
+					.await,
+			))
 		}
 	} else {
 		Err(ZauthError::not_found("client not found"))
@@ -167,37 +166,38 @@ pub async fn grant_get<'r>(
 }
 
 #[post("/oauth/grant", data = "<form>")]
-pub fn grant_post(
+pub async fn grant_post<'r>(
 	session: UserSession,
-	cookies: &CookieJar,
+	cookies: &CookieJar<'_>,
 	form: Form<GrantFormData>,
 	token_store: &State<TokenStore<UserToken>>,
-) -> Result<Redirect> {
+) -> Result<impl Responder<'r, 'static>> {
 	let data = form.into_inner();
 	let state = AuthState::from_cookies(cookies)?;
 	if data.grant {
-		Ok(authorization_granted(
-			state,
-			session.user,
-			token_store.inner(),
-		))
+		Ok(
+			authorization_granted(state, session.user, token_store.inner())
+				.await,
+		)
 	} else {
 		Ok(authorization_denied(state))
 	}
 }
 
-fn authorization_granted(
+async fn authorization_granted(
 	state: AuthState,
 	user: User,
 	token_store: &TokenStore<UserToken>,
 ) -> Redirect {
-	let authorization_code = token_store.create_token(UserToken {
-		user_id:      user.id,
-		username:     user.username.clone(),
-		client_id:    state.client_id.clone(),
-		client_name:  state.client_name.clone(),
-		redirect_uri: state.redirect_uri.clone(),
-	});
+	let authorization_code = token_store
+		.create_token(UserToken {
+			user_id:      user.id,
+			username:     user.username.clone(),
+			client_id:    state.client_id.clone(),
+			client_name:  state.client_name.clone(),
+			redirect_uri: state.redirect_uri.clone(),
+		})
+		.await;
 	let uri = format!(
 		"{}&code={}",
 		state.redirect_uri_with_state(),
@@ -261,6 +261,7 @@ pub async fn token(
 
 	let token = token_store
 		.fetch_token(token)
+		.await
 		.ok_or(ZauthError::from(AuthenticationError::InvalidGrant(
 			"incorrect token".to_string(),
 		)))?

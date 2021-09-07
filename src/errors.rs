@@ -7,7 +7,7 @@ use diesel::result::Error::NotFound;
 use lettre::Message;
 use rocket::serde::json::Json;
 use std::convert::Infallible;
-use std::sync::mpsc::{SendError, TrySendError};
+use rocket::tokio::sync::mpsc::error::{SendError, TrySendError};
 use validator::ValidationErrors;
 
 use crate::views::accepter::Accepter;

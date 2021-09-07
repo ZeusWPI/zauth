@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::util;
 use chrono::{DateTime, Duration, Local};
+use rocket::tokio::sync::Mutex;
 use std::collections::HashMap;
-use std::sync::Mutex;
 
 #[derive(Debug)]
 pub struct Token<T> {
@@ -36,11 +36,10 @@ impl<T> TokenStore<T> {
 		tokens.retain(|_key, token| now < token.expiry);
 	}
 
-	pub fn create_token(&self, item: T) -> String {
-		let tokens: &mut HashMap<String, Token<T>> =
-			&mut self.tokens.lock().unwrap();
+	pub async fn create_token(&self, item: T) -> String {
+		let mut tokens = self.tokens.lock().await;
 
-		Self::remove_expired_tokens(tokens);
+		Self::remove_expired_tokens(&mut tokens);
 
 		let mut token_str = self.generate_random_token();
 		let mut token = Token {
@@ -56,10 +55,9 @@ impl<T> TokenStore<T> {
 		return token_str;
 	}
 
-	pub fn fetch_token(&self, token_str: String) -> Option<Token<T>> {
-		let tokens: &mut HashMap<String, Token<T>> =
-			&mut self.tokens.lock().unwrap();
-		Self::remove_expired_tokens(tokens);
+	pub async fn fetch_token(&self, token_str: String) -> Option<Token<T>> {
+		let mut tokens = &mut self.tokens.lock().await;
+		Self::remove_expired_tokens(&mut tokens);
 		tokens.remove(&token_str)
 	}
 }
