@@ -48,6 +48,7 @@ struct JsonError {
 impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 	fn respond_to(self, request: &'r Request<'_>) -> response::Result<'o> {
 		let mut builder = Response::build();
+		let debug = request.rocket().figment().profile() == "debug";
 		match self {
 			ZauthError::NotFound(_) => {
 				builder.status(Status::NotFound);
@@ -64,14 +65,19 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 				);
 			},
 			ZauthError::Internal(e) => {
+				let message = if debug {
+					format!("{:?}", e)
+				} else {
+					"Check the logs for the actual error.".to_string()
+				};
 				builder.status(Status::InternalServerError);
 				builder.merge(
 					Accepter {
-						html: template!("errors/500.html"; error: String = format!("{:?}", e)),
+						html: template!("errors/500.html"; error: String = message.clone()),
 						json: Json(JsonError {
 							error:   "internal server error",
 							status:  500,
-							message: Some(format!("{:?}", e)),
+							message: Some(message),
 						}),
 					}
 					.respond_to(request)?,
@@ -92,14 +98,19 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 				);
 			},
 			_ => {
+				let message = if debug {
+					format!("{:?}", self)
+				} else {
+					"Check the logs for the actual error.".to_string()
+				};
 				builder.status(Status::NotImplemented);
 				builder.merge(
 					Accepter {
-						html: template!("errors/501.html"; error: String = format!("{:?}", self)),
+						html: template!("errors/501.html"; error: String = message.clone()),
 						json: Json(JsonError {
 							error:   "not implemented",
 							status:  501,
-							message: Some(format!("{:?}", self)),
+							message: Some(message),
 						}),
 					}
 					.respond_to(request)?,

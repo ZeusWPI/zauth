@@ -1,5 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
 <h1>A programmer made a mistake :(</h1>
-<p>They forgot to handle an error, specifically this one: {{ error }}</p>
+<p>They forgot to handle an error. Tell them the following:</p>
+<pre>
+{{ error }}
+</pre>
 {% endblock content %}
