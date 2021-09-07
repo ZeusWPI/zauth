@@ -55,7 +55,7 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 					Accepter {
 						html: template!("errors/404.html"),
 						json: Json(JsonError {
-							error:   "not found".into(),
+							error:   "not found",
 							status:  404,
 							message: None,
 						}),
