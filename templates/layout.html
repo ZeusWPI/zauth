@@ -17,10 +17,37 @@
     {% endblock head %}
 </head>
 <body>
+
+	<!-- Navbar -->
 	{% block nav %}{% endblock nav %}
 
+	<!-- Content -->
 	<div class="container container--main">
 			{% block content %}{% endblock content %}
 	</div>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<div class="container content">
+			<div class="columns is-multiline is-justify-content-space-between">
+				<!-- Copyright -->
+				<div class="column is-narrow">
+					<a href="/">Zauth</a> by <a href="https://zeus.gent" target="_blank">Zeus WPI</a>
+				</div>
+
+				<!-- Change theme -->
+				<div class="column is-narrow">
+					{# <a class="button is-primary is-light is-small" href="#">Change theme</a> #}
+				</div>
+
+				<!-- Links -->
+				<div class="column is-narrow">
+					<a class="footer-link" href="mailto:bestuur@zeus.ugent.be">Contact</a>
+					<a class="footer-link" href="https://zeus.gent">Zeus WPI</a>
+					<a class="footer-link" href="https://github.com/zeusWPI/zauth">GitHub</a>
+				</div>
+			</div>
+		</div>
+	</footer>
 </body>
 </html>

@@ -34,6 +34,12 @@ html {
 }
 
 body {
+  min-height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 
   // Prevent blue highlights on elements on mobile
   * {
@@ -92,6 +98,31 @@ body {
     i {
       font-size: 1.5rem;
     }
+  }
+}
+
+// Footer
+.footer {
+  background-color: $white-ter;
+  clip-path: ellipse(150% 100% at 50% 100%);
+  margin-top: auto;
+  padding: 2rem 1.5rem;
+
+  a {
+    color: $text;
+
+    &:hover {
+      color: $primary;
+      text-decoration: underline;
+    }
+  }
+
+  @include until($tablet) {
+    text-align: center;
+  }
+
+  &-link {
+    padding: 0 0.5rem;
   }
 }
 
