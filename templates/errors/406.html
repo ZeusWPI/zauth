@@ -1,5 +1,11 @@
-{% extends "layout.html" %}
-{% block body %}
-<h1>Not acceptable</h1>
-<p>Sorry, but we couldn't find an HTML representation for the resource you requested.
-{% endblock body %}
+{% extends "base_error.html" %}
+
+<!-- Title -->
+{% block error_title %}
+  Not acceptable
+{% endblock error_title %}
+
+<!-- Content -->
+{% block error_content %}
+  Sorry, but we couldn't find an HTML representation for the resource you requested.
+{% endblock error_content %}

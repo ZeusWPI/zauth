@@ -1,6 +1,12 @@
-{% extends "layout.html" %}
-{% block content %}
-<h1>Not acceptable</h1>
-<p>Sorry, but you're not allowed to do this.</p>
-<p>Maybe you want to <a href="/login">sign in</a>?</p>
-{% endblock content %}
+{% extends "base_error.html" %}
+
+<!-- Title -->
+{% block error_title %}
+  Not acceptable
+{% endblock error_title %}
+
+<!-- Content -->
+{% block error_content %}
+  <p>Sorry, but you're not allowed to do this.</p>
+  <p>Maybe you want to <a href="/login">sign in</a>?</p>
+{% endblock error_content %}

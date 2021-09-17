@@ -1,5 +1,11 @@
-{% extends "layout.html" %}
-{% block content %}
-<h1>Not found</h1>
-<p>Sorry, but we couldn't find the page you were looking for.</p>
-{% endblock content %}
+{% extends "base_error.html" %}
+
+<!-- Title -->
+{% block error_title %}
+  Not found
+{% endblock error_title %}
+
+<!-- Content -->
+{% block error_content %}
+  Sorry, but we couldn't find the page you were looking for.
+{% endblock error_content %}

@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+<!-- Content -->
+{% block content %}
+<div class="columns is-multiline is-mobile is-centered">
+  <div class="column is-12-mobile is-10-tablet is-8-desktop">
+		<div class="card card-content">
+			<div class="title">
+				{% block error_title %}
+          Something went wrong!
+        {% endblock error_title %}
+			</div>
+
+			<div class="subtitle">
+				{% block error_content %}
+          An unexpected error occurred.
+        {% endblock error_content %}
+			</div>
+		</div>
+  </div>
+</div>
+{% endblock %}
