@@ -1,18 +1,32 @@
 {% extends "layout.html" %}
-{% block title %}Grant {{ client_name }} access?{% endblock title %}
+
+<!-- Content -->
 {% block content %}
-<div class="wrapper">
-  <div class="center_card">
-    <img src="https://zinc.zeus.gent/ff5f00">
-  </div>
-  <div class="center_card">
-    <form action="grant" method="post">
-      <h1>Grant {{ client_name }} access?</h1>
-      <div class="buttons">
-        <button type="submit" name="grant" value="true">Yes</button>
-        <button class="button-neg" type="submit" name="grant" value="false">No</button>
+<div class="grant columns is-multiline is-mobile is-centered">
+  <div class="column is-12-mobile is-10-tablet is-5-desktop">
+
+    <!-- Logo -->
+    <a class="grant-logo" href="https://zeus.ugent.be/" target="_blank">
+      <img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
+    </a>
+
+    <div class="grant-card">
+      <!-- Title -->
+      <div class="title">
+        Grant {{ client_name }} access?
       </div>
-    </form>
+
+      <!-- Subtitle -->
+      <div class="subtitle">
+        Are you sure you want to grand this service access to your account?
+      </div>
+
+      <!-- Form -->
+      <form class="is-flex" action="grant" method="post">
+        <button class="button is-success is-medium" type="submit" name="grant" value="true">Yes</button>
+        <button class="button is-danger is-medium ml-2" type="submit" name="grant" value="false">No</button>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock content %}

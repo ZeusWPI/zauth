@@ -103,9 +103,10 @@ body {
   width: 100%;
 }
 
-// Login & register page
+// Login/register/grant page
 .login,
-.register {
+.register,
+.grant {
   margin: auto;
 
   &-logo {
@@ -125,21 +126,12 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    text-align: center;
 
-    &-title {
-      font-size: $size-3;
-      font-weight: 900;
-      margin-bottom: 1.5rem;
-    }
-
-    &-form {
-      @extend .form;
-      margin-bottom: 1rem;
-    }
-
-    &-login,
-    &-register {
-      color: $grey-light;
+    &-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
     }
   }
 }
