@@ -52,17 +52,7 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 		match self {
 			ZauthError::NotFound(_) => {
 				builder.status(Status::NotFound);
-				builder.merge(
-					Accepter {
-						html: template!("errors/404.html"),
-						json: Json(JsonError {
-							error:   "not found",
-							status:  404,
-							message: None,
-						}),
-					}
-					.respond_to(request)?,
-				);
+				builder.merge(not_found().respond_to(request)?);
 			},
 			ZauthError::Internal(e) => {
 				let message = if debug {
@@ -72,30 +62,13 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 				};
 				builder.status(Status::InternalServerError);
 				builder.merge(
-					Accepter {
-						html: template!("errors/500.html"; error: String = message.clone()),
-						json: Json(JsonError {
-							error:   "internal server error",
-							status:  500,
-							message: Some(message),
-						}),
-					}
-					.respond_to(request)?,
+					internal_server_error_with_message(message)
+						.respond_to(request)?,
 				);
 			},
 			ZauthError::AuthError(_) => {
 				builder.status(Status::Unauthorized);
-				builder.merge(
-					Accepter {
-						html: template!("errors/401.html"),
-						json: Json(JsonError {
-							error:   "unauthorized",
-							status:  401,
-							message: None,
-						}),
-					}
-					.respond_to(request)?,
-				);
+				builder.merge(unauthorized().respond_to(request)?);
 			},
 			_ => {
 				let message = if debug {
@@ -105,20 +78,73 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 				};
 				builder.status(Status::NotImplemented);
 				builder.merge(
-					Accepter {
-						html: template!("errors/501.html"; error: String = message.clone()),
-						json: Json(JsonError {
-							error:   "not implemented",
-							status:  501,
-							message: Some(message),
-						}),
-					}
-					.respond_to(request)?,
+					not_implemented_with_message(message)
+						.respond_to(request)?,
 				);
 			},
 		};
 
 		Ok(builder.finalize())
+	}
+}
+
+#[catch(401)]
+pub fn unauthorized<'r>() -> impl Responder<'r, 'static> {
+	Accepter {
+		html: template!("errors/401.html"),
+		json: Json(JsonError {
+			error:   "unauthorized",
+			status:  401,
+			message: None,
+		}),
+	}
+}
+
+#[catch(404)]
+pub fn not_found<'r>() -> impl Responder<'r, 'static> {
+	Accepter {
+		html: template!("errors/404.html"),
+		json: Json(JsonError {
+			error:   "not found",
+			status:  404,
+			message: None,
+		}),
+	}
+}
+
+#[catch(500)]
+pub fn internal_server_error<'r>() -> impl Responder<'r, 'static> {
+	internal_server_error_with_message("Internal rocket error".to_string())
+}
+
+fn internal_server_error_with_message<'r>(
+	message: String,
+) -> impl Responder<'r, 'static> {
+	Accepter {
+		html: template!("errors/500.html"; error: String = message.clone()),
+		json: Json(JsonError {
+			error:   "internal server error",
+			status:  500,
+			message: Some(message),
+		}),
+	}
+}
+
+#[catch(501)]
+pub fn not_implemented<'r>() -> impl Responder<'r, 'static> {
+	not_implemented_with_message("Rocket not implemented error".to_string())
+}
+
+fn not_implemented_with_message<'r>(
+	message: String,
+) -> impl Responder<'r, 'static> {
+	Accepter {
+		html: template!("errors/501.html"; error: String = message.clone()),
+		json: Json(JsonError {
+			error:   "not implemented",
+			status:  501,
+			message: Some(message),
+		}),
 	}
 }
 

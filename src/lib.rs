@@ -47,6 +47,9 @@ use rocket_sync_db_pools::diesel::PgConnection;
 use crate::config::Config;
 use crate::controllers::*;
 use crate::db_seed::Seeder;
+use crate::errors::{
+	internal_server_error, not_found, not_implemented, unauthorized,
+};
 use crate::mailer::Mailer;
 use crate::token_store::TokenStore;
 
@@ -107,6 +110,15 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				users_controller::forgot_password_post,
 				users_controller::reset_password_get,
 				users_controller::reset_password_post,
+			],
+		)
+		.register(
+			"/",
+			catchers![
+				unauthorized,
+				not_found,
+				internal_server_error,
+				not_implemented
 			],
 		)
 		.mount("/static/", FileServer::from("static/"))
