@@ -103,11 +103,19 @@ body {
   width: 100%;
 }
 
-// Login/register/grant page
-.login,
-.register,
-.grant {
-  margin: auto;
+// Card page
+.card-page {
+  @extend .columns;
+  @extend .is-multiline;
+  @extend .is-mobile;
+  @extend .is-centered;
+
+  &-content {
+    @extend .column;
+    @extend .is-12-mobile;
+    @extend .is-10-tablet;
+    @extend .is-5-desktop;
+  }
 
   &-logo {
     width: 60%;
@@ -126,12 +134,10 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;
 
-    &-actions {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
+    .title,
+    .subtitle {
+      text-align: center;
     }
   }
 }
@@ -151,6 +157,20 @@ body {
   &-edit {
     &-form {
       @extend .form;
+    }
+  }
+}
+
+// Error page
+.error {
+   &-image {
+    width: 40%;
+    display: block;
+    margin: auto;
+    margin-bottom: 2rem;
+
+    img {
+      width: 100%;
     }
   }
 }

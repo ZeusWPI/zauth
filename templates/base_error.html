@@ -2,15 +2,25 @@
 
 <!-- Content -->
 {% block content %}
-<div class="columns is-multiline is-mobile is-centered">
-  <div class="column is-12-mobile is-10-tablet is-8-desktop">
-		<div class="card card-content">
+<div class="card-page">
+  <div class="card-page-content">
+
+		<!-- Image -->
+		<div class="card-page-image">
+			<img src="/static/img/error/error.svg" alt="Error image">
+		</div>
+
+		<!-- Card -->
+		<div class="card-page-card">
+
+			<!-- Title -->
 			<div class="title">
 				{% block error_title %}
           Something went wrong!
         {% endblock error_title %}
 			</div>
 
+			<!-- Content -->
 			<div class="subtitle">
 				{% block error_content %}
           An unexpected error occurred.
