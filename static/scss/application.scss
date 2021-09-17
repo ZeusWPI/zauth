@@ -34,6 +34,7 @@ html {
 }
 
 body {
+
   // Prevent blue highlights on elements on mobile
   * {
     -webkit-tap-highlight-color: transparent;
@@ -175,6 +176,90 @@ body {
   }
 }
 
+// Home page
+.home {
+  &-hero {
+    max-width: 600px;
+    margin: auto;
+    margin-top: 5rem;
+    margin-bottom: 5rem !important;
+    text-align: center;
+
+    &-title {
+      font-size: 4rem;
+      font-weight: 600;
+    }
+
+    &-subtitle {
+      font-size: 1.5rem;
+      color: $grey;
+    }
+
+    &-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+  }
+
+  &-section {
+    @extend .section;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+    text-align: center;
+
+    &-title {
+      font-size: 3rem;
+      font-weight: 600;
+    }
+
+    &-content {
+      color: $grey;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    &-image {
+      box-shadow: $shadow;
+      border-radius: $card-radius;
+      width: 80%;
+      margin: auto;
+      margin-top: 3rem;
+
+      img {
+        min-width: 100%;
+        min-height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: inherit;
+        object-fit: contain;
+        vertical-align: middle;
+      }
+    }
+  }
+
+  &-service-card {
+    @extend .card;
+    @extend .card-content;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    &-title {
+      font-size: $size-4;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+
+    &-description {
+      color: $grey;
+      font-size: 1rem;
+    }
+  }
+}
+
 // Modal using :target (without JavaScript)
 .modal-target {
   display: none;
@@ -283,6 +368,10 @@ body {
   }
 }
 
+.is-fullheight {
+  height: 100%;
+}
+
 /**
  * Overrides
  */
@@ -306,3 +395,4 @@ body {
     }
   }
 }
+

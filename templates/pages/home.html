@@ -1,18 +1,77 @@
 {% extends "base_not_logged_in.html" %}
+
+<!-- Macro for service card -->
+{%- macro service_card(name, description, link) -%}
+	<div class="column is-4">
+		<a href="{{ link }}" target="_blank">
+			<div class="home-service-card">
+
+				<!-- Title -->
+				<div class="home-service-card-title">
+					{{ name }}
+				</div>
+
+				<!-- Content -->
+				<div class="home-service-card-description">
+					{{ description }}
+				</div>
+			</div>
+		</a>
+	</div>
+{%- endmacro -%}
+
+<!-- Content -->
 {% block content %}
-<h2>This is the Zeus Authentication platform</h2>
 
-<div class="row">
-    <div class="column" id="center-outer">
-        <div id="center-inner">
-            <h3><a href="/login">Login</a></h3>
-        </div>
-    </div>
-    <div class="column" id="center-outer">
-        <div id="center-inner">
-            <h3><a href="/register">Register</a></h3>
-        </div>
-    </div>
-</div>
+	<!-- Hero -->
+	<div class="home-hero">
+		<div class="home-hero-title has-text-primary">
+			ZAuth
+		</div>
 
+		<div class="home-hero-subtitle">
+			The Zeus Authentication Platform for logging in to all Zeus services.
+		</div>
+
+		<div class="home-hero-actions">
+			<a class="button is-large is-primary" href="/login">Login</a>
+			<a class="button is-large is-primary is-light" href="/register">Register</a>
+		</div>
+	</div>
+
+	<hr />
+
+	<!-- What is Zauth? -->
+	<div class="home-section">
+		<div class="home-section-title">
+			What is <span class="has-text-primary">Zauth</span>
+		</div>
+
+		<div class="home-section-content">
+			ZAuth is a platform for authenticating users to all the services that are built on top of the Zeus framework.
+		</div>
+
+		<div class="home-section-image">
+			<img src="/static/img/home/login.png" alt="ZAuth Login Screen" />
+		</div>
+	</div>
+
+	<!-- Services -->
+	<div class="home-section">
+		<div class="home-section-title">
+			Get access to all our <span class="has-text-primary">services</span>
+		</div>
+
+		<div class="home-section-content">
+			With a Zeus account you have access to all our services in- and outside of the Kelder.
+
+			<div class="columns is-multiline is-centered mt-6">
+				{%- call service_card("Haldis", "Order food from our favorite places and eat together with other Zeus members.", "https://haldis.zeus.gent") -%}
+				{%- call service_card("Tap", "Grab drinks and snacks in the kelder and easily pay for them.", "https://tap.zeus.gent") -%}
+				{%- call service_card("Tab", "Manage your Zeus balance for paying in Haldis or Tap.", "https://tab.zeus.gent") -%}
+				{%- call service_card("Gamification", "Get points for code contributions and join the leaderboard.", "https://zeus.ugent.be/game") -%}
+				{%- call service_card("Cat", "Keep track of who has given hugs to who. We all need some affection sometimes…", "https://cat.zeus.gent") -%}
+			</div>
+		</div>
+	</div>
 {% endblock content %}
