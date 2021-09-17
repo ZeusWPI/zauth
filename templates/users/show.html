@@ -3,7 +3,10 @@
 <!-- Content -->
 {% block content %}
 <div class="profile-title">
-	Welcome back, {{ user.username }}
+	{% if current_user.id == user.id %}
+		Welcome back,
+	{% endif %}
+	{{ user.username }}
 </div>
 
 <div class="profile-subtitle">
@@ -55,11 +58,11 @@
 		</div>
 	</div>
 
-	<!-- Update password -->
+	<!-- Change password -->
 	<div class="column is-5">
 		<div class="card card-content">
 
-			<div class="title">Update profile information</div>
+			<div class="title">Change password</div>
 
 			<div class="is-italic has-text-grey-light">Coming soon!</div>
 		</div>
