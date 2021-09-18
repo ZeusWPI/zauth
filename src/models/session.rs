@@ -4,9 +4,11 @@ use diesel::{self, prelude::*};
 use crate::DbConn;
 
 use self::schema::sessions;
+use crate::config::Config;
 use crate::errors::{Result, ZauthError};
 use crate::models::client::Client;
 use crate::models::user::User;
+use crate::util::random_token;
 
 pub mod schema {
 	table! {
@@ -65,11 +67,41 @@ impl Session {
 		};
 		db.run(move |conn| {
 			conn.transaction(|| {
-				// Create a new client
+				// Create a new session
 				diesel::insert_into(sessions::table)
 					.values(&session)
 					.execute(conn)?;
-				// Fetch the last created client
+				// Fetch the last created session
+				sessions::table.order(sessions::id.desc()).first(conn)
+			})
+			.map_err(ZauthError::from)
+		})
+		.await
+	}
+
+	pub async fn create_client_session(
+		user: &User,
+		client: &Client,
+		conf: &Config,
+		db: &DbConn,
+	) -> Result<Session> {
+		let created_at = Utc::now().naive_utc();
+		let expires_at = created_at + conf.client_session_duration();
+		let key = random_token(conf.secure_token_length);
+		let session = NewSession {
+			user_id: user.id,
+			client_id: Some(client.id),
+			key: Some(key),
+			created_at,
+			expires_at,
+		};
+		db.run(move |conn| {
+			conn.transaction(|| {
+				// Create a new session
+				diesel::insert_into(sessions::table)
+					.values(&session)
+					.execute(conn)?;
+				// Fetch the last created session
 				sessions::table.order(sessions::id.desc()).first(conn)
 			})
 			.map_err(ZauthError::from)
