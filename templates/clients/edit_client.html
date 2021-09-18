@@ -1,39 +1,65 @@
 {% extends "base_logged_in.html" %}
+
+<!-- Content -->
 {% block content %}
+	<div class="card card-content">
 
-<h1>Update {{ client.name }}</h1>
-<form action="/clients/{{ client.id }}" method="post">
-    <fieldset>
-        <input type="hidden" name="_method" value="put"/>
+		<!-- Title -->
+		<div class="title">
+			Update {{ client.name }}
+		</div>
 
-        <label for="name">Name</label>
-        <input type="text"
-               placeholder="Application name"
-               id="name"
-               name="name"
-               minlength="3"
-               maxlength="80"
-               value="{{ client.name }}"
-               required>
+		<!-- Form -->
+		<form class="form" action="/clients/{{ client.id }}" method="post">
+			<input type="hidden" name="_method" value="put"/>
 
-        <label for="description">Description</label>
-        <textarea id="description" name="description" rows="4" cols="50" placeholder="Describe what the application does.">{{ client.description -}}</textarea>
+			<!-- Name -->
+			<div class="field">
+				<label class="label">Name</label>
+        <input
+					class="input"
+					type="text"
+					placeholder="Application name"
+					name="name"
+					minlength="3"
+					maxlength="80"
+					value="{{ client.name }}"
+					required
+				>
+			</div>
 
-        <div title="When this is enabled, users have to confirm they want to share their information with the client. After logging in, they will see the name and description of the client. Users have to explicitly confirm in order to complete the OAuth flow.
-                    This should only be disabled for fully trusted applications.">
-        <label for="needs_grant">Needs grant?</label>
-        <input type="hidden" id="needs_grant" name="needs_grant" value="false">
-        <input type="checkbox" id="needs_grant" name="needs_grant"
-                    {% if client.needs_grant %} checked {% endif %}
-                    >
-        </div>
+			<!-- Description -->
+			<div class="field">
+				<label class="label">Description</label>
+        <textarea
+					class="textarea"
+					name="description"
+					rows="4"
+					cols="50"
+					placeholder="Describe what the application does.">{{ client.description -}}</textarea>
+			</div>
 
-        <label for="redirect_uri_list">Redirect URI's</label>
-        <textarea id="redirect_uri_list" name="redirect_uri_list" rows="4" cols="50" placeholder="http://localhost:3000/auth/callback
-https://example.com/auth/callback">{{- client.redirect_uri_list -}}</textarea>
+			<!-- Needs Grant -->
+			<div title="When this is enabled, users have to confirm they want to share their information with the client. After logging in, they will see the name and description of the client. Users have to explicitly confirm in order to complete the OAuth flow. This should only be disabled for fully trusted applications.">
+				<div class="field">
+					<label class="label">Needs Grant?</label>
+					<label class="switch">
+						<input type="hidden" name="needs_grant" value="false">
+						<input type="checkbox" name="needs_grant" {% if client.needs_grant %} checked {% endif %}>
+						<span class="switch-slider"></span>
+					</label>
+				</div>
+			</div>
 
-        <button type="submit">Save</button>
-    </fieldset>
-</form>
+			<!-- Redirect URI's -->
+			<div class="field">
+				<label class="label">Redirect URI's</label>
+        <textarea class="textarea" name="redirect_uri_list" rows="4" cols="50" placeholder="http://localhost:3000/auth/callback
+https://example.com/auth/callback"
+				>{{- client.redirect_uri_list -}}</textarea>
+			</div>
 
+      <button class="button is-primary" type="submit">Save</button>
+		</form>
+	</div>
 {% endblock content %}

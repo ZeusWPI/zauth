@@ -1,0 +1,20 @@
+{
+  "name": "zauth",
+  "version": "1.0.0",
+  "description": "The name is open for discussion.",
+  "author": "Zeus WPI <bestuur@zeus.gent>",
+  "homepage": "https://github.com/ZeusWPI/zauth#readme",
+  "scripts": {
+    "build": "sass static/scss/* static/dist/css/application.css --style compressed",
+    "watch": "npm run build -- --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZeusWPI/zauth.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "sass": "^1.39.0",
+    "bulma": "^0.9.3"
+  }
+}

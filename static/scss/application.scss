@@ -1,0 +1,429 @@
+// Bulma variable overrides
+$primary: #ff6600;
+$text: #172940;
+$link: $primary;
+$title-color: $text;
+// $subtitle-color: $grey-light;
+
+$family-sans-serif: "Inter",sans-serif;
+
+$radius-small: 8px;
+$radius: 8px;
+
+$card-radius: 16px;
+$card-background-color: #fff;
+
+$modal-card-head-background-color: white;
+$modal-card-head-border-bottom: 2px solid whitesmoke;
+$modal-card-foot-border-top: 2px solid whitesmoke;
+
+// Custom variables
+
+// Include Bulma SCSS
+@import '../../node_modules/bulma/bulma.sass';
+
+/**
+ * Base styles
+ */
+
+html {
+  height: 100%;
+  width: 100%;
+  background-color: $white-bis;
+  overflow-y: auto;
+}
+
+body {
+  min-height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+
+  // Prevent blue highlights on elements on mobile
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  // Select text with a primary color background
+  ::selection,
+  ::-moz-selection {
+    background: $primary;
+    color: $white;
+  }
+}
+
+/**
+ * Application
+ */
+
+// Navbar
+.navbar {
+
+  &.is-raised {
+    box-shadow: $card-shadow;
+  }
+
+  &.is-transparent {
+    background-color: transparent;
+
+    * {
+      color: $primary !important;
+
+      &:hover {
+        color: darken($primary, 10%) !important;
+      }
+    }
+  }
+
+  &-item {
+    font-weight: bold;
+  }
+
+  &-title {
+    @extend .navbar-item;
+    @extend .title;
+    @extend .is-size-5;
+    margin-bottom: 0 !important;
+  }
+
+  &-burger {
+    @include until($desktop) {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    i {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+// Footer
+.footer {
+  background-color: $white-ter;
+  clip-path: ellipse(150% 100% at 50% 100%);
+  margin-top: auto;
+  padding: 2rem 1.5rem;
+
+  a {
+    color: $text;
+
+    &:hover {
+      color: $primary;
+      text-decoration: underline;
+    }
+  }
+
+  @include until($tablet) {
+    text-align: center;
+  }
+
+  &-link {
+    padding: 0 0.5rem;
+  }
+}
+
+// Base form layout
+.form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.7rem;
+  width: 100%;
+}
+
+// Card page
+.card-page {
+  @extend .columns;
+  @extend .is-multiline;
+  @extend .is-mobile;
+  @extend .is-centered;
+
+  &-content {
+    @extend .column;
+    @extend .is-12-mobile;
+    @extend .is-10-tablet;
+    @extend .is-5-desktop;
+  }
+
+  &-image {
+    width: 60%;
+    display: block;
+    margin: auto;
+    margin-bottom: 2rem;
+
+    img {
+      width: 100%;
+    }
+  }
+
+  &-card {
+    @extend .card;
+    @extend .card-content;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .title,
+    .subtitle {
+      text-align: center;
+    }
+  }
+}
+
+// Profile page
+.profile {
+  &-title {
+    font-size: $size-2;
+    font-weight: 900;
+  }
+
+  &-subtitle {
+    color: $grey-light;
+    font-size: $size-5;
+  }
+
+  &-edit {
+    &-form {
+      @extend .form;
+    }
+  }
+}
+
+// Error page
+.error {
+   &-image {
+    width: 40%;
+    display: block;
+    margin: auto;
+    margin-bottom: 2rem;
+
+    img {
+      width: 100%;
+    }
+  }
+}
+
+// Home page
+.home {
+  &-hero {
+    max-width: 600px;
+    margin: auto;
+    margin-top: 5rem;
+    margin-bottom: 5rem !important;
+    text-align: center;
+
+    &-title {
+      font-size: 4rem;
+      font-weight: 600;
+    }
+
+    &-subtitle {
+      font-size: 1.5rem;
+      color: $grey;
+    }
+
+    &-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+  }
+
+  &-section {
+    @extend .section;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+    text-align: center;
+
+    &-title {
+      font-size: 3rem;
+      font-weight: 600;
+    }
+
+    &-content {
+      color: $grey;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    &-image {
+      box-shadow: $shadow;
+      border-radius: $card-radius;
+      width: 80%;
+      margin: auto;
+      margin-top: 3rem;
+
+      img {
+        min-width: 100%;
+        min-height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: inherit;
+        object-fit: contain;
+        vertical-align: middle;
+      }
+    }
+  }
+
+  &-service-card {
+    @extend .card;
+    @extend .card-content;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    &-title {
+      font-size: $size-4;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+
+    &-description {
+      color: $grey;
+      font-size: 1rem;
+    }
+  }
+}
+
+// Modal using :target (without JavaScript)
+.modal-target {
+  display: none;
+
+  &:target {
+    @extend .is-active;
+    display: block;
+  }
+}
+
+// Responsive table
+.table--responsive {
+  width: 100%;
+
+  @include until($tablet) {
+    &--labels {
+      td {
+        text-align: right !important;
+
+        &::before {
+          content: attr(data-label);
+          float: left;
+          font-weight: bold;
+        }
+      }
+    }
+
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: block;
+
+      &:first-child {
+        border-top: 2px solid whitesmoke;
+      }
+    }
+
+    td {
+      display: block;
+      padding: 0.4rem 0;
+      width: 100%;
+      border-bottom: none;
+
+      .table--responsive--labels {
+        text-align: right !important;
+      }
+
+      &:first-child {
+        padding-top: 0.6em;
+      }
+
+      &:last-child {
+        padding-bottom: 0.6em;
+        border-bottom: 2px solid whitesmoke;
+      }
+    }
+  }
+}
+
+// Checkbox switch
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+
+  input {
+    // Hide the default checkbox
+    opacity: 0;
+    width: 0;
+    height: 0;
+
+    &:checked + .switch-slider {
+      background-color: $primary !important;
+
+      &::before {
+        transform: translateX(26px);
+      }
+    }
+  }
+
+  &-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: $grey-lighter;
+    transition: 0.4s;
+    border-radius: $radius;
+
+    &::before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: $white;
+      transition: 0.4s;
+      border-radius: $radius;
+    }
+  }
+}
+
+.is-fullheight {
+  height: 100%;
+}
+
+/**
+ * Overrides
+ */
+
+// Change the card's background color
+.card {
+  background-color: $card-background-color;
+}
+
+// Add padding to container on mobile
+.container {
+  width: 100%;
+
+  &--main {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+
+    @include until($desktop) {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
+}
+

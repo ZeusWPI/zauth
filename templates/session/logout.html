@@ -1,6 +1,24 @@
 {% extends "base_logged_in.html" %}
+
+<!-- Content -->
 {% block content %}
-<form action="/logout" method="post">
-    <button type="submit" name="logout" value="true">Confirm</button>
-</form>
+<div class="card-page">
+  <div class="card-page-content">
+		<div class="card-page-card">
+			<div class="title">
+				Are you sure?
+			</div>
+
+			<div class="subtitle">
+				Are you sure you want to logout?
+			</div>
+
+			<form action="/logout" method="post">
+				<button class="button is-primary is-medium" type="submit">
+					Confirm
+				</button>
+			</form>
+		</div>
+  </div>
+</div>
 {% endblock %}

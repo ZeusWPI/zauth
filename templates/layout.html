@@ -2,25 +2,52 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+
     <title>
-        {% block title %}
-        Zauth
-        {% endblock title %}
+			{% block title %}
+			Zauth
+			{% endblock title %}
     </title>
-    <link rel="stylesheet" type="text/css" href="/static/style.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.0/milligram.css">
+
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/dist/css/application.css">
+
     {% block head %}
     {% endblock head %}
 </head>
 <body>
-{% block nav %}{% endblock nav %}
 
-<div class="container">
-    {% block content %}{% endblock content %}
-</div>
+	<!-- Navbar -->
+	{% block nav %}{% endblock nav %}
 
+	<!-- Content -->
+	<div class="container container--main">
+			{% block content %}{% endblock content %}
+	</div>
 
+	<!-- Footer -->
+	<footer class="footer">
+		<div class="container content">
+			<div class="columns is-multiline is-justify-content-space-between">
+				<!-- Copyright -->
+				<div class="column is-narrow">
+					<a href="/">Zauth</a> by <a href="https://zeus.gent" target="_blank">Zeus WPI</a>
+				</div>
+
+				<!-- Change theme -->
+				<div class="column is-narrow">
+					{# <a class="button is-primary is-light is-small" href="#">Change theme</a> #}
+				</div>
+
+				<!-- Links -->
+				<div class="column is-narrow">
+					<a class="footer-link" href="mailto:bestuur@zeus.ugent.be">Contact</a>
+					<a class="footer-link" href="https://zeus.gent">Zeus WPI</a>
+					<a class="footer-link" href="https://github.com/zeusWPI/zauth">GitHub</a>
+				</div>
+			</div>
+		</div>
+	</footer>
 </body>
 </html>

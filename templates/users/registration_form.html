@@ -1,25 +1,60 @@
 {% extends "base_not_logged_in.html" %}
-{% block content %}
-<h1>Register</h1>
 
-<form action="/register" method="post">
+<!-- Content -->
+{% block content %}
+<div class="card-page">
+  <div class="card-page-content">
+
+		<!-- Logo -->
+    <a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
+      <img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
+    </a>
+
+    <!-- Error messages -->
     {% match errors %}
-    {%  when Some with (errors) %}
-    {{ errors.to_string() }}
+    {% when Some with (errors) %}
+      <div class="notification is-danger is-light">
+        {{ errors }}
+      </div>
     {% when None %}
     {% endmatch %}
-    <label for="username">Username</label>
-    <input id="username" name="username" type="text" required/>
 
-    <label for="password">Password</label>
-    <input id="password" name="password" type="password" required/>
+    <div class="card-page-card">
+      <!-- Title -->
+      <div class="title">
+        Create a new account
+      </div>
 
-    <label for="full_name">Full Name</label>
-    <input id="full_name" name="full_name" type="text" required/>
+      <!-- Register form -->
+      <form class="form mb-2" action="/register" method="post">
+        <div class="field">
+          <label class="label">Username</label>
+          <input class="input" name="username" type="text" placeholder="Username" required />
+        </div>
 
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email" required/>
+				<div class="field">
+          <label class="label">Full Name</label>
+          <input class="input" name="full_name" type="text" placeholder="Full Name" required />
+        </div>
 
-    <button type="submit">Register</button>
-</form>
-{% endblock %}
+				<div class="field">
+          <label class="label">Email</label>
+          <input class="input" name="email" type="email" placeholder="Email" required />
+        </div>
+
+				<div class="field">
+          <label class="label">Password</label>
+          <input class="input" name="password" type="password" placeholder="Password" required />
+        </div>
+
+        <button class="button is-primary" type="submit">Register</button>
+      </form>
+
+    <!-- Login -->
+     <div class="has-text-grey-light">
+        Already an account? <a href="/login">Login here!</a>
+     </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -1,23 +1,50 @@
 {% extends "base_not_logged_in.html" %}
-{% block head %}
-    <link rel="stylesheet" type="text/css" href="/static/login.css">
-{% endblock head %}
+
+<!-- Content -->
 {% block content %}
-<div class="wrapper">
-  <div class="box">
+<div class="card-page">
+  <div class="card-page-content">
+
+    <!-- Logo -->
+    <a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
+      <img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
+    </a>
+
+    <!-- Error messages -->
     {% match error %}
     {% when Some with (message) %}
-        <p> Error: {{ message }}
+      <div class="notification is-danger is-light">
+        {{ message }}
+      </div>
     {% when None %}
     {% endmatch %}
-    <form action="/login" method="post">
-      <input type="text" placeholder="Username" name="username" id="name" required>
-      <input type="password" placeholder="Password" name="password" id="password" required>
-      <input type="submit" value="Login" class="loginbutton">
-    </form>
+
+    <div class="card-page-card">
+      <!-- Title -->
+      <div class="title">
+        Login with Zauth
+      </div>
+
+      <!-- Login form -->
+      <form class="form mb-2" action="/login" method="post">
+        <div class="field ">
+          <label class="label">Username</label>
+          <input class="input is-medium" name="username" type="text" placeholder="Username" required />
+        </div>
+
+        <div class="field">
+          <label class="label">Password</label>
+          <input class="input is-medium" name="password" type="password" placeholder="Password" required />
+        </div>
+
+       <button class="button is-primary" type="submit">Login</button>
+      </form>
+
+      <!-- Register -->
+     <div class="has-text-grey-light">
+        Don't have an account? <a href="/register">Create one here!</a>
+     </div>
+    </div>
   </div>
-  <a href="https://zeus.ugent.be/" target="_blank">
-    <img src="https://zinc.zeus.gent/ff5f00">
-  </a>
 </div>
 {% endblock content %}

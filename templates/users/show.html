@@ -1,54 +1,71 @@
 {% extends "base_logged_in.html" %}
 
+<!-- Content -->
 {% block content %}
-
-<h1>{{ user.username }}</h1>
-{% if user.admin %}
-    <p> This user is an admin.
-{% else %}
-    <p> This is a normal user.
-{% endif %}
-
-<p>{{user.state}}</p>
-
-<div class="container">
-
-    <div class="row">
-        <div class="column">
-            <h3>
-                Update profile info
-            </h3>
-
-            <form action="/users/{{user.id}}" method="POST">
-                <input type="hidden" name="_method" value="put"/>
-
-                <label for="username">Username</label>
-                <input id="username" name="username" type="text" value="{{ user.username }}" disabled/>
-
-                <label for="password">password</label>
-                <input id="password" name="password" type="password"/>
-
-                <label for="full_name">Full Name</label>
-                <input id="full_name" name="full_name" type="text" value="{{ user.full_name }}"/>
-
-                <label for="email">Email</label>
-                <input id="email" name="email" type="email" value="{{ user.email }}"/>
-
-                <label for="ssh_key">ssh key</label>
-                <input id="ssh_key" name="ssh_key" type="text"
-                       value="{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}"/>
-
-                <button type="submit">Update</button>
-            </form>
-        </div>
-        <div class="column">
-            <h3>
-                Set new password
-            </h3>
-            <p>Coming soon!</p>
-        </div>
-    </div>
+<div class="profile-title">
+	{% if current_user.id == user.id %}
+		Welcome back,
+	{% endif %}
+	{{ user.username }}
 </div>
 
+<div class="profile-subtitle">
+	{% if user.admin %}
+  	Zeus Admin
+	{% else %}
+		Zeus Member
+	{% endif %}
+</div>
 
+<div class="columns is-multiline mt-4">
+
+	<!-- Update profile -->
+	<div class="column is-7">
+		<div class="card card-content">
+
+			<div class="title">Update profile information</div>
+
+			<form class="profile-edit-form" action="/users/{{ user.id }}" method="POST">
+				<input type="hidden" name="_method" value="put"/>
+
+				<div class="field">
+          <label class="label">Username</label>
+          <input class="input" name="username" type="text" placeholder="Username" value="{{ user.username }}" disabled />
+        </div>
+
+				<div class="field">
+          <label class="label">Full Name</label>
+          <input class="input" name="full_name" type="text" placeholder="Full Name" value="{{ user.full_name }}" />
+        </div>
+
+				<div class="field">
+          <label class="label">Email</label>
+          <input class="input" name="email" type="email" placeholder="Email" value="{{ user.email }}" required />
+        </div>
+
+				<div class="field">
+          <label class="label">Password</label>
+          <input class="input" name="password" type="password" placeholder="Password" />
+        </div>
+
+				<div class="field">
+          <label class="label">SSH Keys</label>
+					<textarea class="textarea" placeholder="SSH Keys" value="{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}"></textarea>
+				</div>
+
+				<button class="button is-primary" type="submit">Update</button>
+			</form>
+		</div>
+	</div>
+
+	<!-- Change password -->
+	<div class="column is-5">
+		<div class="card card-content">
+
+			<div class="title">Change password</div>
+
+			<div class="is-italic has-text-grey-light">Coming soon!</div>
+		</div>
+	</div>
+</div>
 {% endblock content %}
