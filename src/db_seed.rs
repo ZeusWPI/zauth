@@ -120,11 +120,12 @@ impl Seeder {
 	async fn seed_users(&self, bcrypt_cost: u32, db: &DbConn) -> Result<()> {
 		for i in 1..self.users_to_seed {
 			let new_user = NewUser {
-				username:  format!("user{}", i),
-				password:  random_token(12),
-				full_name: format!("Test user {}", i),
-				email:     format!("user{}@example.com", i),
-				ssh_key:   None,
+				username:    format!("user{}", i),
+				password:    random_token(12),
+				full_name:   format!("Test user {}", i),
+				email:       format!("user{}@example.com", i),
+				ssh_key:     None,
+				not_a_robot: true,
 			};
 			if i % 2 == 0 {
 				User::create(new_user, bcrypt_cost, &db).await?;
@@ -147,11 +148,12 @@ impl Seeder {
 		if admin.is_err() {
 			let mut admin = User::create(
 				NewUser {
-					username:  username.clone(),
-					password:  password.clone(),
-					full_name: String::from("Admin McAdmin"),
-					email:     String::from("admin@example.com"),
-					ssh_key:   None,
+					username:    username.clone(),
+					password:    password.clone(),
+					full_name:   String::from("Admin McAdmin"),
+					email:       String::from("admin@example.com"),
+					ssh_key:     None,
+					not_a_robot: true,
 				},
 				bcrypt_cost,
 				&db,

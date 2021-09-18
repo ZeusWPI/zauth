@@ -50,11 +50,12 @@ async fn show_user_as_user() {
 	common::as_user(async move |http_client, db, user| {
 		let other = User::create(
 			NewUser {
-				username:  String::from("somebody"),
-				password:  String::from("once told me"),
-				full_name: String::from("zeus"),
-				email:     String::from("would@be.forever"),
-				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
+				username:    String::from("somebody"),
+				password:    String::from("once told me"),
+				full_name:   String::from("zeus"),
+				email:       String::from("would@be.forever"),
+				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
+				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -92,11 +93,12 @@ async fn show_user_as_admin() {
 	common::as_admin(async move |http_client, db, admin| {
 		let other = User::create(
 			NewUser {
-				username:  String::from("somebody"),
-				password:  String::from("once told me"),
-				full_name: String::from("zeus"),
-				email:     String::from("would@be.forever"),
-				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
+				username:    String::from("somebody"),
+				password:    String::from("once told me"),
+				full_name:   String::from("zeus"),
+				email:       String::from("would@be.forever"),
+				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
+				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -152,11 +154,12 @@ async fn update_self() {
 
 		let other = User::create(
 			NewUser {
-				username:  String::from("somebody"),
-				password:  String::from("once told me"),
-				full_name: String::from("zeus"),
-				email:     String::from("would@be.forever"),
-				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
+				username:    String::from("somebody"),
+				password:    String::from("once told me"),
+				full_name:   String::from("zeus"),
+				email:       String::from("would@be.forever"),
+				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
+				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -213,11 +216,12 @@ async fn make_admin() {
 	common::as_admin(async move |http_client, db, _admin| {
 		let other = User::create(
 			NewUser {
-				username:  String::from("somebody"),
-				password:  String::from("once told me"),
-				full_name: String::from("zeus"),
-				email:     String::from("would@be.forever"),
-				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
+				username:    String::from("somebody"),
+				password:    String::from("once told me"),
+				full_name:   String::from("zeus"),
+				email:       String::from("would@be.forever"),
+				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
+				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -251,11 +255,12 @@ async fn try_make_admin() {
 	common::as_user(async move |http_client, db, _user| {
 		let other = User::create(
 			NewUser {
-				username:  String::from("somebody"),
-				password:  String::from("once told me"),
-				full_name: String::from("zeus"),
-				email:     String::from("would@be.forever"),
-				ssh_key:   Some(String::from("ssh-rsa nananananananaaa")),
+				username:    String::from("somebody"),
+				password:    String::from("once told me"),
+				full_name:   String::from("zeus"),
+				email:       String::from("would@be.forever"),
+				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
+				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -292,7 +297,7 @@ async fn create_user_form() {
 			.body(
 				"username=testuser&password=testpassword&full_name=abc&\
 				 email=hij@klm.op&ssh_key=ssh-rsa%20base64%3D%3D%20user@\
-				 hostname",
+				 hostname&not_a_robot=true",
 			)
 			.dispatch()
 			.await;
@@ -319,7 +324,7 @@ async fn create_user_json() {
 			.body(
 				"{\"username\": \"testuser\", \"password\": \"testpassword\", \
 				 \"full_name\": \"abc\", \"email\": \"hij@klm.op\", \
-				 \"ssh_key\": \"ssh-rsa qrs tuv@wxyz\"}",
+				 \"ssh_key\": \"ssh-rsa qrs tuv@wxyz\", \"not_a_robot\": true}",
 			)
 			.dispatch()
 			.await;
@@ -340,11 +345,12 @@ async fn forgot_password() {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
-				username:  String::from("user"),
-				password:  String::from("password"),
-				full_name: String::from("name"),
-				email:     email.clone(),
-				ssh_key:   None,
+				username:    String::from("user"),
+				password:    String::from("password"),
+				full_name:   String::from("name"),
+				email:       email.clone(),
+				ssh_key:     None,
+				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -446,11 +452,12 @@ async fn forgot_password_non_existing_email() {
 		let email = String::from("test@example.com");
 		let _user = User::create(
 			NewUser {
-				username:  String::from("user"),
-				password:  String::from("password"),
-				full_name: String::from("name"),
-				email:     email.clone(),
-				ssh_key:   None,
+				username:    String::from("user"),
+				password:    String::from("password"),
+				full_name:   String::from("name"),
+				email:       email.clone(),
+				ssh_key:     None,
+				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -484,11 +491,12 @@ async fn reset_password_invalid_token() {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
-				username:  String::from("user"),
-				password:  String::from("password"),
-				full_name: String::from("name"),
-				email:     email.clone(),
-				ssh_key:   None,
+				username:    String::from("user"),
+				password:    String::from("password"),
+				full_name:   String::from("name"),
+				email:       email.clone(),
+				ssh_key:     None,
+				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -547,14 +555,15 @@ async fn register_user() {
 		let password = "toucha    ";
 		let full_name = "maa";
 		let email = "spaghet@zeus.ugent.be";
+		let not_a_robot = true;
 
 		let response = http_client
 			.post("/register")
 			.header(Accept::HTML)
 			.header(ContentType::Form)
 			.body(format!(
-				"username={}&password={}&full_name={}&email={}",
-				username, password, full_name, email
+				"username={}&password={}&full_name={}&email={}&not_a_robot={}",
+				username, password, full_name, email, not_a_robot
 			))
 			.dispatch()
 			.await;
@@ -570,6 +579,42 @@ async fn register_user() {
 			UserState::PendingApproval,
 			"registered users should be pending for approval"
 		);
+	})
+	.await;
+}
+
+#[rocket::async_test]
+async fn refuse_robots() {
+	common::as_visitor(async move |http_client, db| {
+		let response = http_client
+			.get("/register")
+			.header(Accept::HTML)
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::Ok);
+
+		let username = "somebody";
+		let password = "toucha    ";
+		let full_name = "maa";
+		let email = "spaghet@zeus.ugent.be";
+
+		let response = http_client
+			.post("/register")
+			.header(Accept::HTML)
+			.header(ContentType::Form)
+			.body(format!(
+				"username={}&password={}&full_name={}&email={}",
+				username, password, full_name, email
+			))
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::UnprocessableEntity);
+
+		if let Ok(_) = User::find_by_username(username.to_string(), &db).await {
+			panic!("robot user was created");
+		}
 	})
 	.await;
 }

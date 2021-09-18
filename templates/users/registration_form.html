@@ -47,6 +47,13 @@
           <input class="input" name="password" type="password" placeholder="Password" required />
         </div>
 
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" name="not-a-robot" class="big-checkbox" onclick="greetNotARobot(event)"/>
+            I'm not a robot
+          </label>
+        </div>
+
         <button class="button is-primary" type="submit">Register</button>
       </form>
 
@@ -57,4 +64,14 @@
     </div>
   </div>
 </div>
+
+<script>
+  function greetNotARobot(event) {    
+    if (event.target.checked) {
+      alert("Hi not a robot! We're Zeus WPI!")
+    } else {
+      alert("Hi robot! You're welcome in Zeus as well, but you need an aidmin to physically vouch for you.")
+    }
+  }
+</script>
 {% endblock content %}
