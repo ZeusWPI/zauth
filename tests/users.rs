@@ -4,6 +4,7 @@ extern crate diesel;
 extern crate rocket;
 
 use rocket::http::{Accept, ContentType, Status};
+use rocket::local::asynchronous::LocalResponse;
 
 use pwhash::bcrypt;
 use zauth::models::user::*;
@@ -412,8 +413,6 @@ async fn forgot_password() {
 		let old_password_hash = user.hashed_password.clone();
 		let new_password = "passw0rd";
 
-		dbg!(&user);
-
 		let response = common::expect_mail_to(vec![&email], async || {
 			http_client
 				.post(format!("/users/reset_password/"))
@@ -427,8 +426,6 @@ async fn forgot_password() {
 				.await
 		})
 		.await;
-
-		dbg!(&user);
 
 		assert_eq!(
 			response.status(),
@@ -536,6 +533,130 @@ async fn reset_password_invalid_token() {
 
 		let user = user.reload(&db).await.unwrap();
 		assert_eq!(user.hashed_password, old_hash);
+	})
+	.await;
+}
+
+async fn post_registration<'a>(
+	http_client: &'a common::HttpClient,
+	username: &str,
+	password: &str,
+	full_name: &str,
+	email: &str,
+	not_a_robot: bool,
+) -> LocalResponse<'a> {
+	let response = http_client
+		.get("/register")
+		.header(Accept::HTML)
+		.dispatch()
+		.await;
+
+	assert_eq!(response.status(), Status::Ok);
+
+	http_client
+		.post("/register")
+		.header(Accept::HTML)
+		.header(ContentType::Form)
+		.body(format!(
+			"username={}&password={}&full_name={}&email={}&not_a_robot={}",
+			username, password, full_name, email, not_a_robot
+		))
+		.dispatch()
+		.await
+}
+
+#[rocket::async_test]
+async fn limit_pending_users() {
+	common::as_visitor(async move |http_client, db| {
+		let max_pending = 5;
+
+		for i in 0..max_pending {
+			let username = format!("somebody{}", i);
+			common::expect_mail_to(vec!["admin@localhost"], async || {
+				let response = post_registration(
+					&http_client,
+					&username,
+					"touchaaaaaaaaaaaaaaa",
+					"maa",
+					&format!("spaghet{}@example.com", i),
+					true,
+				)
+				.await;
+
+				assert_eq!(response.status(), Status::Created);
+			})
+			.await;
+
+			let user = User::find_by_username(username.to_string(), &db)
+				.await
+				.expect("user should be created");
+
+			assert_eq!(
+				user.state,
+				UserState::PendingApproval,
+				"registered users should be pending for approval"
+			);
+		}
+
+		let username = "somebodyelse";
+		common::dont_expect_mail(async || {
+			let response = post_registration(
+				&http_client,
+				&username,
+				"touchaaaaaaaaaaaaaaa",
+				"maa",
+				"spaghettio@example.com",
+				true,
+			)
+			.await;
+
+			assert_eq!(
+				response.status(),
+				Status::UnprocessableEntity,
+				"user creation should fail because of pending limit"
+			);
+		})
+		.await;
+
+		assert!(
+			User::find_by_username(username.to_string(), &db)
+				.await
+				.is_err(),
+			"user should not be created"
+		);
+
+		// accept one pending, so one slot should be free
+		let mut user = User::find_by_username("somebody0".to_string(), &db)
+			.await
+			.expect("pending user");
+		user.state = UserState::Active;
+		let user = user.update(&db).await.expect("activate user");
+
+		let response =
+			common::expect_mail_to(vec!["admin@localhost"], async || {
+				let response = post_registration(
+					&http_client,
+					&username,
+					"touchaaaaaaaaaaaaaaa",
+					"maa",
+					"spaghettio@example.com",
+					true,
+				)
+				.await;
+
+				assert_eq!(response.status(), Status::Created);
+			})
+			.await;
+
+		let user = User::find_by_username(username.to_string(), &db)
+			.await
+			.expect("user should be created");
+
+		assert_eq!(
+			user.state,
+			UserState::PendingApproval,
+			"registered users should be pending for approval"
+		);
 	})
 	.await;
 }

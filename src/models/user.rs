@@ -336,7 +336,11 @@ impl User {
 	pub async fn pending_count(db: &DbConn) -> Result<usize> {
 		let count: i64 = db
 			.run(move |conn| {
-				users::table.count().first(conn).map_err(ZauthError::from)
+				users::table
+					.filter(users::state.eq(UserState::PendingApproval))
+					.count()
+					.first(conn)
+					.map_err(ZauthError::from)
 			})
 			.await?;
 		Ok(count as usize)
