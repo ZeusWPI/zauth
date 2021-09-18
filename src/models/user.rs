@@ -70,7 +70,9 @@ pub struct User {
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password:       String,
 	pub admin:                 bool,
+	#[serde(skip)]
 	pub password_reset_token:  Option<String>,
+	#[serde(skip)]
 	pub password_reset_expiry: Option<NaiveDateTime>,
 	#[validate(length(min = 3, max = 254))]
 	pub full_name:             String,
@@ -78,6 +80,7 @@ pub struct User {
 	pub email:                 String,
 	#[validate(custom = "validate_ssh_key_list")]
 	pub ssh_key:               Option<String>,
+	#[serde(skip)]
 	pub state:                 UserState,
 	pub last_login:            NaiveDateTime,
 	pub created_at:            NaiveDateTime,

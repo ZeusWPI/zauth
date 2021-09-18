@@ -1,17 +1,17 @@
-use chrono::{DateTime, Duration, Local};
 use rocket::http::{Cookie, CookieJar, Status};
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome, Request};
 use std::str::FromStr;
 
 use crate::controllers::sessions_controller::rocket_uri_macro_new_session;
-use crate::errors::{Result, ZauthError};
+use crate::errors::Result;
+use crate::models::client::Client;
+use crate::models::session::Session;
 use crate::models::user::User;
 use crate::DbConn;
 use rocket::http::uri::Origin;
 use rocket::response::Redirect;
 
-pub const SESSION_VALIDITY_MINUTES: i64 = 59;
 const REDIRECT_COOKIE: &str = "ZAUTH_REDIRECT";
 const SESSION_COOKIE: &str = "ZAUTH_SESSION";
 
@@ -36,49 +36,38 @@ pub fn stored_redirect_or(cookies: &CookieJar, fallback: Origin) -> Redirect {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Session {
-	user_id: i32,
-	expiry:  DateTime<Local>,
+pub struct SessionCookie {
+	session_id: i32,
 }
 
-impl Session {
-	pub fn new(user: User) -> Session {
-		Session {
-			user_id: user.id,
-			expiry:  Local::now() + Duration::minutes(SESSION_VALIDITY_MINUTES),
+impl SessionCookie {
+	pub fn new(session: Session) -> SessionCookie {
+		SessionCookie {
+			session_id: session.id,
 		}
 	}
 
-	pub fn login(user: User, cookies: &CookieJar) {
-		let session = Session::new(user);
-		let session_str = serde_urlencoded::to_string(session).unwrap();
+	pub fn login(self, cookies: &CookieJar) {
+		let session_str = serde_urlencoded::to_string(self).unwrap();
 		let session_cookie = Cookie::new(SESSION_COOKIE, session_str);
 		cookies.add_private(session_cookie);
 	}
 
-	pub fn destroy(cookies: &CookieJar) {
-		cookies.remove_private(Cookie::named(SESSION_COOKIE))
-	}
-
-	pub async fn user(&self, db: &DbConn) -> Result<User> {
-		if Local::now() > self.expiry {
-			Err(ZauthError::expired())
-		} else {
-			User::find(self.user_id, db).await
-		}
+	pub async fn session(&self, db: &DbConn) -> Result<Session> {
+		Session::find_by_id(self.session_id, db).await
 	}
 }
 
-impl FromStr for Session {
+impl FromStr for SessionCookie {
 	type Err = serde_urlencoded::de::Error;
 
-	fn from_str(cookie: &str) -> std::result::Result<Session, Self::Err> {
+	fn from_str(cookie: &str) -> std::result::Result<SessionCookie, Self::Err> {
 		serde_urlencoded::from_str(cookie)
 	}
 }
 
 #[rocket::async_trait]
-impl<'r> FromRequest<'r> for Session {
+impl<'r> FromRequest<'r> for SessionCookie {
 	type Error = &'static str;
 
 	async fn from_request(
@@ -87,7 +76,7 @@ impl<'r> FromRequest<'r> for Session {
 		let session = request
 			.cookies()
 			.get_private(SESSION_COOKIE)
-			.map(|cookie| Session::from_str(cookie.value()));
+			.map(|cookie| SessionCookie::from_str(cookie.value()));
 		match session {
 			Some(Ok(session)) => Outcome::Success(session),
 			_ => Outcome::Failure((Status::Unauthorized, "invalid session")),
@@ -98,6 +87,19 @@ impl<'r> FromRequest<'r> for Session {
 #[derive(Debug)]
 pub struct UserSession {
 	pub user: User,
+	session:  Session,
+}
+
+impl UserSession {
+	pub async fn destroy(
+		self,
+		cookies: &CookieJar<'_>,
+		db: &DbConn,
+	) -> Result<()> {
+		cookies.remove_private(Cookie::named(SESSION_COOKIE));
+		self.session.invalidate(db).await?;
+		Ok(())
+	}
 }
 
 #[rocket::async_trait]
@@ -107,16 +109,23 @@ impl<'r> FromRequest<'r> for UserSession {
 	async fn from_request(
 		request: &'r Request<'_>,
 	) -> Outcome<Self, Self::Error> {
-		let session = try_outcome!(request.guard::<Session>().await);
+		let cookie = try_outcome!(request.guard::<SessionCookie>().await);
 		let db =
 			try_outcome!(request.guard::<DbConn>().await.map_failure(|_| {
 				(Status::InternalServerError, "could not connect to database")
 			}));
-		match session.user(&db).await {
-			Ok(user) => Outcome::Success(UserSession { user }),
+
+		match Session::find_by_id(cookie.session_id, &db).await {
+			Ok(session) => match session.user(&db).await {
+				Ok(user) => Outcome::Success(UserSession { user, session }),
+				_ => Outcome::Failure((
+					Status::Unauthorized,
+					"user not found for database session",
+				)),
+			},
 			_ => Outcome::Failure((
-				Status::InternalServerError,
-				"user not found for valid session",
+				Status::Unauthorized,
+				"session not found for valid cookie",
 			)),
 		}
 	}
@@ -125,6 +134,7 @@ impl<'r> FromRequest<'r> for UserSession {
 #[derive(Debug)]
 pub struct AdminSession {
 	pub admin: User,
+	session:   Session,
 }
 
 #[rocket::async_trait]
@@ -137,9 +147,119 @@ impl<'r> FromRequest<'r> for AdminSession {
 		let session = try_outcome!(request.guard::<UserSession>().await);
 		let user: User = session.user;
 		if user.admin {
-			Outcome::Success(AdminSession { admin: user })
+			Outcome::Success(AdminSession {
+				admin:   user,
+				session: session.session,
+			})
 		} else {
 			Outcome::Failure((Status::Forbidden, "user is not an admin"))
+		}
+	}
+}
+
+#[derive(Debug)]
+pub struct ClientSession {
+	pub user:   User,
+	pub client: Client,
+	session:    Session,
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for ClientSession {
+	type Error = &'static str;
+
+	async fn from_request(
+		request: &'r Request<'_>,
+	) -> Outcome<Self, Self::Error> {
+		let headers: Vec<_> = request.headers().get("Authorization").collect();
+		if headers.is_empty() {
+			return Outcome::Failure((
+				Status::BadRequest,
+				"no authorization header found",
+			));
+		} else if headers.len() > 1 {
+			return Outcome::Failure((
+				Status::BadRequest,
+				"found more than one authorization header",
+			));
+		}
+
+		let auth_header = headers[0];
+		let prefix = "Bearer ";
+		if !auth_header.starts_with(prefix) {
+			return Outcome::Failure((
+				Status::BadRequest,
+				"only support Bearer tokens are supported",
+			));
+		}
+		let key = &auth_header[prefix.len()..];
+
+		let db =
+			try_outcome!(request.guard::<DbConn>().await.map_failure(|_| {
+				(Status::InternalServerError, "could not connect to database")
+			}));
+
+		match Session::find_by_key(key.to_string(), &db).await {
+			Ok(session) => match session.user(&db).await {
+				Ok(user) => match session.client(&db).await {
+					Ok(Some(client)) => Outcome::Success(ClientSession {
+						user,
+						client,
+						session,
+					}),
+					_ => Outcome::Failure((
+						Status::Unauthorized,
+						"there is no client associated to this client session",
+					)),
+				},
+				_ => Outcome::Failure((
+					Status::Unauthorized,
+					"user not found for database session",
+				)),
+			},
+			_ => Outcome::Failure((
+				Status::Unauthorized,
+				"session not found for valid cookie",
+			)),
+		}
+	}
+}
+
+#[derive(Debug)]
+pub struct ClientOrUserSession {
+	pub user:   User,
+	pub client: Option<Client>,
+	session:    Session,
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for ClientOrUserSession {
+	type Error = &'static str;
+
+	async fn from_request(
+		request: &'r Request<'_>,
+	) -> Outcome<Self, Self::Error> {
+		match request.guard::<UserSession>().await {
+			Outcome::Success(session) => {
+				Outcome::Success(ClientOrUserSession {
+					user:    session.user,
+					client:  None,
+					session: session.session,
+				})
+			},
+			_ => match request.guard::<ClientSession>().await {
+				Outcome::Success(session) => {
+					Outcome::Success(ClientOrUserSession {
+						user:    session.user,
+						client:  Some(session.client),
+						session: session.session,
+					})
+				},
+				_ => Outcome::Failure((
+					Status::Unauthorized,
+					"found neither a user session or client session",
+				)),
+			},
 		}
 	}
 }
