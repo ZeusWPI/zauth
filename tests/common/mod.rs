@@ -36,8 +36,9 @@ pub fn url(content: &str) -> String {
 
 async fn reset_db(db: &DbConn) {
 	db.run(|conn| {
-		assert!(sql_query("TRUNCATE TABLE users").execute(conn).is_ok());
-		assert!(sql_query("TRUNCATE TABLE clients").execute(conn).is_ok());
+		sql_query("TRUNCATE TABLE sessions, users, clients")
+			.execute(conn)
+			.expect("drop all tables");
 	})
 	.await
 }

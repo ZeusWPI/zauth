@@ -1,3 +1,4 @@
+use chrono::{Duration, NaiveDateTime, Utc};
 use diesel::{self, prelude::*};
 
 use crate::DbConn;
@@ -6,8 +7,6 @@ use self::schema::sessions;
 use crate::errors::{Result, ZauthError};
 use crate::models::client::Client;
 use crate::models::user::User;
-
-use chrono::NaiveDateTime;
 
 pub mod schema {
 	table! {
@@ -19,7 +18,7 @@ pub mod schema {
 			created_at -> Timestamp,
 			expires_at -> Timestamp,
 			valid -> Bool,
-			scopes -> Text,
+			scope -> Nullable<Text>,
 		}
 	}
 }
@@ -36,23 +35,33 @@ pub struct Session {
 	pub created_at: NaiveDateTime,
 	pub expires_at: NaiveDateTime,
 	pub valid:      bool,
-	pub scopes:     String,
+	pub scope:      Option<String>,
 }
 
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "sessions"]
 pub struct NewSession {
-	pub key:       Option<String>,
-	pub user_id:   i32,
-	pub client_id: Option<i32>,
+	pub key:        Option<String>,
+	pub user_id:    i32,
+	pub client_id:  Option<i32>,
+	pub created_at: NaiveDateTime,
+	pub expires_at: NaiveDateTime,
 }
 
 impl Session {
-	pub async fn create(user: &User, db: &DbConn) -> Result<Session> {
+	pub async fn create(
+		user: &User,
+		session_duration: Duration,
+		db: &DbConn,
+	) -> Result<Session> {
+		let created_at = Utc::now().naive_utc();
+		let expires_at = created_at + session_duration;
 		let session = NewSession {
-			user_id:   user.id,
+			user_id: user.id,
 			client_id: None,
-			key:       None,
+			key: None,
+			created_at,
+			expires_at,
 		};
 		db.run(move |conn| {
 			conn.transaction(|| {

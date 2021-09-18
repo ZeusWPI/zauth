@@ -1,5 +1,6 @@
 use rocket::form::Form;
 use rocket::response::{Redirect, Responder};
+use rocket::State;
 
 use crate::controllers::pages_controller::rocket_uri_macro_home_page;
 use crate::ephemeral::session::{
@@ -8,6 +9,7 @@ use crate::ephemeral::session::{
 use crate::errors::{Either, Result, ZauthError};
 use crate::models::session::Session;
 use crate::models::user::User;
+use crate::Config;
 use crate::DbConn;
 use rocket::http::CookieJar;
 
@@ -43,6 +45,7 @@ pub struct LoginFormData {
 pub async fn create_session<'r>(
 	form: Form<LoginFormData>,
 	cookies: &'r CookieJar<'_>,
+	config: &'r State<Config>,
 	db: DbConn,
 ) -> Result<Either<Redirect, impl Responder<'r, 'static>>> {
 	let form = form.into_inner();
@@ -54,7 +57,9 @@ pub async fn create_session<'r>(
 			}))
 		},
 		Ok(user) => {
-			let session = Session::create(&user, &db).await?;
+			let session =
+				Session::create(&user, config.user_session_duration(), &db)
+					.await?;
 			SessionCookie::new(session).login(cookies);
 			Ok(Either::Left(stored_redirect_or(cookies, uri!(home_page))))
 		},

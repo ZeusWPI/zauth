@@ -9,7 +9,7 @@ CREATE TABLE sessions
     created_at  TIMESTAMP                       NOT NULL,
     expires_at  TIMESTAMP                       NOT NULL,
     valid       BOOLEAN                         NOT NULL DEFAULT true,
-    scopes      TEXT                            NOT NULL
+    scope       TEXT
 );
 
 CREATE INDEX ix_sessions_key ON sessions (key);

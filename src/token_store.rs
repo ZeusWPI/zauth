@@ -22,9 +22,7 @@ impl<T> TokenStore<T> {
 	pub fn new(config: &Config) -> TokenStore<T> {
 		TokenStore {
 			tokens:         Mutex::new(HashMap::new()),
-			token_validity: Duration::seconds(
-				config.authorization_token_validity_seconds as i64,
-			),
+			token_validity: config.authorization_token_duration(),
 			token_length:   config.secure_token_length,
 		}
 	}
