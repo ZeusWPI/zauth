@@ -184,7 +184,7 @@ impl<'r> FromRequest<'r> for ClientSession {
 			));
 		}
 
-		let auth_header = dbg!(headers[0]);
+		let auth_header = headers[0];
 		let prefix = "Bearer ";
 		if !auth_header.starts_with(prefix) {
 			return Outcome::Failure((
