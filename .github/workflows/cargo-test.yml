@@ -32,6 +32,10 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
+    - name: Fix network issues
+      run: |
+        mkdir .cargo
+        echo "[net] git-fetch-with-cli = true" > .cargo/config
     - name: Build Zauth
       run: cargo build --verbose
     - name: Run tests
