@@ -114,8 +114,7 @@ pub async fn register<'r>(
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
-	let pending =
-		User::create_pending(user.into_inner(), conf.bcrypt_cost, &db).await;
+	let pending = User::create_pending(user.into_inner(), &conf, &db).await;
 	match pending {
 		Ok(user) => {
 			let user_list_url = uri!(list_users);

@@ -10,6 +10,7 @@ mail_queue_size = 32
 mail_queue_wait_seconds = 1
 mail_from = "zauth@localhost"
 mail_server = "stub"
+maximum_pending_users = 25
 
 [debug]
 secret_key = "1vwCFFPSdQya895gNiO556SzmfShG6MokstgttLvwjw="

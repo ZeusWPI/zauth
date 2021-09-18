@@ -6,13 +6,14 @@ use diesel_derive_enum::DbEnum;
 use std::fmt;
 
 use crate::models::user::UserState::{Active, PendingApproval};
+use crate::Config;
 use chrono::{NaiveDateTime, Utc};
 use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
 use rocket::serde::Serialize;
 use std::convert::TryFrom;
-use validator::{Validate, ValidationError};
+use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(DbEnum, Debug, Serialize, Clone, PartialEq)]
 pub enum UserState {
@@ -226,13 +227,25 @@ impl User {
 
 	pub async fn create_pending(
 		user: NewUser,
-		bcrypt_cost: u32,
+		conf: &Config,
 		db: &DbConn,
 	) -> Result<User> {
 		user.validate()?;
+		if Self::pending_count(&db).await? >= conf.maximum_pending_users {
+			let mut err = ValidationErrors::new();
+			err.add(
+				"__all__",
+				ValidationError::new(
+					"Because of an unusual amount of registrations, we have \
+					 temporarily disabled registrations. Please come back \
+					 later or contact an admin to request an account",
+				),
+			);
+			return Err(ZauthError::from(err));
+		};
 		let user = NewUserHashed {
 			username:        user.username,
-			hashed_password: hash(&user.password, bcrypt_cost)?,
+			hashed_password: hash(&user.password, conf.bcrypt_cost)?,
 			full_name:       user.full_name,
 			email:           user.email,
 			ssh_key:         user.ssh_key,
@@ -318,6 +331,15 @@ impl User {
 			users::table.find(id).first(conn).map_err(ZauthError::from)
 		})
 		.await
+	}
+
+	pub async fn pending_count(db: &DbConn) -> Result<usize> {
+		let count: i64 = db
+			.run(move |conn| {
+				users::table.count().first(conn).map_err(ZauthError::from)
+			})
+			.await?;
+		Ok(count as usize)
 	}
 
 	pub async fn last(db: &DbConn) -> Result<User> {

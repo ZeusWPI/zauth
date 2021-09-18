@@ -564,8 +564,9 @@ async fn register_user() {
 					.header(Accept::HTML)
 					.header(ContentType::Form)
 					.body(format!(
-				"username={}&password={}&full_name={}&email={}&not_a_robot={}",
-				username, password, full_name, email, not_a_robot
+						"username={}&password={}&full_name={}&email={}&\
+						 not_a_robot={}",
+						username, password, full_name, email, not_a_robot
 					))
 					.dispatch()
 					.await
