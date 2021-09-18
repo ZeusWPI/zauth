@@ -59,8 +59,10 @@ pub async fn show_user<'r>(
 pub async fn list_users<'r>(
 	session: AdminSession,
 	db: DbConn,
+	conf: &'r State<Config>,
 ) -> Result<impl Responder<'r, 'static>> {
 	let users = User::all(&db).await?;
+	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
 	let users_pending_for_approval: Vec<User> =
 		User::find_by_pending(&db).await?;
 	Ok(Accepter {
@@ -68,6 +70,7 @@ pub async fn list_users<'r>(
 			"users/index.html";
 			users: Vec<User> = users.clone(),
 			current_user: User = session.admin,
+			registrations_full: bool = full,
 			users_pending_for_approval: Vec<User> = users_pending_for_approval.clone(),
 		},
 		json: Json(users),
@@ -100,10 +103,16 @@ pub async fn create_user<'r>(
 }
 
 #[get("/register")]
-pub fn register_page<'r>() -> Result<impl Responder<'r, 'static>> {
-	Ok(
-		template! { "users/registration_form.html"; errors: Option<ValidationErrors> = None },
-	)
+pub async fn register_page<'r>(
+	db: DbConn,
+	conf: &'r State<Config>,
+) -> Result<impl Responder<'r, 'static>> {
+	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
+	Ok(template! {
+		"users/registration_form.html";
+		registrations_full: bool = full,
+		errors: Option<ValidationErrors> = None,
+	})
 }
 
 #[post("/register", data = "<user>")]
@@ -115,6 +124,7 @@ pub async fn register<'r>(
 	mailer: &'r State<Mailer>,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
 	let pending = User::create_pending(user.into_inner(), &conf, &db).await;
+	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
 	match pending {
 		Ok(user) => {
 			let user_list_url = uri!(list_users);
@@ -143,6 +153,7 @@ pub async fn register<'r>(
 				Status::UnprocessableEntity,
 				template! {
 					"users/registration_form.html";
+					registrations_full: bool = full,
 					errors: Option<ValidationErrors> = Some(errors.clone()),
 				},
 			),
