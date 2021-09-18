@@ -95,11 +95,13 @@ impl Session {
 	}
 
 	pub async fn find_by_key(key: String, db: &DbConn) -> Result<Session> {
+		let now = Utc::now().naive_utc();
 		let session = db
 			.run(move |conn| {
 				sessions::table
 					.filter(sessions::key.eq(Some(key)))
 					.filter(sessions::valid.eq(true))
+					.filter(sessions::expires_at.gt(now))
 					.first(conn)
 					.map_err(ZauthError::from)
 			})
@@ -108,11 +110,13 @@ impl Session {
 	}
 
 	pub async fn find_by_id(id: i32, db: &DbConn) -> Result<Session> {
+		let now = Utc::now().naive_utc();
 		let session = db
 			.run(move |conn| {
 				sessions::table
 					.filter(sessions::valid.eq(true))
 					.filter(sessions::id.eq(id))
+					.filter(sessions::expires_at.gt(now))
 					.first(conn)
 			})
 			.await?;
@@ -126,5 +130,13 @@ impl Session {
 
 	pub async fn user(&self, db: &DbConn) -> Result<User> {
 		User::find(self.user_id, &db).await
+	}
+
+	pub async fn last(db: &DbConn) -> Result<Session> {
+		Ok(db
+			.run(move |conn| {
+				sessions::table.order(sessions::id.desc()).first(conn)
+			})
+			.await?)
 	}
 }
