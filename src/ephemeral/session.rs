@@ -5,13 +5,13 @@ use std::str::FromStr;
 
 use crate::controllers::sessions_controller::rocket_uri_macro_new_session;
 use crate::errors::Result;
+use crate::models::client::Client;
 use crate::models::session::Session;
 use crate::models::user::User;
 use crate::DbConn;
 use rocket::http::uri::Origin;
 use rocket::response::Redirect;
 
-pub const SESSION_VALIDITY_MINUTES: i64 = 59;
 const REDIRECT_COOKIE: &str = "ZAUTH_REDIRECT";
 const SESSION_COOKIE: &str = "ZAUTH_SESSION";
 
@@ -153,6 +153,74 @@ impl<'r> FromRequest<'r> for AdminSession {
 			})
 		} else {
 			Outcome::Failure((Status::Forbidden, "user is not an admin"))
+		}
+	}
+}
+
+#[derive(Debug)]
+pub struct ClientSession {
+	pub user:   User,
+	pub client: Client,
+	session:    Session,
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for ClientSession {
+	type Error = &'static str;
+
+	async fn from_request(
+		request: &'r Request<'_>,
+	) -> Outcome<Self, Self::Error> {
+		let headers: Vec<_> = request.headers().get("Authorization").collect();
+		if headers.is_empty() {
+			return Outcome::Failure((
+				Status::BadRequest,
+				"no authorization header found",
+			));
+		} else if headers.len() > 1 {
+			return Outcome::Failure((
+				Status::BadRequest,
+				"found more than one authorization header",
+			));
+		}
+
+		let auth_header = headers[0];
+		let prefix = "Bearer ";
+		if !auth_header.starts_with(prefix) {
+			return Outcome::Failure((
+				Status::BadRequest,
+				"only support Bearer tokens are supported",
+			));
+		}
+		let key = &auth_header[prefix.len()..];
+
+		let db =
+			try_outcome!(request.guard::<DbConn>().await.map_failure(|_| {
+				(Status::InternalServerError, "could not connect to database")
+			}));
+
+		match Session::find_by_key(key.to_string(), &db).await {
+			Ok(session) => match session.user(&db).await {
+				Ok(user) => match session.client(&db).await {
+					Ok(Some(client)) => Outcome::Success(ClientSession {
+						user,
+						client,
+						session,
+					}),
+					_ => Outcome::Failure((
+						Status::Unauthorized,
+						"there is no client associated to this client session",
+					)),
+				},
+				_ => Outcome::Failure((
+					Status::Unauthorized,
+					"user not found for database session",
+				)),
+			},
+			_ => Outcome::Failure((
+				Status::Unauthorized,
+				"session not found for valid cookie",
+			)),
 		}
 	}
 }

@@ -132,6 +132,14 @@ impl Session {
 		User::find(self.user_id, &db).await
 	}
 
+	pub async fn client(&self, db: &DbConn) -> Result<Option<Client>> {
+		if let Some(client_id) = self.client_id {
+			Ok(Some(Client::find(client_id, &db).await?))
+		} else {
+			Ok(None)
+		}
+	}
+
 	pub async fn last(db: &DbConn) -> Result<Session> {
 		Ok(db
 			.run(move |conn| {
