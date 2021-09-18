@@ -22,7 +22,7 @@ use std::thread;
 use std::time::Duration;
 use zauth::mailer::STUB_MAILER_OUTBOX;
 
-type HttpClient = rocket::local::asynchronous::Client;
+pub type HttpClient = rocket::local::asynchronous::Client;
 
 // Rocket doesn't support transactional testing yet, so we use a lock to
 // serialize tests.

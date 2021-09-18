@@ -6,7 +6,9 @@ use validator::ValidationErrors;
 
 use crate::config::Config;
 use crate::ephemeral::from_api::Api;
-use crate::ephemeral::session::{AdminSession, UserSession};
+use crate::ephemeral::session::{
+	AdminSession, ClientOrUserSession, ClientSession, UserSession,
+};
 use crate::errors::Either::{self, Left, Right};
 use crate::errors::{InternalError, OneOf, Result, ZauthError};
 use crate::mailer::Mailer;
@@ -20,7 +22,12 @@ use rocket::serde::json::Json;
 use rocket::State;
 
 #[get("/current_user")]
-pub fn current_user(session: UserSession) -> Json<User> {
+pub fn current_user(session: ClientOrUserSession) -> Json<User> {
+	Json(session.user)
+}
+
+#[get("/current_user")]
+pub fn current_user_as_client(session: ClientSession) -> Json<User> {
 	Json(session.user)
 }
 

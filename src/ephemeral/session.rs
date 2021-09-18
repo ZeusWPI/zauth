@@ -184,7 +184,7 @@ impl<'r> FromRequest<'r> for ClientSession {
 			));
 		}
 
-		let auth_header = headers[0];
+		let auth_header = dbg!(headers[0]);
 		let prefix = "Bearer ";
 		if !auth_header.starts_with(prefix) {
 			return Outcome::Failure((
@@ -221,6 +221,45 @@ impl<'r> FromRequest<'r> for ClientSession {
 				Status::Unauthorized,
 				"session not found for valid cookie",
 			)),
+		}
+	}
+}
+
+#[derive(Debug)]
+pub struct ClientOrUserSession {
+	pub user:   User,
+	pub client: Option<Client>,
+	session:    Session,
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for ClientOrUserSession {
+	type Error = &'static str;
+
+	async fn from_request(
+		request: &'r Request<'_>,
+	) -> Outcome<Self, Self::Error> {
+		match request.guard::<UserSession>().await {
+			Outcome::Success(session) => {
+				Outcome::Success(ClientOrUserSession {
+					user:    session.user,
+					client:  None,
+					session: session.session,
+				})
+			},
+			_ => match request.guard::<ClientSession>().await {
+				Outcome::Success(session) => {
+					Outcome::Success(ClientOrUserSession {
+						user:    session.user,
+						client:  Some(session.client),
+						session: session.session,
+					})
+				},
+				_ => Outcome::Failure((
+					Status::Unauthorized,
+					"found neither a user session or client session",
+				)),
+			},
 		}
 	}
 }

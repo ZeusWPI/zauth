@@ -9,9 +9,10 @@ extern crate zauth;
 
 use self::serde_json::Value;
 use regex::Regex;
-use rocket::http::ContentType;
 use rocket::http::Header;
 use rocket::http::Status;
+use rocket::http::{Accept, ContentType};
+use rocket::http::{Cookie, CookieJar};
 
 use zauth::controllers::oauth_controller::UserToken;
 use zauth::models::client::{Client, NewClient};
@@ -20,6 +21,7 @@ use zauth::token_store::TokenStore;
 
 mod common;
 use crate::common::url;
+use crate::common::HttpClient;
 
 fn get_param(param_name: &str, query: &String) -> Option<String> {
 	Regex::new(&format!("{}=([^&]+)", param_name))
@@ -156,6 +158,11 @@ async fn normal_flow() {
 			urlencoding::decode(&state).expect("state decoded")
 		);
 
+		// Log out user so we don't have their cookies anymore
+		let response = http_client.post("/logout").dispatch().await;
+
+		assert_eq!(response.status(), Status::SeeOther);
+
 		// 6a. Client requests access code while sending its credentials
 		//     trough HTTP Auth.
 		let token_url = "/oauth/token";
@@ -192,7 +199,7 @@ async fn normal_flow() {
 		dbg!(&data);
 		assert!(data["access_token"].is_string());
 		assert!(data["token_type"].is_string());
-		assert_eq!(data["token_type"], "???");
+		assert_eq!(data["token_type"], "bearer");
 
 		// 6b. Client requests access code while sending its credentials
 		//     trough the form body.
@@ -236,10 +243,30 @@ async fn normal_flow() {
 		let data: Value =
 			serde_json::from_str(&response_body).expect("response json values");
 
-		dbg!(&data);
 		assert!(data["access_token"].is_string());
-		assert!(data["token_type"].is_string());
-		assert_eq!(data["token_type"], "???");
+		assert_eq!(data["token_type"], "bearer");
+		let token = data["access_token"].as_str().expect("access token");
+
+		let response = http_client
+			.get("/current_user")
+			.header(Accept::JSON)
+			.header(Header::new("Authorization", format!("Bearer {}", token)))
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::Ok);
+		assert_eq!(
+			response.content_type().expect("content type"),
+			ContentType::JSON
+		);
+
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
+
+		assert!(data["id"].is_number());
+		assert_eq!(data["username"], user_username);
 	})
 	.await;
 }

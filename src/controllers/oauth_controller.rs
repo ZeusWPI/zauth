@@ -217,17 +217,7 @@ fn authorization_denied(state: AuthState) -> Redirect {
 pub struct TokenSuccess {
 	access_token: String,
 	token_type:   String,
-	expires_in:   u64,
-}
-
-impl TokenSuccess {
-	fn json(username: String) -> Json<TokenSuccess> {
-		Json(TokenSuccess {
-			access_token: username.clone(),
-			token_type:   String::from("???"),
-			expires_in:   1,
-		})
-	}
+	expires_in:   i64,
 }
 
 #[derive(FromForm, Debug)]
@@ -281,7 +271,11 @@ pub async fn token(
 		let session =
 			Session::create_client_session(&user, &client, &config, &db)
 				.await?;
-		Ok(TokenSuccess::json(session.key.unwrap()))
+		Ok(Json(TokenSuccess {
+			access_token: session.key.unwrap().clone(),
+			token_type:   String::from("bearer"),
+			expires_in:   config.client_session_seconds,
+		}))
 	} else {
 		Err(ZauthError::from(AuthenticationError::InvalidGrant(
 			"token was not authorized to this client".to_string(),
