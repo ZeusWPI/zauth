@@ -20,7 +20,7 @@ services:
       - zauth-database:/var/lib/postgresql/data
 
   adminer:
-    image: adminer:lastest
+    image: adminer:latest
     depends_on:
       - database
     environment:
