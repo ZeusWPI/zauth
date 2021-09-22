@@ -5,11 +5,13 @@ use rocket::serde::json::Json;
 use rocket::State;
 use std::fmt::Debug;
 
+use crate::config::Config;
 use crate::ephemeral::session::UserSession;
 use crate::errors::Either::{Left, Right};
 use crate::errors::*;
 use crate::http_authentication::BasicAuthentication;
 use crate::models::client::*;
+use crate::models::session::*;
 use crate::models::user::*;
 use crate::DbConn;
 
@@ -215,17 +217,7 @@ fn authorization_denied(state: AuthState) -> Redirect {
 pub struct TokenSuccess {
 	access_token: String,
 	token_type:   String,
-	expires_in:   u64,
-}
-
-impl TokenSuccess {
-	fn json(username: String) -> Json<TokenSuccess> {
-		Json(TokenSuccess {
-			access_token: username.clone(),
-			token_type:   String::from("???"),
-			expires_in:   1,
-		})
-	}
+	expires_in:   i64,
 }
 
 #[derive(FromForm, Debug)]
@@ -241,6 +233,7 @@ pub struct TokenFormData {
 pub async fn token(
 	auth: Option<BasicAuthentication>,
 	form: Form<TokenFormData>,
+	config: &State<Config>,
 	token_state: &State<TokenStore<UserToken>>,
 	db: DbConn,
 ) -> Result<Json<TokenSuccess>> {
@@ -274,8 +267,15 @@ pub async fn token(
 		.item;
 
 	if client.id == token.client_id {
-		let access_token = token.username;
-		Ok(TokenSuccess::json(access_token))
+		let user = User::find(token.user_id, &db).await?;
+		let session =
+			Session::create_client_session(&user, &client, &config, &db)
+				.await?;
+		Ok(Json(TokenSuccess {
+			access_token: session.key.unwrap().clone(),
+			token_type:   String::from("bearer"),
+			expires_in:   config.client_session_seconds,
+		}))
 	} else {
 		Err(ZauthError::from(AuthenticationError::InvalidGrant(
 			"token was not authorized to this client".to_string(),

@@ -22,7 +22,7 @@ use std::thread;
 use std::time::Duration;
 use zauth::mailer::STUB_MAILER_OUTBOX;
 
-type HttpClient = rocket::local::asynchronous::Client;
+pub type HttpClient = rocket::local::asynchronous::Client;
 
 // Rocket doesn't support transactional testing yet, so we use a lock to
 // serialize tests.
@@ -36,8 +36,9 @@ pub fn url(content: &str) -> String {
 
 async fn reset_db(db: &DbConn) {
 	db.run(|conn| {
-		assert!(sql_query("TRUNCATE TABLE users").execute(conn).is_ok());
-		assert!(sql_query("TRUNCATE TABLE clients").execute(conn).is_ok());
+		sql_query("TRUNCATE TABLE sessions, users, clients")
+			.execute(conn)
+			.expect("drop all tables");
 	})
 	.await
 }

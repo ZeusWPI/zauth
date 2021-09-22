@@ -72,7 +72,7 @@ def fetch_user(access_token):
     return requests.get(
         f"{ZAUTH_BASE_URL}/current_user",
         headers={
-            "Authorization": access_token,
+            "Authorization": "Bearer " + access_token,
             "Accept": "application/json"
         }
     )
@@ -104,10 +104,10 @@ def callback():
         if user_response.ok:
             user_json = user_response.json()
             response.append(f"<p>OK fetching current user:")
-            response.append(urllib.parse.quote(user_json))
+            response.append(str(user_json))
         else:
             response.append(f"<p>ERROR fetching current user:")
-            response.append(html.escape(user_response.content))
+            response.append(html.escape(str(user_response.content)))
     else:
         response.append(f"<p>ERROR fetching token: ")
         response.append(html.escape(str(token_response.content)))
