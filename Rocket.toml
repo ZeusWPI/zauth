@@ -19,6 +19,8 @@ seed_database = true
 url = "postgresql://zauth:zauth@localhost/zauth"
 
 [release]
+address = "0.0.0.0"
+port = 8000
 # Values you want to fill in for production use
 # secret_key =  # used to encrypt cookies (generate a new one!)
 # base_url =    # URL where the application is hosten (e.g. https://auth.zeus.gent)
