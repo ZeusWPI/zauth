@@ -1,4 +1,5 @@
 use rocket::http::Status;
+use rocket::http::uri::Absolute;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;
@@ -237,6 +238,7 @@ pub struct ResetPassword {
 #[post("/users/forgot_password", data = "<value>")]
 pub async fn forgot_password_post<'r>(
 	value: Form<ResetPassword>,
+	conf: &State<Config>,
 	db: DbConn,
 	mailer: &State<Mailer>,
 ) -> Result<impl Responder<'r, 'static>> {
@@ -256,7 +258,8 @@ pub async fn forgot_password_post<'r>(
 		let user = user.update(&db).await?;
 
 		let token = user.password_reset_token.as_ref().unwrap();
-		let reset_url = uri!(reset_password_get(token));
+		let base_uri = Absolute::parse(conf.base_uri).expect("Valid base_uri");
+		let reset_url = uri!(base_uri, reset_password_get(token));
 		mailer.try_create(
 			&user,
 			String::from("[Zauth] You've requested a password reset"),
