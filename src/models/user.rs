@@ -262,15 +262,15 @@ impl User {
 		change: UserChange,
 		bcrypt_cost: u32,
 	) -> Result<()> {
-		if let Some(username) = change.username {
-			self.username = username;
-		}
-		if let Some(password) = change.password {
-			self.hashed_password = hash(&password, bcrypt_cost)?;
-		}
-		if let Some(full_name) = change.full_name {
-			self.full_name = full_name;
-		}
+		// if let Some(username) = change.username {
+		// 	self.username = username;
+		// }
+		// if let Some(password) = change.password {
+		// 	self.hashed_password = hash(&password, bcrypt_cost)?;
+		// }
+		// if let Some(full_name) = change.full_name {
+		// 	self.full_name = full_name;
+		// }
 		if let Some(email) = change.email {
 			self.email = email;
 		}
