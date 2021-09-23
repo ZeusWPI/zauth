@@ -9,6 +9,7 @@ use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::thread;
 use std::time::Duration;
+use std::net::{SocketAddr, ToSocketAddrs};
 
 #[derive(Clone)]
 pub struct Mailer {
@@ -114,8 +115,7 @@ impl Mailer {
 		receiver: Receiver<Message>,
 		server: &str,
 	) -> Result<impl FnOnce()> {
-		let transport = SmtpTransport::relay(server)
-			.map_err(LaunchError::from)?
+		let transport = SmtpTransport::builder_dangerous(server)
 			.build();
 		Ok(move || {
 			while let Ok(mail) = receiver.recv() {
