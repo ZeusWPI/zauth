@@ -258,7 +258,7 @@ pub async fn forgot_password_post<'r>(
 		let user = user.update(&db).await?;
 
 		let token = user.password_reset_token.as_ref().unwrap();
-		let base_url = Absolute::parse(conf.base_url).expect("Valid base_url");
+		let base_url = Absolute::parse(&conf.base_url).expect("Valid base_url");
 		let reset_url = uri!(base_url, reset_password_get(token));
 		mailer.try_create(
 			&user,
