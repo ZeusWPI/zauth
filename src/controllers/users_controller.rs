@@ -258,8 +258,8 @@ pub async fn forgot_password_post<'r>(
 		let user = user.update(&db).await?;
 
 		let token = user.password_reset_token.as_ref().unwrap();
-		let base_uri = Absolute::parse(conf.base_uri).expect("Valid base_uri");
-		let reset_url = uri!(base_uri, reset_password_get(token));
+		let base_url = Absolute::parse(conf.base_url).expect("Valid base_url");
+		let reset_url = uri!(base_url, reset_password_get(token));
 		mailer.try_create(
 			&user,
 			String::from("[Zauth] You've requested a password reset"),
