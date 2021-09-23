@@ -93,7 +93,7 @@ lazy_static! {
 
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
-	#[validate(regex = NEW_USER_REGEX)]
+	#[validate(regex = "NEW_USER_REGEX")]
 	pub username:    String,
 	#[validate(length(min = 8))]
 	pub password:    String,
