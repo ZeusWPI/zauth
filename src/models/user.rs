@@ -66,7 +66,7 @@ pub mod schema {
 #[serde(crate = "rocket::serde")]
 pub struct User {
 	pub id:                    i32,
-	#[validate(length(min = 3, max = 254))]
+	#[validate(length(min = 1, max = 254))]
 	pub username:              String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password:       String,
@@ -87,9 +87,13 @@ pub struct User {
 	pub created_at:            NaiveDateTime,
 }
 
+lazy_static! {
+    static ref NEW_USER_REGEX: Regex = Regex::new(r"^[a-z][a-z0-9]{2,}$").unwrap();
+}
+
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
-	#[validate(length(min = 3, max = 254))]
+	#[validate(regex = NEW_USER_REGEX)]
 	pub username:    String,
 	#[validate(length(min = 8))]
 	pub password:    String,
