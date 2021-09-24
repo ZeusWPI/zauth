@@ -127,11 +127,7 @@ impl Seeder {
 				ssh_key:     None,
 				not_a_robot: true,
 			};
-			if i % 2 == 0 {
-				User::create(new_user, bcrypt_cost, &db).await?;
-			} else {
-				User::create_pending(new_user, bcrypt_cost, &db).await?;
-			}
+			User::create(new_user, bcrypt_cost, &db).await?;
 		}
 		eprintln!("Seeded {} users", self.users_to_seed);
 		Ok(())

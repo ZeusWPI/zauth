@@ -6,6 +6,7 @@ use thiserror::Error;
 use diesel::result::Error::NotFound;
 use lettre::Message;
 use rocket::serde::json::Json;
+use std::convert::Infallible;
 use std::sync::mpsc::{SendError, TrySendError};
 use validator::ValidationErrors;
 
@@ -27,6 +28,8 @@ pub enum ZauthError {
 	AuthError(#[from] AuthenticationError),
 	#[error("Login error {0:?}")]
 	LoginError(#[from] LoginError),
+	#[error("Infallible")]
+	Infallible(#[from] Infallible),
 }
 impl ZauthError {
 	pub fn not_found(what: &str) -> Self {
@@ -156,6 +159,7 @@ impl From<diesel::result::Error> for ZauthError {
 		}
 	}
 }
+
 pub type Result<T> = std::result::Result<T, ZauthError>;
 
 #[derive(Error, Debug)]

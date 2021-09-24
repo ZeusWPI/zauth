@@ -56,6 +56,8 @@ where
 	// Prepare config
 	let db_url = "postgresql://zauth:zauth@localhost/zauth_test";
 	let config = rocket::Config::figment()
+		.merge(("mail_queue_wait_seconds", 0))
+		.merge(("maximum_pending_users", 5))
 		.merge(("databases.postgresql_database.url", db_url));
 
 	let _lock = DB_LOCK.lock();

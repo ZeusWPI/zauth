@@ -10,6 +10,13 @@
       <img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
     </a>
 
+    {% if registrations_full %}
+      <div class="notification is-danger is-light">
+          <b>Sorry!</b> We are receiving an unusual amount of registrations and
+          have temporarily disabled the registration form. Please come back
+          later or contact an admin to create a new account.
+      </div>
+    {% else %}
     <!-- Error messages -->
     {% match errors %}
     {% when Some with (errors) %}
@@ -62,6 +69,7 @@
         Already an account? <a href="/login">Login here!</a>
      </div>
     </div>
+    {% endif %}
   </div>
 </div>
 

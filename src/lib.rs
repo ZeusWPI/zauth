@@ -37,6 +37,7 @@ pub mod models;
 pub mod token_store;
 pub mod util;
 
+use lettre::message::Mailbox;
 use rocket::fairing::AdHoc;
 use rocket::figment::Figment;
 use rocket::fs::FileServer;
@@ -44,7 +45,7 @@ use rocket::{Build, Rocket};
 use rocket_sync_db_pools::database;
 use rocket_sync_db_pools::diesel::PgConnection;
 
-use crate::config::Config;
+use crate::config::{AdminEmail, Config};
 use crate::controllers::*;
 use crate::db_seed::Seeder;
 use crate::errors::{
@@ -52,6 +53,8 @@ use crate::errors::{
 };
 use crate::mailer::Mailer;
 use crate::token_store::TokenStore;
+
+use std::str::FromStr;
 
 #[database("postgresql_database")]
 pub struct DbConn(PgConnection);
@@ -74,6 +77,9 @@ pub fn prepare() -> Rocket<Build> {
 /// attach fairings.
 fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 	let config: Config = rocket.figment().extract().expect("config");
+	let admin_email: AdminEmail = AdminEmail(
+		Mailbox::from_str(&config.admin_email).expect("admin email"),
+	);
 	let token_store = TokenStore::<oauth_controller::UserToken>::new(&config);
 	let mailer = Mailer::new(&config).unwrap();
 
@@ -124,6 +130,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 		.mount("/static/", FileServer::from("static/"))
 		.manage(token_store)
 		.manage(mailer)
+		.manage(admin_email)
 		.attach(DbConn::fairing())
 		.attach(AdHoc::config::<Config>())
 		.attach(AdHoc::on_ignite("Database preparation", prepare_database));

@@ -4,7 +4,7 @@ use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;
 use validator::ValidationErrors;
 
-use crate::config::Config;
+use crate::config::{AdminEmail, Config};
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::{
 	AdminSession, ClientOrUserSession, ClientSession, UserSession,
@@ -59,8 +59,10 @@ pub async fn show_user<'r>(
 pub async fn list_users<'r>(
 	session: AdminSession,
 	db: DbConn,
+	conf: &'r State<Config>,
 ) -> Result<impl Responder<'r, 'static>> {
 	let users = User::all(&db).await?;
+	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
 	let users_pending_for_approval: Vec<User> =
 		User::find_by_pending(&db).await?;
 	Ok(Accepter {
@@ -68,6 +70,7 @@ pub async fn list_users<'r>(
 			"users/index.html";
 			users: Vec<User> = users.clone(),
 			current_user: User = session.admin,
+			registrations_full: bool = full,
 			users_pending_for_approval: Vec<User> = users_pending_for_approval.clone(),
 		},
 		json: Json(users),
@@ -100,33 +103,57 @@ pub async fn create_user<'r>(
 }
 
 #[get("/register")]
-pub fn register_page<'r>() -> Result<impl Responder<'r, 'static>> {
-	Ok(
-		template! { "users/registration_form.html"; errors: Option<ValidationErrors> = None },
-	)
+pub async fn register_page<'r>(
+	db: DbConn,
+	conf: &'r State<Config>,
+) -> Result<impl Responder<'r, 'static>> {
+	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
+	Ok(template! {
+		"users/registration_form.html";
+		registrations_full: bool = full,
+		errors: Option<ValidationErrors> = None,
+	})
 }
 
 #[post("/register", data = "<user>")]
 pub async fn register<'r>(
 	user: Api<NewUser>,
-	conf: &State<Config>,
 	db: DbConn,
+	admin_email: &'r State<AdminEmail>,
+	conf: &'r State<Config>,
+	mailer: &'r State<Mailer>,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
-	let pending =
-		User::create_pending(user.into_inner(), conf.bcrypt_cost, &db).await;
+	let pending = User::create_pending(user.into_inner(), &conf, &db).await;
+	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
 	match pending {
-		Ok(user) => Ok(Left(Accepter {
-			html: Custom(
-				Status::Created,
-				template!("users/registration_success.html"),
-			),
-			json: Custom(Status::Created, Json(user)),
-		})),
+		Ok(user) => {
+			let user_list_url = uri!(list_users);
+			mailer.try_create(
+				admin_email.0.clone(),
+				String::from("[Zauth] New user registration"),
+				template!(
+				"mails/new_user_registration.txt";
+				name: String = user.username.to_string(),
+				user_list_url: String = user_list_url.to_string(),
+				)
+				.render()
+				.map_err(InternalError::from)?,
+			)?;
+
+			Ok(Left(Accepter {
+				html: Custom(
+					Status::Created,
+					template!("users/registration_success.html"),
+				),
+				json: Custom(Status::Created, Json(user)),
+			}))
+		},
 		Err(ZauthError::ValidationError(errors)) => Ok(Right(Accepter {
 			html: Custom(
 				Status::UnprocessableEntity,
 				template! {
 					"users/registration_form.html";
+					registrations_full: bool = full,
 					errors: Option<ValidationErrors> = Some(errors.clone()),
 				},
 			),

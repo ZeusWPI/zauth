@@ -10,6 +10,14 @@
 
 <!-- Content -->
 {% block content %}
+    {% if !registrations_full %}
+    <div class="notification is-danger">
+      <strong>Oops!</strong> We've reached the maximum amount of limited users and
+      the registration form is disabled. Please accept or reject some pending
+      users to enable registrations again.
+    </div>
+    {% endif %}
+
 	<!-- Users -->
 	<div class="card card-content">
 
