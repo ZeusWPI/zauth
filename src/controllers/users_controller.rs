@@ -1,5 +1,5 @@
-use rocket::http::Status;
 use rocket::http::uri::Absolute;
+use rocket::http::Status;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;

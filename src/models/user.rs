@@ -88,7 +88,8 @@ pub struct User {
 }
 
 lazy_static! {
-    static ref NEW_USER_REGEX: Regex = Regex::new(r"^[a-z][a-z0-9]{2,}$").unwrap();
+	static ref NEW_USER_REGEX: Regex =
+		Regex::new(r"^[a-z][a-z0-9]{2,}$").unwrap();
 }
 
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
