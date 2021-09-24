@@ -138,7 +138,7 @@ async fn update_self() {
 			.put(format!("/users/{}", user.id))
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body("username=newusername")
+			.body("ssh_key=ssh-rsa%20supersecretkey")
 			.dispatch()
 			.await;
 
@@ -150,7 +150,10 @@ async fn update_self() {
 
 		let updated = User::find(user.id, &db).await.unwrap();
 
-		assert_eq!("newusername", updated.username);
+		assert_eq!(
+			Some(String::from("ssh-rsa supersecretkey")),
+			updated.ssh_key
+		);
 
 		let other = User::create(
 			NewUser {
@@ -171,7 +174,7 @@ async fn update_self() {
 			.put(format!("/users/{}", other.id))
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body("username=newusername")
+			.body("ssh_key=ssh-rsa%20supersecretkey")
 			.dispatch()
 			.await;
 
@@ -179,33 +182,6 @@ async fn update_self() {
 			response.status(),
 			Status::Forbidden,
 			"user should not be able to edit others"
-		);
-	})
-	.await;
-}
-
-#[rocket::async_test]
-async fn change_password() {
-	common::as_user(async move |http_client, db, user| {
-		let response = http_client
-			.put(format!("/users/{}", user.id))
-			.header(ContentType::Form)
-			.header(Accept::JSON)
-			.body("password=newpassword")
-			.dispatch()
-			.await;
-
-		assert_eq!(
-			response.status(),
-			Status::NoContent,
-			"user should be able to change password"
-		);
-
-		let updated = User::find(user.id, &db).await.unwrap();
-
-		assert_ne!(
-			user.hashed_password, updated.hashed_password,
-			"password should have changed"
 		);
 	})
 	.await;
