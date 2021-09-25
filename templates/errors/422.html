@@ -1,0 +1,19 @@
+{% extends "base_error.html" %}
+
+<!-- Title -->
+{% block error_title %}
+  Unprocessable request
+{% endblock error_title %}
+
+<!-- Content -->
+{% block error_content %}
+<p>Sorry, but your request could not be processed because.
+  Probably because it would cause an illegal state.
+{% match message %}
+{% when Some with (msg) %}
+<p><strong>Message:</strong> {{ msg }}
+{% when None %}
+{% endmatch %}
+
+
+{% endblock error_content %}

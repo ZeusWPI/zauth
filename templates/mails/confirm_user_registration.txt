@@ -1,0 +1,10 @@
+Hi {{name}}
+
+Your account has been approved by an admin. Please finalize your registration
+by clicking on the following link to confirm your email:
+{{confirm_url}}
+
+Enjoy your time with Zeus WPI!
+
+Kind regards
+The Zeus Authentication Server

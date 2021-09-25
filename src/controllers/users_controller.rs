@@ -209,14 +209,29 @@ pub async fn set_admin<'r>(
 pub async fn set_approved<'r>(
 	id: i32,
 	_session: AdminSession,
+	mailer: &'r State<Mailer>,
+	conf: &'r State<Config>,
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
-	let mut user = User::find(id, &db).await?;
-
-	if user.state == UserState::PendingApproval {
-		user.state = UserState::PendingMailConfirmation;
-		user = user.update(&db).await?;
-	}
+	let user = User::find(id, &db).await?;
+	let user = user.approve(&conf, &db).await?;
+	let confirm_url = uri!(
+		conf.base_url(),
+		confirm_email_get(
+			user.pending_email_token.clone().unwrap_or(String::from(""))
+		)
+	);
+	mailer.try_create(
+		&user,
+		String::from("[Zauth] Confirm your registration"),
+		template!(
+		"mails/confirm_user_registration.txt";
+		name: String = user.full_name.to_string(),
+		confirm_url: String = confirm_url.to_string(),
+		)
+		.render()
+		.map_err(InternalError::from)?,
+	)?;
 
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user(user.id))),
@@ -299,7 +314,9 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 	mailer: &'r State<Mailer>,
 ) -> Result<impl Responder<'r, 'o>> {
 	let form = form.into_inner();
-	if let Some(user) = User::find_by_token(form.token.to_owned(), &db).await? {
+	if let Some(user) =
+		User::find_by_password_token(form.token.to_owned(), &db).await?
+	{
 		let changed = user
 			.change_password(&form.new_password, conf.bcrypt_cost, &db)
 			.await;
@@ -332,5 +349,38 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 	} else {
 		let template = template! { "users/reset_password_invalid.html" };
 		Ok(OneOf::Three(Custom(Status::Forbidden, template)))
+	}
+}
+
+#[get("/users/confirm/<token>")]
+pub fn confirm_email_get<'r>(token: String) -> impl Responder<'r, 'static> {
+	template! {
+		"users/confirm_email_form.html";
+		token: String = token,
+	}
+}
+
+#[derive(Debug, FromForm)]
+pub struct EmailConfirmation {
+	token: String,
+}
+
+#[post("/users/confirm", data = "<form>")]
+pub async fn confirm_email_post<'r>(
+	form: Form<EmailConfirmation>,
+	db: DbConn,
+) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
+	if let Some(user) =
+		User::find_by_email_token(form.token.clone(), &db).await?
+	{
+		let user = user.confirm_email(&db).await?;
+		Ok(Either::Left(template! {
+			"users/confirm_email_success.html";
+			email: String = user.email,
+		}))
+	} else {
+		Ok(Either::Right(
+			template! {"users/confirm_email_invalid.html"},
+		))
 	}
 }

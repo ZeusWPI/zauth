@@ -630,9 +630,9 @@ async fn limit_pending_users() {
 			.await
 			.expect("pending user");
 		user.state = UserState::Active;
-		let user = user.update(&db).await.expect("activate user");
+		let _user = user.update(&db).await.expect("activate user");
 
-		let response =
+		let _response =
 			common::expect_mail_to(vec!["admin@localhost"], async || {
 				let response = post_registration(
 					&http_client,
@@ -662,48 +662,81 @@ async fn limit_pending_users() {
 }
 
 #[rocket::async_test]
-async fn register_user() {
-	common::as_visitor(async move |http_client, db| {
+async fn user_approval_flow() {
+	common::as_admin(async move |http_client, db, _admin| {
+		let email = String::from("test@example.com");
+		let mut user = User::create(
+			NewUser {
+				username:    String::from("user"),
+				password:    String::from("password"),
+				full_name:   String::from("name"),
+				email:       email.clone(),
+				ssh_key:     None,
+				not_a_robot: true,
+			},
+			common::BCRYPT_COST,
+			&db,
+		)
+		.await
+		.unwrap();
+
+		user.state = UserState::PendingApproval;
+		let user = user
+			.update(&db)
+			.await
+			.expect("set user to pending approval");
+
+		common::expect_mail_to(vec![&email], async || {
+			let response = http_client
+				.post(format!("/users/{}/approve/", user.id))
+				.header(Accept::HTML)
+				.header(ContentType::Form)
+				.dispatch()
+				.await;
+
+			assert_eq!(response.status(), Status::SeeOther);
+		})
+		.await;
+
+		let user = user.reload(&db).await.expect("reload user");
+
+		assert_eq!(
+			user.state,
+			UserState::PendingMailConfirmation,
+			"approved users should have a pending email"
+		);
+
+		let token = user
+			.pending_email_token
+			.as_ref()
+			.expect("email token")
+			.clone();
+
 		let response = http_client
-			.get("/register")
+			.get(format!("/users/confirm/{}", token))
 			.header(Accept::HTML)
+			.header(ContentType::Form)
 			.dispatch()
 			.await;
 
 		assert_eq!(response.status(), Status::Ok);
 
-		let username = "somebody";
-		let password = "toucha    ";
-		let full_name = "maa";
-		let email = "spaghet@zeus.ugent.be";
-		let not_a_robot = true;
-
-		let response =
-			common::expect_mail_to(vec!["admin@localhost"], async || {
-				http_client
-					.post("/register")
-					.header(Accept::HTML)
-					.header(ContentType::Form)
-					.body(format!(
-						"username={}&password={}&full_name={}&email={}&\
-						 not_a_robot={}",
-						username, password, full_name, email, not_a_robot
-					))
-					.dispatch()
-					.await
-			})
+		let response = http_client
+			.post("/users/confirm")
+			.header(Accept::HTML)
+			.header(ContentType::Form)
+			.body(format!("token={}", token))
+			.dispatch()
 			.await;
 
-		assert_eq!(response.status(), Status::Created);
+		assert_eq!(response.status(), Status::Ok);
 
-		let user = User::find_by_username(username.to_string(), &db)
-			.await
-			.expect("user should be created");
+		let user = user.reload(&db).await.expect("reload user");
 
 		assert_eq!(
 			user.state,
-			UserState::PendingApproval,
-			"registered users should be pending for approval"
+			UserState::Active,
+			"after email is confirmed, user should be activated"
 		);
 	})
 	.await;

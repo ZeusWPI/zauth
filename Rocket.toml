@@ -2,6 +2,7 @@
 user_session_seconds = 604800              # 1 week
 client_session_seconds = 300               # 5 minutes
 authorization_token_seconds = 300          # 5 minutes
+email_confirmation_token_seconds = 604800  # 1 week
 admin_email = "admin@localhost"
 secure_token_length = 64
 bcrypt_cost = 12

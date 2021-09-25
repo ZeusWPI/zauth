@@ -12,7 +12,6 @@ use regex::Regex;
 use rocket::http::Header;
 use rocket::http::Status;
 use rocket::http::{Accept, ContentType};
-use rocket::http::{Cookie, CookieJar};
 
 use zauth::controllers::oauth_controller::UserToken;
 use zauth::models::client::{Client, NewClient};
@@ -21,7 +20,6 @@ use zauth::token_store::TokenStore;
 
 mod common;
 use crate::common::url;
-use crate::common::HttpClient;
 
 fn get_param(param_name: &str, query: &String) -> Option<String> {
 	Regex::new(&format!("{}=([^&]+)", param_name))
