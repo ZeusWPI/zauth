@@ -9,8 +9,6 @@ services:
       - database
     command: >
       sh -c "./docker_misc/wait_for_service database 5432 && diesel --database-url 'postgresql://zauth:zauth@database/zauth' database setup && ROCKET_ENV=production zauth"
-    networks:
-      - zauth-internal
 
   database:
     image: postgres:13-alpine
@@ -20,11 +18,17 @@ services:
       POSTGRES_PASSWORD: zauth
     volumes:
       - zauth-database:/var/lib/postgresql/data
-    networks:
-      - zauth-internal
+    ports:
+      - 127.0.0.1:5432:5432
 
-networks:
-  zauth-internal:
-    name: 'zauth-internal'
+  adminer:
+    image: adminer:latest
+    depends_on:
+      - database
+    environment:
+      ADMINER_DEFAULT_SERVER: database
+    ports:
+      - 127.0.0.1:8080:8080
+
 volumes:
   zauth-database:

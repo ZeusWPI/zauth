@@ -114,9 +114,7 @@ impl Mailer {
 		receiver: Receiver<Message>,
 		server: &str,
 	) -> Result<impl FnOnce()> {
-		let transport = SmtpTransport::relay(server)
-			.map_err(LaunchError::from)?
-			.build();
+		let transport = SmtpTransport::builder_dangerous(server).build();
 		Ok(move || {
 			while let Ok(mail) = receiver.recv() {
 				let result = transport.send(&mail);

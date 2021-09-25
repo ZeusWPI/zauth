@@ -1,16 +1,19 @@
-{% extends "layout.html" %}
+{% extends "base_not_logged_in.html" %}
+
+<!-- Content -->
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="column">
-            <h3>
-                A password reset link has been sent to<br />
-                <b>{{ email }}</b>
-            </h3>
-            <p>Unless your email was not registered on this site. We'll show you this message either way.</p>
-        </div>
+<div class="card-page">
+  <div class="card-page-content">
+    <div class="card-page-card">
+      <div class="subtitle mb-1">
+        A password reset link has been sent to: <br>
+				<b>{{ email }}</b>
+      </div>
+
+      <div class="text has-text-grey">
+        Unless your email was not registered on this site. We'll show you this message either way.
+      </div>
     </div>
+  </div>
 </div>
-
-
 {% endblock content %}

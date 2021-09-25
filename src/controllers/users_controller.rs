@@ -1,3 +1,4 @@
+use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
@@ -168,7 +169,6 @@ pub async fn update_user<'r>(
 	id: i32,
 	change: Api<UserChange>,
 	session: UserSession,
-	conf: &State<Config>,
 	db: DbConn,
 ) -> Result<
 	Either<
@@ -178,7 +178,7 @@ pub async fn update_user<'r>(
 > {
 	let mut user = User::find(id, &db).await?;
 	if session.user.id == user.id || session.user.admin {
-		user.change_with(change.into_inner(), conf.bcrypt_cost)?;
+		user.change_with(change.into_inner())?;
 		let user = user.update(&db).await?;
 		Ok(Left(Accepter {
 			html: Redirect::to(uri!(show_user(user.id))),
@@ -237,6 +237,7 @@ pub struct ResetPassword {
 #[post("/users/forgot_password", data = "<value>")]
 pub async fn forgot_password_post<'r>(
 	value: Form<ResetPassword>,
+	conf: &State<Config>,
 	db: DbConn,
 	mailer: &State<Mailer>,
 ) -> Result<impl Responder<'r, 'static>> {
@@ -250,13 +251,13 @@ pub async fn forgot_password_post<'r>(
 	}?;
 
 	if let Some(mut user) = user {
-		user.password_reset_token = Some(util::random_token(32));
+		let token = util::random_token(32);
+		user.password_reset_token = Some(token.clone());
 		user.password_reset_expiry =
 			Some(Utc::now().naive_utc() + Duration::days(1));
 		let user = user.update(&db).await?;
-
-		let token = user.password_reset_token.as_ref().unwrap();
-		let reset_url = uri!(reset_password_get(token));
+		let base_url = Absolute::parse(&conf.base_url).expect("Valid base_url");
+		let reset_url = uri!(base_url, reset_password_get(token));
 		mailer.try_create(
 			&user,
 			String::from("[Zauth] You've requested a password reset"),
