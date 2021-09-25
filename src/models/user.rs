@@ -5,7 +5,6 @@ use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
 
-use crate::models::user::UserState::{Active, PendingApproval};
 use crate::util::random_token;
 use crate::Config;
 use chrono::{NaiveDateTime, Utc};
@@ -121,14 +120,26 @@ pub struct NewUser {
 
 #[derive(Serialize, Insertable, Debug, Clone)]
 #[table_name = "users"]
+struct PendingUserHashed {
+	username:             String,
+	hashed_password:      String,
+	full_name:            String,
+	state:                UserState,
+	last_login:           NaiveDateTime,
+	pending_email:        String,
+	pending_email_token:  String,
+	pending_email_expiry: NaiveDateTime,
+}
+
+#[derive(Serialize, Insertable, Debug, Clone)]
+#[table_name = "users"]
 struct NewUserHashed {
 	username:        String,
 	hashed_password: String,
 	full_name:       String,
-	email:           String,
 	state:           UserState,
-	ssh_key:         Option<String>,
 	last_login:      NaiveDateTime,
+	email:           String,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -159,7 +170,7 @@ impl User {
 	}
 
 	pub fn is_active(&self) -> bool {
-		matches!(self.state, Active)
+		matches!(self.state, UserState::Active)
 	}
 
 	pub async fn find_by_username<'r>(
@@ -267,11 +278,21 @@ impl User {
 			hashed_password: hash(&user.password, bcrypt_cost)?,
 			full_name:       user.full_name,
 			email:           user.email,
-			ssh_key:         user.ssh_key,
-			state:           Active,
+			state:           UserState::Active,
 			last_login:      Utc::now().naive_utc(),
 		};
-		Self::insert(user, db).await
+		db.run(move |conn| {
+			conn.transaction(|| {
+				// Create a new user
+				diesel::insert_into(users::table)
+					.values(&user)
+					.execute(conn)?;
+				// Fetch the last created user
+				let user = users::table.order(users::id.desc()).first(conn)?;
+				Ok(user)
+			})
+		})
+		.await
 	}
 
 	pub async fn create_pending(
@@ -292,43 +313,50 @@ impl User {
 			);
 			return Err(ZauthError::from(err));
 		};
-		let user = NewUserHashed {
-			username:        user.username,
-			hashed_password: hash(&user.password, conf.bcrypt_cost)?,
-			full_name:       user.full_name,
-			email:           user.email,
-			ssh_key:         user.ssh_key,
-			state:           PendingApproval,
-			last_login:      Utc::now().naive_utc(),
+		let user = PendingUserHashed {
+			username:             user.username,
+			hashed_password:      hash(&user.password, conf.bcrypt_cost)?,
+			full_name:            user.full_name,
+			pending_email:        user.email,
+			pending_email_token:  random_token(conf.secure_token_length),
+			pending_email_expiry: Utc::now().naive_utc()
+				+ conf.email_confirmation_token_duration(),
+			state:                UserState::PendingMailConfirmation,
+			last_login:           Utc::now().naive_utc(),
 		};
-		Self::insert(user, db).await
+		db.run(move |conn| {
+			conn.transaction(|| {
+				// Create a new user
+				diesel::insert_into(users::table)
+					.values(&user)
+					.execute(conn)?;
+				// Fetch the last created user
+				let user = users::table.order(users::id.desc()).first(conn)?;
+				Ok(user)
+			})
+		})
+		.await
 	}
 
-	pub async fn approve(mut self, conf: &Config, db: &DbConn) -> Result<User> {
-		if self.state == UserState::PendingApproval {
-			self.state = UserState::PendingMailConfirmation;
-		} else {
+	pub async fn approve(mut self, db: &DbConn) -> Result<User> {
+		if self.state != UserState::PendingApproval {
 			return Err(ZauthError::Unprocessable(String::from(
 				"user is not in the pending approval state",
 			)));
 		}
-		self.pending_email = Some(self.email.clone());
-		self.pending_email_token = Some(random_token(conf.secure_token_length));
-		self.pending_email_expiry = Some(
-			Utc::now().naive_utc() + conf.email_confirmation_token_duration(),
-		);
+		self.state = UserState::Active;
 		self.update(&db).await
 	}
 
 	pub async fn confirm_email(mut self, db: &DbConn) -> Result<User> {
 		if self.state == UserState::PendingMailConfirmation {
-			self.state = UserState::Active;
+			self.state = UserState::PendingApproval;
 		}
 		self.email = self
 			.pending_email
 			.as_ref()
 			.ok_or(ZauthError::Unprocessable(String::from(
-				"Valid confirmation token, but no pending email",
+				"valid confirmation token, but no pending email",
 			)))?
 			.to_string();
 		self.pending_email_token = None;
@@ -407,6 +435,7 @@ impl User {
 			.run(move |conn| {
 				users::table
 					.filter(users::state.eq(UserState::PendingApproval))
+					.filter(users::state.eq(UserState::PendingMailConfirmation))
 					.count()
 					.first(conn)
 					.map_err(ZauthError::from)

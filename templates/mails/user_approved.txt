@@ -1,0 +1,10 @@
+Hi {{name}}
+
+Your account has been approved and you can now use our services with your
+account. You can use the following link to login:
+{{ login_url }}
+
+Enjoy your time with Zeus WPI!
+
+Kind regards
+The Zeus Authentication Server

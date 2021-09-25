@@ -6,6 +6,7 @@ use std::fmt::Debug;
 use validator::ValidationErrors;
 
 use crate::config::{AdminEmail, Config};
+use crate::controllers::sessions_controller::rocket_uri_macro_new_session;
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::{
 	AdminSession, ClientOrUserSession, ClientSession, UserSession,
@@ -120,7 +121,6 @@ pub async fn register_page<'r>(
 pub async fn register<'r>(
 	user: Api<NewUser>,
 	db: DbConn,
-	admin_email: &'r State<AdminEmail>,
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
@@ -128,14 +128,21 @@ pub async fn register<'r>(
 	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
 	match pending {
 		Ok(user) => {
-			let user_list_url = uri!(list_users);
+			let confirm_url = uri!(
+				conf.base_url(),
+				confirm_email_get(
+					user.pending_email_token
+						.clone()
+						.unwrap_or(String::from(""))
+				)
+			);
 			mailer.try_create(
-				admin_email.0.clone(),
-				String::from("[Zauth] New user registration"),
+				&user,
+				String::from("[Zauth] Confirm your email"),
 				template!(
-				"mails/new_user_registration.txt";
-				name: String = user.username.to_string(),
-				user_list_url: String = user_list_url.to_string(),
+				"mails/confirm_user_registration.txt";
+				name: String = user.full_name.to_string(),
+				confirm_url: String = confirm_url.to_string(),
 				)
 				.render()
 				.map_err(InternalError::from)?,
@@ -214,20 +221,17 @@ pub async fn set_approved<'r>(
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let user = User::find(id, &db).await?;
-	let user = user.approve(&conf, &db).await?;
-	let confirm_url = uri!(
-		conf.base_url(),
-		confirm_email_get(
-			user.pending_email_token.clone().unwrap_or(String::from(""))
-		)
-	);
-	mailer.try_create(
+	let user = user.approve(&db).await?;
+
+	let login_url = uri!(conf.base_url(), new_session);
+
+	mailer.create(
 		&user,
-		String::from("[Zauth] Confirm your registration"),
+		String::from("[Zauth] Your account has been approved"),
 		template!(
-		"mails/confirm_user_registration.txt";
+		"mails/user_approved.txt";
 		name: String = user.full_name.to_string(),
-		confirm_url: String = confirm_url.to_string(),
+		login_url: String = login_url.to_string(),
 		)
 		.render()
 		.map_err(InternalError::from)?,
@@ -370,15 +374,31 @@ pub struct EmailConfirmation {
 #[post("/users/confirm", data = "<form>")]
 pub async fn confirm_email_post<'r>(
 	form: Form<EmailConfirmation>,
+	mailer: &State<Mailer>,
+	admin_email: &State<AdminEmail>,
 	db: DbConn,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
 	if let Some(user) =
 		User::find_by_email_token(form.token.clone(), &db).await?
 	{
 		let user = user.confirm_email(&db).await?;
+
+		let user_list_url = uri!(list_users);
+		mailer.try_create(
+			admin_email.0.clone(),
+			String::from("[Zauth] New user registration"),
+			template!(
+			"mails/new_user_registration.txt";
+			name: String = user.username.to_string(),
+			user_list_url: String = user_list_url.to_string(),
+			)
+			.render()
+			.map_err(InternalError::from)?,
+		)?;
+
 		Ok(Either::Left(template! {
 			"users/confirm_email_success.html";
-			email: String = user.email,
+			user: User = user,
 		}))
 	} else {
 		Ok(Either::Right(
