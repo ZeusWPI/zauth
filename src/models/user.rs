@@ -437,7 +437,7 @@ fn validate_not_a_robot(
 	if !not_a_robot {
 		return Err(ValidationError::new(
 			"Non-human registration is currently not supported by the digital \
-			 interface. Please interface with an aidmin.",
+			 interface. Please interface with an AIdmin.",
 		));
 	}
 	Ok(())
