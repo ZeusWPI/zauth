@@ -9,6 +9,8 @@ services:
       - database
     command: >
       sh -c "./docker_misc/wait_for_service database 5432 && diesel --database-url 'postgresql://zauth:zauth@database/zauth' database setup && ROCKET_ENV=production zauth"
+    volumes:
+      - ${PWD}/Rocket.toml:/usr/src/zauth/Rocket.toml
 
   database:
     image: postgres:13-alpine
