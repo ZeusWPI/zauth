@@ -23,10 +23,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build the new image
-        run: docker build . -t ghcr.io/ZeusWPI/zauth:${{ steps.parse_tag.outputs.version }}
+        run: docker build . -t ghcr.io/zeuswpi/zauth:${{ steps.parse_tag.outputs.version }}
       - name: Login to the container registry
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
       - name: Tag the new image with latest
-        run: docker tag ghcr.io/ZeusWPI/zauth:${{ steps.parse_tag.outputs.version }} ghcr.io/ZeusWPI/zauth:latest
+        run: docker tag ghcr.io/zeuswpi/zauth:${{ steps.parse_tag.outputs.version }} ghcr.io/zeuswpi/zauth:latest
       - name: Push the new image
         run: docker push --all-tags
