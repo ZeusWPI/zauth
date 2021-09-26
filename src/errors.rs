@@ -20,6 +20,8 @@ pub enum ZauthError {
 	Launch(#[from] LaunchError),
 	#[error("Not found: {0:?}")]
 	NotFound(String),
+	#[error("Unprocessable request: {0:?}")]
+	Unprocessable(String),
 	#[error("Validation error: {0:?}")]
 	ValidationError(#[from] ValidationErrors),
 	#[error("OAuth error: {0:?}")]
@@ -56,6 +58,13 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 			ZauthError::NotFound(_) => {
 				builder.status(Status::NotFound);
 				builder.merge(not_found().respond_to(request)?);
+			},
+			ZauthError::Unprocessable(message) => {
+				builder.status(Status::UnprocessableEntity);
+				builder.merge(
+					unprocessable_with_message(Some(message))
+						.respond_to(request)?,
+				);
 			},
 			ZauthError::Internal(e) => {
 				let message = if debug {
@@ -111,6 +120,26 @@ pub fn not_found<'r>() -> impl Responder<'r, 'static> {
 			error:   "not found",
 			status:  404,
 			message: None,
+		}),
+	}
+}
+
+#[catch(422)]
+pub fn unprocessable<'r>() -> impl Responder<'r, 'static> {
+	unprocessable_with_message(None)
+}
+
+pub fn unprocessable_with_message<'r>(
+	message: Option<String>,
+) -> impl Responder<'r, 'static> {
+	Accepter {
+		html: template!("errors/422.html";
+			message: Option<String> = message.clone()
+		),
+		json: Json(JsonError {
+			error: "unprocessable",
+			status: 422,
+			message,
 		}),
 	}
 }

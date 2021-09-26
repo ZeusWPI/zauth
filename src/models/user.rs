@@ -6,6 +6,7 @@ use diesel_derive_enum::DbEnum;
 use std::fmt;
 
 use crate::models::user::UserState::{Active, PendingApproval};
+use crate::util::random_token;
 use crate::Config;
 use chrono::{NaiveDateTime, Utc};
 use lettre::message::Mailbox;
@@ -52,6 +53,9 @@ pub mod schema {
 			password_reset_expiry -> Nullable<Timestamp>,
 			full_name -> Varchar,
 			email -> Varchar,
+			pending_email -> Nullable<Varchar>,
+			pending_email_token -> Nullable<Varchar>,
+			pending_email_expiry -> Nullable<Timestamp>,
 			ssh_key -> Nullable<Text>,
 			state -> UserStateMapping,
 			last_login -> Timestamp,
@@ -79,6 +83,12 @@ pub struct User {
 	pub full_name:             String,
 	#[validate(email)]
 	pub email:                 String,
+	#[serde(skip)]
+	pub pending_email:         Option<String>,
+	#[serde(skip)]
+	pub pending_email_token:   Option<String>,
+	#[serde(skip)]
+	pub pending_email_expiry:  Option<NaiveDateTime>,
 	#[validate(custom = "validate_ssh_key_list")]
 	pub ssh_key:               Option<String>,
 	#[serde(skip)]
@@ -175,7 +185,7 @@ impl User {
 		Ok(())
 	}
 
-	pub async fn find_by_token<'r>(
+	pub async fn find_by_password_token<'r>(
 		token: String,
 		db: &DbConn,
 	) -> Result<Option<User>> {
@@ -195,6 +205,34 @@ impl User {
 			{
 				Ok(Some(user))
 			},
+			Ok(_) => Ok(None),
+			Err(ZauthError::NotFound(_)) => Ok(None),
+			Err(err) => Err(err),
+		}
+	}
+
+	fn email_token_valid(&self) -> bool {
+		if let Some(expiry) = self.pending_email_expiry {
+			return Utc::now().naive_utc() < expiry;
+		}
+		return false;
+	}
+
+	pub async fn find_by_email_token<'r>(
+		token: String,
+		db: &DbConn,
+	) -> Result<Option<User>> {
+		let token = token.to_owned();
+		let result = db
+			.run(move |conn| {
+				users::table
+					.filter(users::pending_email_token.eq(token))
+					.first::<Self>(conn)
+			})
+			.await
+			.map_err(ZauthError::from);
+		match result {
+			Ok(user) if user.email_token_valid() => Ok(Some(user)),
 			Ok(_) => Ok(None),
 			Err(ZauthError::NotFound(_)) => Ok(None),
 			Err(err) => Err(err),
@@ -258,6 +296,38 @@ impl User {
 			last_login:      Utc::now().naive_utc(),
 		};
 		Self::insert(user, db).await
+	}
+
+	pub async fn approve(mut self, conf: &Config, db: &DbConn) -> Result<User> {
+		if self.state == UserState::PendingApproval {
+			self.state = UserState::PendingMailConfirmation;
+		} else {
+			return Err(ZauthError::Unprocessable(String::from(
+				"user is not in the pending approval state",
+			)));
+		}
+		self.pending_email = Some(self.email.clone());
+		self.pending_email_token = Some(random_token(conf.secure_token_length));
+		self.pending_email_expiry = Some(
+			Utc::now().naive_utc() + conf.email_confirmation_token_duration(),
+		);
+		self.update(&db).await
+	}
+
+	pub async fn confirm_email(mut self, db: &DbConn) -> Result<User> {
+		if self.state == UserState::PendingMailConfirmation {
+			self.state = UserState::Active;
+		}
+		self.email = self
+			.pending_email
+			.as_ref()
+			.ok_or(ZauthError::Unprocessable(String::from(
+				"Valid confirmation token, but no pending email",
+			)))?
+			.to_string();
+		self.pending_email_token = None;
+		self.pending_email_expiry = None;
+		self.update(&db).await
 	}
 
 	async fn insert(user: NewUserHashed, db: &DbConn) -> Result<User> {

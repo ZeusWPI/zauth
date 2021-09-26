@@ -116,6 +116,8 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				users_controller::forgot_password_post,
 				users_controller::reset_password_get,
 				users_controller::reset_password_post,
+				users_controller::confirm_email_get,
+				users_controller::confirm_email_post,
 			],
 		)
 		.register(
