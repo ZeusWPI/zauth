@@ -14,6 +14,7 @@ let
 in
 pkgs.mkShell {
   buildInputs = with pkgs; [
+    docker-compose
     rustNightlyTemp
     cargo-watch
     postgresql
