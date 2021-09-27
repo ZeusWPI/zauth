@@ -106,7 +106,7 @@ lazy_static! {
 pub struct NewUser {
 	#[validate(regex = "NEW_USER_REGEX")]
 	pub username:    String,
-	#[validate(length(min = 8))]
+	#[validate(length(min = 8, message="Password to short"))]
 	pub password:    String,
 	#[validate(length(min = 3, max = 254))]
 	pub full_name:   String,
