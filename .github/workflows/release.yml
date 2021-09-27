@@ -12,14 +12,14 @@ jobs:
       - uses: actions/checkout@v2
       - name: Parse tag
         id: parse_tag
-        run: "echo ${{ github.ref }} | sed 's#^refs/tags/#::set-output name=version::#'"
+        run: "echo ${{ github.ref }} | sed 's#^refs/tags/v#::set-output name=version::#'"
       - name: Create release
         id: create_release
         uses: release-drafter/release-drafter@v5
         with:
-          name: ${{ steps.parse_tag.outputs.version }}
-          tag: ${{ steps.parse_tag.outputs.version }}
-          version: ${{ steps.parse_tag.outputs.version }}
+          name: v${{ steps.parse_tag.outputs.version }}
+          tag: v${{ steps.parse_tag.outputs.version }}
+          version: v${{ steps.parse_tag.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build the new image
