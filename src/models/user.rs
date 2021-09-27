@@ -106,7 +106,7 @@ lazy_static! {
 pub struct NewUser {
 	#[validate(regex = "NEW_USER_REGEX")]
 	pub username:    String,
-	#[validate(length(min = 8, message = "Password to short"))]
+	#[validate(length(min = 8, message = "Password too short"))]
 	pub password:    String,
 	#[validate(length(min = 3, max = 254))]
 	pub full_name:   String,
@@ -143,6 +143,12 @@ pub struct UserChange {
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct ChangeAdmin {
 	pub admin: bool,
+}
+
+#[derive(Validate, FromForm, Deserialize, Debug, Clone)]
+pub struct ChangePassword {
+	#[validate(length(min = 8, message = "Password too short"))]
+	pub password: String,
 }
 
 impl User {
@@ -374,11 +380,12 @@ impl User {
 
 	pub async fn change_password(
 		mut self,
-		new_password: &str,
-		bcrypt_cost: u32,
+		change: ChangePassword,
+		conf: &Config,
 		db: &DbConn,
 	) -> Result<Self> {
-		self.hashed_password = hash(new_password, bcrypt_cost)?;
+		change.validate()?;
+		self.hashed_password = hash(&change.password, conf.bcrypt_cost)?;
 		self.password_reset_token = None;
 		self.password_reset_expiry = None;
 		self.update(db).await
