@@ -318,9 +318,10 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 	if let Some(user) =
 		User::find_by_password_token(form.token.to_owned(), &db).await?
 	{
-		let changed = user
-			.change_password(&form.new_password, conf.bcrypt_cost, &db)
-			.await;
+		let change = ChangePassword {
+			password: form.new_password,
+		};
+		let changed = user.change_password(change, conf, &db).await;
 		match changed {
 			Ok(user) => {
 				let body = template!(

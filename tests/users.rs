@@ -386,6 +386,28 @@ async fn forgot_password() {
 			"should get reset password page"
 		);
 
+		let short_password = "pw";
+
+		common::dont_expect_mail(async || {
+			let response = http_client
+				.post(format!("/users/reset_password/"))
+				.header(ContentType::Form)
+				.header(Accept::HTML)
+				.body(format!(
+					"token={}&new_password={}",
+					&token, &short_password
+				))
+				.dispatch()
+				.await;
+
+			assert_eq!(
+				response.status(),
+				Status::UnprocessableEntity,
+				"should not accept short password"
+			);
+		})
+		.await;
+
 		let old_password_hash = user.hashed_password.clone();
 		let new_password = "passw0rd";
 
