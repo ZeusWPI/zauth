@@ -66,4 +66,4 @@ You can also test the OAuth2 flow manually by running the flask application in
 
 ### Using Nix
 
-We have provided a [shell.nix](./shell.nix) for easy setup for Nix users. You can easily start a database server
+We have provided a [flake.nix](./flake.nix) for easy setup for Nix users. With [flakes enabled](https://nixos.wiki/wiki/Flakes), run `nix develop`.
