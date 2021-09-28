@@ -330,11 +330,13 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 				)
 				.render()
 				.map_err(InternalError::from)?;
-				mailer.create(
-					&user,
-					String::from("[Zauth] Your password has been reset"),
-					body,
-				)?;
+				mailer
+					.create(
+						&user,
+						String::from("[Zauth] Your password has been reset"),
+						body,
+					)
+					.await?;
 				Ok(OneOf::One(
 					template! { "users/reset_password_success.html" },
 				))

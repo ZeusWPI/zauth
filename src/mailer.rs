@@ -4,16 +4,16 @@ use crate::errors::{InternalError, LaunchError, Result, ZauthError};
 use lettre::message::Mailbox;
 use lettre::{Address, Message, SmtpTransport, Transport};
 use parking_lot::{Condvar, Mutex};
+use rocket::tokio::sync::mpsc;
+use rocket::tokio::sync::mpsc::Receiver;
+use rocket::tokio::time::sleep;
 use std::convert::TryInto;
-use std::sync::mpsc;
-use std::sync::mpsc::Receiver;
-use std::thread;
 use std::time::Duration;
 
 #[derive(Clone)]
 pub struct Mailer {
 	from:  Address,
-	queue: mpsc::SyncSender<Message>,
+	queue: mpsc::Sender<Message>,
 }
 
 pub static STUB_MAILER_OUTBOX: (Mutex<Vec<Message>>, Condvar) =
@@ -54,7 +54,7 @@ impl Mailer {
 	///
 	/// Use this method only for important emails where the possibility for
 	/// abuse is minimal.
-	pub fn create<E: Into<ZauthError>, M: TryInto<Mailbox, Error = E>>(
+	pub async fn create<E: Into<ZauthError>, M: TryInto<Mailbox, Error = E>>(
 		&self,
 		receiver: M,
 		subject: String,
@@ -64,17 +64,22 @@ impl Mailer {
 
 		self.queue
 			.send(mail)
+			.await
 			.map_err(|e| ZauthError::from(InternalError::from(e)))
 	}
 
 	pub fn new(config: &Config) -> Result<Mailer> {
 		let wait = Duration::from_secs(config.mail_queue_wait_seconds);
-		let (sender, recv) = mpsc::sync_channel(config.mail_queue_size);
+		let (sender, recv) = mpsc::channel(config.mail_queue_size);
 
 		if config.mail_server == "stub" {
-			thread::spawn(Self::stub_sender(wait, recv));
+			rocket::tokio::spawn(Self::stub_sender(wait, recv));
 		} else {
-			thread::spawn(Self::smtp_sender(wait, recv, &config.mail_server)?);
+			rocket::tokio::spawn(Self::smtp_sender(
+				wait,
+				recv,
+				&config.mail_server,
+			)?);
 		}
 
 		Ok(Mailer {
@@ -89,10 +94,10 @@ impl Mailer {
 
 	fn stub_sender(
 		wait: Duration,
-		receiver: Receiver<Message>,
-	) -> impl FnOnce() {
-		move || {
-			while let Ok(mail) = receiver.recv() {
+		mut receiver: Receiver<Message>,
+	) -> impl std::future::Future<Output = impl Send + 'static> {
+		async move {
+			while let Some(mail) = receiver.recv().await {
 				{
 					let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
 					println!(
@@ -104,19 +109,19 @@ impl Mailer {
 				}
 
 				// sleep for a while to prevent sending mails too fast
-				thread::sleep(wait);
+				sleep(wait).await;
 			}
 		}
 	}
 
 	fn smtp_sender(
 		wait: Duration,
-		receiver: Receiver<Message>,
+		mut receiver: Receiver<Message>,
 		server: &str,
-	) -> Result<impl FnOnce()> {
+	) -> Result<impl std::future::Future<Output = impl Send + 'static>> {
 		let transport = SmtpTransport::builder_dangerous(server).build();
-		Ok(move || {
-			while let Ok(mail) = receiver.recv() {
+		Ok(async move {
+			while let Some(mail) = receiver.recv().await {
 				let result = transport.send(&mail);
 				if result.is_ok() {
 					println!("Sent email: {:?}", result);
@@ -124,7 +129,7 @@ impl Mailer {
 					println!("Error sending email: {:?}", result);
 				}
 				// sleep for a while to prevent sending mails too fast
-				thread::sleep(wait);
+				sleep(wait).await;
 			}
 		})
 	}
