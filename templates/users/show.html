@@ -50,7 +50,7 @@
 
 				<div class="field">
           <label class="label">SSH Keys</label>
-					<textarea class="textarea" placeholder="SSH Keys" value="{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}"></textarea>
+					<textarea class="textarea" name="ssh_key" placeholder="SSH Keys">{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}</textarea>
 				</div>
 
 				<button class="button is-primary" type="submit">Update</button>
