@@ -10,16 +10,70 @@
 
 <!-- Content -->
 {% block content %}
-    {% if registrations_full %}
-    <div class="notification is-danger">
-      <strong>Oops!</strong> We've reached the maximum amount of limited users and
-      the registration form is disabled. Please accept or reject some pending
-      users to enable registrations again.
-    </div>
-    {% endif %}
+	{% if registrations_full %}
+	<div class="notification is-danger">
+		<strong>Oops!</strong> We've reached the maximum amount of limited users and
+		the registration form is disabled. Please accept or reject some pending
+		users to enable registrations again.
+	</div>
+	{% endif %}
+
+	<!-- Users pending approval -->
+	<div class="card card-content">
+
+		<!-- Title -->
+		<div class="title">	Users pending for Approval ({{ users_pending_for_approval.len() }})</div>
+
+		<!-- Table -->
+		<table class="table table--responsive table--responsive--labels is-fullwidth">
+			<thead>
+				<tr>
+					<th>Username</th>
+					<th>Full Name</th>
+					<th>Email</th>
+					<th>Created at</th>
+					<th>Approve</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for user in users_pending_for_approval %}
+					<tr>
+						<!-- Username -->
+						<td data-label="Username">
+							<a href="/users/{{ user.id }}">{{ user.username }}</a>
+						</td>
+
+						<!-- Fullname -->
+						<td data-label="Fullname">{{ user.full_name }}</td>
+
+						<!-- Email -->
+						<td data-label="Email">{{ user.email }}</td>
+
+						<!-- Created at -->
+						<td data-label="Created at" title="{{ user.created_at }}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
+
+						<!-- Approve -->
+						<td>
+							<form action="/users/{{ user.id }}/approve" method="post">
+								<button class="button is-success is-small" type="submit">Approve</button>
+							</form>
+						</td>
+					</tr>
+				{% endfor %}
+
+				<!-- Placeholder -->
+				{% if users_pending_for_approval.len() == 0 %}
+					<tr>
+						<td colspan="8">No users needing approval</td>
+					</tr>
+				{% endif %}
+			</tbody>
+		</table>
+	</div>
 
 	<!-- Users -->
-	<div class="card card-content">
+	<div class="card card-content mt-5">
 
 		<!-- Title -->
 		<div class="columns is-multiline is-justify-content-space-between">
@@ -138,60 +192,6 @@
 						{% when None %}
 					{% endmatch %}
 				{% endfor %}
-			</tbody>
-		</table>
-	</div>
-
-	<!-- Users pending approval -->
-	<div class="card card-content mt-5">
-
-		<!-- Title -->
-		<div class="title">	Users pending for Approval ({{ users_pending_for_approval.len() }})</div>
-
-		<!-- Table -->
-		<table class="table table--responsive table--responsive--labels is-fullwidth">
-			<thead>
-				<tr>
-					<th>Username</th>
-					<th>Full Name</th>
-					<th>Email</th>
-					<th>Created at</th>
-					<th>Approve</th>
-				</tr>
-			</thead>
-
-			<tbody>
-				{% for user in users_pending_for_approval %}
-					<tr>
-						<!-- Username -->
-						<td data-label="Username">
-							<a href="/users/{{ user.id }}">{{ user.username }}</a>
-						</td>
-
-						<!-- Fullname -->
-						<td data-label="Fullname">{{ user.full_name }}</td>
-
-						<!-- Email -->
-						<td data-label="Email">{{ user.email }}</td>
-
-						<!-- Created at -->
-						<td data-label="Created at" title="{{ user.created_at }}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
-
-						<!-- Approve -->
-						<td>
-							<form action="/users/{{ user.id }}/approve" method="post">
-								<button class="button is-success is-small" type="submit">Approve</button>
-							</form>
-						</td>
-					</tr>
-				{% endfor %}
-
-				<!-- Placeholder -->
-				{% if users_pending_for_approval.len() == 0 %}
-					<tr>
-						<td colspan="8">No users needing approval</td>
-					</tr>
-				{% endif %}
 			</tbody>
 		</table>
 	</div>
