@@ -208,13 +208,15 @@ async fn normal_flow() {
 			.state::<TokenStore<UserToken>>()
 			.expect("should have token store");
 
-		let authorization_code = token_store.create_token(UserToken {
-			user_id:      user.id,
-			username:     user.username.clone(),
-			client_id:    client.id,
-			client_name:  client.name,
-			redirect_uri: String::from(redirect_uri),
-		}).await;
+		let authorization_code = token_store
+			.create_token(UserToken {
+				user_id:      user.id,
+				username:     user.username.clone(),
+				client_id:    client.id,
+				client_name:  client.name,
+				redirect_uri: String::from(redirect_uri),
+			})
+			.await;
 
 		let token_url = "/oauth/token";
 		let form_body = format!(
