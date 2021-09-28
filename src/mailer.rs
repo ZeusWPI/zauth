@@ -8,7 +8,6 @@ use rocket::tokio::sync::mpsc;
 use rocket::tokio::sync::mpsc::Receiver;
 use rocket::tokio::time::sleep;
 use std::convert::TryInto;
-use std::thread;
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -93,10 +92,10 @@ impl Mailer {
 		})
 	}
 
-	async fn stub_sender(
+	fn stub_sender(
 		wait: Duration,
-		receiver: Receiver<Message>,
-	) -> impl std::future::Future {
+		mut receiver: Receiver<Message>,
+	) -> impl std::future::Future<Output = impl Send + 'static> {
 		async move {
 			while let Some(mail) = receiver.recv().await {
 				{
@@ -115,14 +114,14 @@ impl Mailer {
 		}
 	}
 
-	async fn smtp_sender(
+	fn smtp_sender(
 		wait: Duration,
-		receiver: Receiver<Message>,
+		mut receiver: Receiver<Message>,
 		server: &str,
-	) -> Result<impl FnOnce()> {
+	) -> Result<impl std::future::Future<Output = impl Send + 'static>> {
 		let transport = SmtpTransport::builder_dangerous(server).build();
 		Ok(async move {
-			while let Ok(mail) = receiver.recv().await {
+			while let Some(mail) = receiver.recv().await {
 				let result = transport.send(&mail);
 				if result.is_ok() {
 					println!("Sent email: {:?}", result);
