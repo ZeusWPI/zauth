@@ -214,7 +214,7 @@ async fn normal_flow() {
 			client_id:    client.id,
 			client_name:  client.name,
 			redirect_uri: String::from(redirect_uri),
-		});
+		}).await;
 
 		let token_url = "/oauth/token";
 		let form_body = format!(
