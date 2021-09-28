@@ -126,6 +126,7 @@ struct PendingUserHashed {
 	full_name:            String,
 	state:                UserState,
 	last_login:           NaiveDateTime,
+	email:                String,
 	pending_email:        String,
 	pending_email_token:  String,
 	pending_email_expiry: NaiveDateTime,
@@ -317,6 +318,7 @@ impl User {
 			username:             user.username,
 			hashed_password:      hash(&user.password, conf.bcrypt_cost)?,
 			full_name:            user.full_name,
+			email:                user.email.clone(),
 			pending_email:        user.email,
 			pending_email_token:  random_token(conf.secure_token_length),
 			pending_email_expiry: Utc::now().naive_utc()
@@ -362,21 +364,6 @@ impl User {
 		self.pending_email_token = None;
 		self.pending_email_expiry = None;
 		self.update(&db).await
-	}
-
-	async fn insert(user: NewUserHashed, db: &DbConn) -> Result<User> {
-		db.run(move |conn| {
-			conn.transaction(|| {
-				// Create a new user
-				diesel::insert_into(users::table)
-					.values(&user)
-					.execute(conn)?;
-				// Fetch the last created user
-				let user = users::table.order(users::id.desc()).first(conn)?;
-				Ok(user)
-			})
-		})
-		.await
 	}
 
 	pub fn change_with(&mut self, change: UserChange) -> Result<()> {
@@ -435,7 +422,9 @@ impl User {
 			.run(move |conn| {
 				users::table
 					.filter(users::state.eq(UserState::PendingApproval))
-					.filter(users::state.eq(UserState::PendingMailConfirmation))
+					.or_filter(
+						users::state.eq(UserState::PendingMailConfirmation),
+					)
 					.count()
 					.first(conn)
 					.map_err(ZauthError::from)

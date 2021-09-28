@@ -570,13 +570,14 @@ async fn limit_pending_users() {
 
 		for i in 0..max_pending {
 			let username = format!("somebody{}", i);
-			common::expect_mail_to(vec!["admin@localhost"], async || {
+			let email = format!("spaghet{}@example.com", i);
+			common::expect_mail_to(vec![&email], async || {
 				let response = post_registration(
 					&http_client,
 					&username,
 					"touchaaaaaaaaaaaaaaa",
 					"maa",
-					&format!("spaghet{}@example.com", i),
+					&email,
 					true,
 				)
 				.await;
@@ -591,8 +592,8 @@ async fn limit_pending_users() {
 
 			assert_eq!(
 				user.state,
-				UserState::PendingApproval,
-				"registered users should be pending for approval"
+				UserState::PendingMailConfirmation,
+				"registered users should be pending for mail confirmation"
 			);
 		}
 
@@ -623,28 +624,62 @@ async fn limit_pending_users() {
 			"user should not be created"
 		);
 
-		// accept one pending, so one slot should be free
+		// confirm one pending email
+		let mut user = User::find_by_username("somebody0".to_string(), &db)
+			.await
+			.expect("pending user");
+		user.state = UserState::PendingMailConfirmation;
+		let _user = user.update(&db).await.expect("confirm user email");
+
+		let username = "somebodyelse";
+		common::dont_expect_mail(async || {
+			let response = post_registration(
+				&http_client,
+				&username,
+				"touchaaaaaaaaaaaaaaa",
+				"maa",
+				"spaghettio@example.com",
+				true,
+			)
+			.await;
+
+			assert_eq!(
+				response.status(),
+				Status::UnprocessableEntity,
+				"user creation should fail because of pending limit"
+			);
+		})
+		.await;
+
+		assert!(
+			User::find_by_username(username.to_string(), &db)
+				.await
+				.is_err(),
+			"user should not be created"
+		);
+
+		// confirm pending user, a free slot should be created
 		let mut user = User::find_by_username("somebody0".to_string(), &db)
 			.await
 			.expect("pending user");
 		user.state = UserState::Active;
 		let _user = user.update(&db).await.expect("activate user");
 
-		let _response =
-			common::expect_mail_to(vec!["admin@localhost"], async || {
-				let response = post_registration(
-					&http_client,
-					&username,
-					"touchaaaaaaaaaaaaaaa",
-					"maa",
-					"spaghettio@example.com",
-					true,
-				)
-				.await;
-
-				assert_eq!(response.status(), Status::Created);
-			})
+		let email = "spaghettio@example.com";
+		let _response = common::expect_mail_to(vec![email], async || {
+			let response = post_registration(
+				&http_client,
+				&username,
+				"touchaaaaaaaaaaaaaaa",
+				"maa",
+				email,
+				true,
+			)
 			.await;
+
+			assert_eq!(response.status(), Status::Created);
+		})
+		.await;
 
 		let user = User::find_by_username(username.to_string(), &db)
 			.await
@@ -652,7 +687,7 @@ async fn limit_pending_users() {
 
 		assert_eq!(
 			user.state,
-			UserState::PendingApproval,
+			UserState::PendingMailConfirmation,
 			"registered users should be pending for approval"
 		);
 	})
@@ -663,7 +698,7 @@ async fn limit_pending_users() {
 async fn user_approval_flow() {
 	common::as_admin(async move |http_client, db, _admin| {
 		let email = String::from("test@example.com");
-		let mut user = User::create(
+		let user = User::create_pending(
 			NewUser {
 				username:    String::from("user"),
 				password:    String::from("password"),
@@ -672,37 +707,11 @@ async fn user_approval_flow() {
 				ssh_key:     None,
 				not_a_robot: true,
 			},
-			common::BCRYPT_COST,
+			&common::config(),
 			&db,
 		)
 		.await
 		.unwrap();
-
-		user.state = UserState::PendingApproval;
-		let user = user
-			.update(&db)
-			.await
-			.expect("set user to pending approval");
-
-		common::expect_mail_to(vec![&email], async || {
-			let response = http_client
-				.post(format!("/users/{}/approve/", user.id))
-				.header(Accept::HTML)
-				.header(ContentType::Form)
-				.dispatch()
-				.await;
-
-			assert_eq!(response.status(), Status::SeeOther);
-		})
-		.await;
-
-		let user = user.reload(&db).await.expect("reload user");
-
-		assert_eq!(
-			user.state,
-			UserState::PendingMailConfirmation,
-			"approved users should have a pending email"
-		);
 
 		let token = user
 			.pending_email_token
@@ -733,9 +742,25 @@ async fn user_approval_flow() {
 
 		assert_eq!(
 			user.state,
-			UserState::Active,
-			"after email is confirmed, user should be activated"
+			UserState::PendingApproval,
+			"after email is confirmed, user should be pending for approval"
 		);
+
+		common::expect_mail_to(vec![&email], async || {
+			let response = http_client
+				.post(format!("/users/{}/approve/", user.id))
+				.header(Accept::HTML)
+				.header(ContentType::Form)
+				.dispatch()
+				.await;
+
+			assert_eq!(response.status(), Status::SeeOther);
+		})
+		.await;
+
+		let user = user.reload(&db).await.expect("reload user");
+
+		assert_eq!(user.state, UserState::Active, "user should be approved");
 	})
 	.await;
 }
