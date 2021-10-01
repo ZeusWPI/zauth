@@ -12,7 +12,7 @@ pub fn home_page<'r>(
 	match session {
 		None => Either::Right(template! {"pages/home.html"}),
 		Some(session) => {
-			Either::Left(Redirect::to(uri!(show_user(session.user.id))))
+			Either::Left(Redirect::to(uri!(show_user(session.user.username))))
 		},
 	}
 }
