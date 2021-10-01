@@ -61,6 +61,7 @@ pub async fn create_session<'r>(
 				Session::create(&user, config.user_session_duration(), &db)
 					.await?;
 			SessionCookie::new(session).login(cookies);
+			user.update_last_login(&db).await?;
 			Ok(Either::Left(stored_redirect_or(cookies, uri!(home_page))))
 		},
 		Err(err) => Err(err),
