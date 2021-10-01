@@ -395,6 +395,11 @@ impl User {
 		Self::find(self.id, db).await
 	}
 
+	pub async fn update_last_login(mut self, db: &DbConn) -> Result<Self> {
+		self.last_login = Utc::now().naive_utc();
+		self.update(db).await
+	}
+
 	pub async fn find(id: i32, db: &DbConn) -> Result<User> {
 		db.run(move |conn| {
 			users::table.find(id).first(conn).map_err(ZauthError::from)
