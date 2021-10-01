@@ -17,6 +17,7 @@
           later or contact an admin to create a new account.
       </div>
     {% else %}
+
     <!-- Error messages -->
     {% match errors %}
     {% when Some with (errors) %}
@@ -36,17 +37,17 @@
       <form class="form mb-2" action="/register" method="post">
         <div class="field">
           <label class="label">Username</label>
-          <input class="input" name="username" type="text" placeholder="username" required />
+          <input class="input" name="username" type="text" placeholder="Username" required />
+          <p class="help">You can freely choose this. Username should begin with a lowercase letter, then continue with two or more lowercase letters/numbers</p>
         </div>
-        <p class="help">You can freely choose this. Username should begin with a lowercase letter, then continue with two or more lowercase letters/numbers</p>
 
-	<div class="field">
+	      <div class="field">
           <label class="label">Full Name</label>
           <input class="input" name="full_name" type="text" placeholder="Firstname Lastname" required />
+          <p class="help">In the format "Firstname Lastname" if possible</p>
         </div>
-        <p class="help">In the format "Firstname Lastname" if possible</p>
 
-	<div class="field">
+	      <div class="field">
           <label class="label">Email</label>
           <input class="input" name="email" type="email" placeholder="example@example.com" required />
         </div>
@@ -76,7 +77,7 @@
 </div>
 
 <script>
-  function greetNotARobot(event) {    
+  function greetNotARobot(event) {
     if (event.target.checked) {
       alert("Hi not a robot! We're Zeus WPI!")
     } else {
