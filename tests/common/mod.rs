@@ -12,6 +12,7 @@ use diesel::RunQueryDsl;
 use parking_lot::Mutex;
 use std::str::FromStr;
 
+use crate::common::zauth::config::Config;
 use crate::common::zauth::models::client::*;
 use crate::common::zauth::models::user::*;
 use crate::common::zauth::DbConn;
@@ -28,10 +29,28 @@ pub type HttpClient = rocket::local::asynchronous::Client;
 // serialize tests.
 static DB_LOCK: Mutex<()> = Mutex::new(());
 
-pub const BCRYPT_COST: u32 = 4;
-
 pub fn url(content: &str) -> String {
 	urlencoding::encode(content).into_owned()
+}
+
+pub static BCRYPT_COST: u32 = 4;
+
+pub fn config() -> Config {
+	Config {
+		admin_email: "admin@example.com".to_string(),
+		user_session_seconds: 300,
+		client_session_seconds: 300,
+		authorization_token_seconds: 300,
+		email_confirmation_token_seconds: 300,
+		secure_token_length: 64,
+		bcrypt_cost: BCRYPT_COST,
+		base_url: "example.com".to_string(),
+		mail_queue_size: 10,
+		mail_queue_wait_seconds: 0,
+		mail_from: "zauth@example.com".to_string(),
+		mail_server: "stub".to_string(),
+		maximum_pending_users: 5,
+	}
 }
 
 async fn reset_db(db: &DbConn) {

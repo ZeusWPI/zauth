@@ -1,10 +1,13 @@
 Hi {{name}}
 
-Your account has been approved by an admin. Please finalize your registration
-by clicking on the following link to confirm your email:
+Welcome at Zeus WPI!
+Please confirm your email by clicking the following link:
 {{confirm_url}}
 
-Enjoy your time with Zeus WPI!
+After your email has been confirmed, an admin will need to approve your account. Once your account is approved, you will receive another email saying your account has been activated, after which you can enjoy the Zeus services.
+
+While waiting, you can create an account on our chat server over at
+https://mattermost.zeus.gent
 
 Kind regards
 The Zeus Authentication Server
