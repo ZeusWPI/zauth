@@ -31,6 +31,7 @@
         postgresql
         pgcli
         diesel-cli
+        nodePackages.npm
         python3
         python3Packages.flask
         (
