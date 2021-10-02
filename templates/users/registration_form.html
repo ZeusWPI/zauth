@@ -37,17 +37,13 @@
       <form class="form mb-2" action="/register" method="post">
         <div class="field">
           <label class="label">Username</label>
-          <input class="input" name="username" type="text" placeholder="Username" required />
-          <p class="help">You can freely choose this. Username should begin with a lowercase letter, then continue with two or more lowercase letters/numbers</p>
+          <input class="input" name="username" type="text" placeholder="username" minlength="3" maxlength="32" pattern="[a-z][a-z0-9_-]{2,32}" title="Username may only contain alphanumeric characters, hyphens or underscores, and must begin with a letter." required />
         </div>
-
-	      <div class="field">
-          <label class="label">Full Name</label>
-          <input class="input" name="full_name" type="text" placeholder="Firstname Lastname" required />
-          <p class="help">In the format "Firstname Lastname" if possible</p>
+        <div class="field">
+          <label class="label">Full name</label>
+          <input class="input" name="full_name" type="text" placeholder="Firstname Lastname" minlength="3" maxlength="254" title="In the format 'Firstname Lastname' if possible" required />
         </div>
-
-	      <div class="field">
+        <div class="field">
           <label class="label">Email</label>
           <input class="input" name="email" type="email" placeholder="example@example.com" required />
         </div>
