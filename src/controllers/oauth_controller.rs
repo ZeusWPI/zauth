@@ -224,7 +224,7 @@ pub struct TokenSuccess {
 pub struct TokenFormData {
 	grant_type:    String,
 	code:          String,
-	redirect_uri:  Option<String>,
+	redirect_uri:  String,
 	client_id:     Option<String>,
 	client_secret: Option<String>,
 }
@@ -238,7 +238,13 @@ pub async fn token(
 	db: DbConn,
 ) -> Result<Json<TokenSuccess>> {
 	let data = form.into_inner();
+
+	if !data.grant_type.eq("authorization_code") {
+		return Err(ZauthError::from(OAuthError::GrantTypeMismatch));
+	}
+
 	let token = data.code.clone();
+	let data_redirect_uri = data.redirect_uri.clone();
 	let token_store = token_state.inner();
 
 	let auth = auth
@@ -262,12 +268,20 @@ pub async fn token(
 	let token = token_store
 		.fetch_token(token)
 		.await
-		.ok_or(ZauthError::from(AuthenticationError::InvalidGrant(
+		.ok_or(ZauthError::from(OAuthError::InvalidGrant(
 			"incorrect token".to_string(),
 		)))?
 		.item;
 
-	if client.id == token.client_id {
+	if client.id != token.client_id {
+		Err(ZauthError::from(OAuthError::InvalidGrant(
+			"token was not authorized to this client".to_string(),
+		)))
+	} else if token.redirect_uri != data_redirect_uri {
+		Err(ZauthError::from(OAuthError::InvalidGrant(
+			"redirect uri does not match".to_string(),
+		)))
+	} else {
 		let user = User::find(token.user_id, &db).await?;
 		let session =
 			Session::create_client_session(&user, &client, &config, &db)
@@ -277,9 +291,5 @@ pub async fn token(
 			token_type:   String::from("bearer"),
 			expires_in:   config.client_session_seconds,
 		}))
-	} else {
-		Err(ZauthError::from(AuthenticationError::InvalidGrant(
-			"token was not authorized to this client".to_string(),
-		)))
 	}
 }
