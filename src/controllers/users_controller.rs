@@ -225,17 +225,19 @@ pub async fn set_approved<'r>(
 
 	let login_url = uri!(conf.base_url(), new_session);
 
-	mailer.create(
-		&user,
-		String::from("[Zauth] Your account has been approved"),
-		template!(
-		"mails/user_approved.txt";
-		name: String = user.full_name.to_string(),
-		login_url: String = login_url.to_string(),
+	mailer
+		.create(
+			&user,
+			String::from("[Zauth] Your account has been approved"),
+			template!(
+			"mails/user_approved.txt";
+			name: String = user.full_name.to_string(),
+			login_url: String = login_url.to_string(),
+			)
+			.render()
+			.map_err(InternalError::from)?,
 		)
-		.render()
-		.map_err(InternalError::from)?,
-	)?;
+		.await?;
 
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user(user.id))),
