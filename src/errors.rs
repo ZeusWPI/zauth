@@ -232,8 +232,6 @@ pub enum AuthenticationError {
 	Unauthorized(String),
 	#[error("Authentication failed")]
 	AuthFailed,
-	#[error("Invalid grant {0}")]
-	InvalidGrant(String),
 	#[error("Session expired")]
 	SessionExpired,
 }
@@ -258,8 +256,12 @@ pub enum OAuthError {
 	InvalidCookie,
 	#[error("Only response_type=code is supported")]
 	ResponseTypeMismatch,
+	#[error("Only grant_type=authorization_code is supported")]
+	GrantTypeMismatch,
 	#[error("Invalid request")]
 	InvalidRequest,
+	#[error("Invalid grant: {0}")]
+	InvalidGrant(String),
 }
 
 pub enum Either<R, E> {
