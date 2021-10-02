@@ -134,7 +134,6 @@ impl<'r> FromRequest<'r> for UserSession {
 #[derive(Debug)]
 pub struct AdminSession {
 	pub admin: User,
-	session:   Session,
 }
 
 #[rocket::async_trait]
@@ -147,10 +146,7 @@ impl<'r> FromRequest<'r> for AdminSession {
 		let session = try_outcome!(request.guard::<UserSession>().await);
 		let user: User = session.user;
 		if user.admin {
-			Outcome::Success(AdminSession {
-				admin:   user,
-				session: session.session,
-			})
+			Outcome::Success(AdminSession { admin: user })
 		} else {
 			Outcome::Failure((Status::Forbidden, "user is not an admin"))
 		}
@@ -161,7 +157,6 @@ impl<'r> FromRequest<'r> for AdminSession {
 pub struct ClientSession {
 	pub user:   User,
 	pub client: Client,
-	session:    Session,
 }
 
 #[rocket::async_trait]
@@ -202,11 +197,9 @@ impl<'r> FromRequest<'r> for ClientSession {
 		match Session::find_by_key(key.to_string(), &db).await {
 			Ok(session) => match session.user(&db).await {
 				Ok(user) => match session.client(&db).await {
-					Ok(Some(client)) => Outcome::Success(ClientSession {
-						user,
-						client,
-						session,
-					}),
+					Ok(Some(client)) => {
+						Outcome::Success(ClientSession { user, client })
+					},
 					_ => Outcome::Failure((
 						Status::Unauthorized,
 						"there is no client associated to this client session",
@@ -229,7 +222,6 @@ impl<'r> FromRequest<'r> for ClientSession {
 pub struct ClientOrUserSession {
 	pub user:   User,
 	pub client: Option<Client>,
-	session:    Session,
 }
 
 #[rocket::async_trait]
@@ -242,17 +234,15 @@ impl<'r> FromRequest<'r> for ClientOrUserSession {
 		match request.guard::<UserSession>().await {
 			Outcome::Success(session) => {
 				Outcome::Success(ClientOrUserSession {
-					user:    session.user,
-					client:  None,
-					session: session.session,
+					user:   session.user,
+					client: None,
 				})
 			},
 			_ => match request.guard::<ClientSession>().await {
 				Outcome::Success(session) => {
 					Outcome::Success(ClientOrUserSession {
-						user:    session.user,
-						client:  Some(session.client),
-						session: session.session,
+						user:   session.user,
+						client: Some(session.client),
 					})
 				},
 				_ => Outcome::Failure((
