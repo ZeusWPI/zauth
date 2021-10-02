@@ -22,7 +22,11 @@ services:
       - zauth-database:/var/lib/postgresql/data
     ports:
       - 127.0.0.1:5432:5432
-    options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    healthcheck:
+      test: "pg_isready -U zauth"
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   adminer:
     image: adminer:latest
