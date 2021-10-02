@@ -347,14 +347,16 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 					template! { "users/reset_password_success.html" },
 				))
 			},
-			Err(err) => {
-				let template = template! {
+
+			Err(ZauthError::ValidationError(errors)) => Ok(OneOf::Two(Custom(
+				Status::UnprocessableEntity,
+				template! {
 					"users/reset_password_form.html";
 					token: String = form.token,
-					errors: Option<String> = Some(err.to_string()),
-				};
-				Ok(OneOf::Two(Custom(Status::UnprocessableEntity, template)))
-			},
+					errors: Option<ValidationErrors> = Some(errors.clone()),
+				},
+			))),
+			Err(other) => Err(other),
 		}
 	} else {
 		let template = template! { "users/reset_password_invalid.html" };
