@@ -81,6 +81,7 @@ pub struct User {
 	#[validate(length(min = 3, max = 254))]
 	pub full_name:             String,
 	#[validate(email)]
+	#[serde(skip)] // Don't send backing email address of users, applications could accidentally use this
 	pub email:                 String,
 	#[serde(skip)]
 	pub pending_email:         Option<String>,
