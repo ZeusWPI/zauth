@@ -749,7 +749,7 @@ async fn user_approval_flow() {
 
 		common::expect_mail_to(vec![&email], async || {
 			let response = http_client
-				.post(format!("/users/{}/approve/", user.id))
+				.post(format!("/users/{}/approve/", user.username))
 				.header(Accept::HTML)
 				.header(ContentType::Form)
 				.dispatch()
