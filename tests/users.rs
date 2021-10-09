@@ -221,7 +221,7 @@ async fn make_admin() {
 		);
 
 		let updated =
-				User::find_by_username(other.username, &db).await.unwrap();
+			User::find_by_username(other.username, &db).await.unwrap();
 
 		assert!(updated.admin, "other user should be admin now");
 	})
