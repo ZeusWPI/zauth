@@ -32,6 +32,7 @@
         pgcli
         diesel-cli
         nodePackages.npm
+        nodejs
         python3
         python3Packages.flask
         (

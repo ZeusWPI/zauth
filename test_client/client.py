@@ -8,10 +8,10 @@ import requests as requests
 from flask import Flask, redirect, request
 
 CLIENT_PORT = 8001
-CLIENT_ID = os.environ["CLIENT_ID"] or "test"
-CLIENT_SECRET = os.environ["CLIENT_SECRET"] or "CHANGE ME"
+CLIENT_ID = os.environ.get("CLIENT_ID", "test")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET", "CHANGE ME")
 
-ZAUTH_BASE_URL = "http://localhost:8000"
+ZAUTH_BASE_URL = "http://zauth.localhost:8000"
 
 app = Flask(__name__)
 
@@ -24,7 +24,7 @@ def authenticate_params():
     return {
         "client_id": CLIENT_ID,
         "response_type": "code",
-        "redirect_uri": f"http://localhost:{CLIENT_PORT}/callback",
+        "redirect_uri": f"http://client.localhost:{CLIENT_PORT}/callback",
         "state": state
     }
 
@@ -62,8 +62,9 @@ def authenticate():
 def fetch_token(code):
     auth = (CLIENT_ID, CLIENT_SECRET)
     data = {
-        "grant_type": "code",
+        "grant_type": "authorization_code",
         "code": code,
+        "redirect_uri": f"http://client.localhost:{CLIENT_PORT}/callback",
     }
     return requests.post(f"{ZAUTH_BASE_URL}/oauth/token", auth=auth, data=data)
 
