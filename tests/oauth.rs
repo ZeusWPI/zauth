@@ -67,7 +67,7 @@ async fn normal_flow() {
 
 		// 1. User is redirected to OAuth server with request params given by
 		// the client
-		// The OAuth server should respond with a redirect the login page.
+		// The OAuth server should respond with the authorize page
 		let authorize_url = format!(
 			"/oauth/authorize?response_type=code&redirect_uri={}&client_id={}&\
 			 state={}",
@@ -77,7 +77,16 @@ async fn normal_flow() {
 		);
 		let response = http_client.get(authorize_url).dispatch().await;
 
-		assert_eq!(response.status(), Status::SeeOther);
+		assert_eq!(response.status(), Status::Ok);
+
+		// 2. User accepts authorization to client
+		// Server should respond with login redirect.
+		let response = http_client
+			.post("/oauth/authorize")
+			.body("authorized=true")
+			.header(ContentType::Form)
+			.dispatch()
+			.await;
 		let login_location = response
 			.headers()
 			.get_one("Location")
@@ -85,13 +94,13 @@ async fn normal_flow() {
 
 		assert!(login_location.starts_with("/login"));
 
-		// 2. User requests the login page
+		// 3. User requests the login page
 		let response = http_client.get(login_location).dispatch().await;
 
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(response.content_type(), Some(ContentType::HTML));
 
-		// 3. User posts it credentials to the login path
+		// 4. User posts it credentials to the login path
 		let login_url = "/login";
 		let form_body = format!(
 			"username={}&password={}",
@@ -114,13 +123,13 @@ async fn normal_flow() {
 
 		assert!(grant_location.starts_with("/oauth/grant"));
 
-		// 4. User requests grant page
+		// 5. User requests grant page
 		let response = http_client.get(grant_location).dispatch().await;
 
 		assert_eq!(response.status(), Status::Ok);
 		assert_eq!(response.content_type(), Some(ContentType::HTML));
 
-		// 5. User posts to grant page
+		// 6. User posts to grant page
 		let grant_url = "/oauth/grant";
 		let grant_form_body = String::from("grant=true");
 
@@ -161,7 +170,7 @@ async fn normal_flow() {
 
 		assert_eq!(response.status(), Status::SeeOther);
 
-		// 6a. Client requests access code while sending its credentials
+		// 7a. Client requests access code while sending its credentials
 		//     trough HTTP Auth.
 		let token_url = "/oauth/token";
 		let form_body = format!(
@@ -199,7 +208,7 @@ async fn normal_flow() {
 		assert!(data["token_type"].is_string());
 		assert_eq!(data["token_type"], "bearer");
 
-		// 6b. Client requests access code while sending its credentials
+		// 7b. Client requests access code while sending its credentials
 		//     trough the form body.
 
 		// First, re-create a token
