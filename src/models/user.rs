@@ -108,7 +108,10 @@ lazy_static! {
 pub struct NewUser {
 	#[validate(regex = "NEW_USER_REGEX")]
 	pub username:    String,
-	#[validate(length(min = 8, message = "Password too short"))]
+	#[validate(length(
+		min = 8,
+		message = "Password too short, must be at least 8 characters"
+	))]
 	pub password:    String,
 	#[validate(length(min = 3, max = 254))]
 	pub full_name:   String,
@@ -162,7 +165,10 @@ pub struct ChangeAdmin {
 
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct ChangePassword {
-	#[validate(length(min = 8, message = "Password too short"))]
+	#[validate(length(
+		min = 8,
+		message = "Password too short, must be at least 8 characters"
+	))]
 	pub password: String,
 }
 
