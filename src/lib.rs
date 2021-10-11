@@ -94,6 +94,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				clients_controller::create_client,
 				clients_controller::delete_client,
 				oauth_controller::authorize,
+				oauth_controller::do_authorize,
 				oauth_controller::grant_get,
 				oauth_controller::grant_post,
 				oauth_controller::token,

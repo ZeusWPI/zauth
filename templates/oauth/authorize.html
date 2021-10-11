@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+<!-- Content -->
+{% block content %}
+<div class="card-page">
+  <div class="card-page-content">
+
+    <!-- Logo -->
+    <a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
+      <img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
+    </a>
+
+    <div class="card-page-card">
+      <!-- Title -->
+      <div class="title">
+        Authorize for {{ client_name }}?
+      </div>
+
+      <!-- Subtitle -->
+      <div class="subtitle">
+        Are you sure you want to log in with your Zeus account?
+      </div>
+
+      <!-- Form -->
+      <form class="is-flex" action="authorize" method="post">
+        <button class="button is-success is-medium" type="submit" name="authorized" value="true">Yes</button>
+        <button class="button is-danger is-medium ml-2" type="submit" name="authorized" value="false">No</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}

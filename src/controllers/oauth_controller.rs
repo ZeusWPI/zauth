@@ -93,11 +93,11 @@ pub struct AuthorizationRequest {
 }
 
 #[get("/oauth/authorize?<req..>")]
-pub async fn authorize(
+pub async fn authorize<'r>(
 	cookies: &CookieJar<'_>,
 	req: AuthorizationRequest,
 	db: DbConn,
-) -> Result<Redirect> {
+) -> Result<impl Responder<'r, 'static>> {
 	if !req.response_type.eq("code") {
 		// This was NotImplemented error, but it makes no sense for a authorise
 		// function not to return an AuthResult
@@ -108,9 +108,13 @@ pub async fn authorize(
 		Client::find_by_name(req.client_id.to_owned(), &db).await
 	{
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
+			let client_name = client.name.clone();
 			let state = AuthState::from_req(client, req);
 			cookies.add_private(state.into_cookie()?);
-			Ok(ensure_logged_in_and_redirect(cookies, uri!(grant_get)))
+			Ok(template! {
+				"oauth/authorize.html";
+				client_name: String = client_name,
+			})
 		} else {
 			Err(AuthenticationError::Unauthorized(format!(
 				"client with id {} is not authorized to use redirect_uri '{}'",
@@ -124,6 +128,24 @@ pub async fn authorize(
 			req.client_id
 		))
 		.into())
+	}
+}
+
+#[derive(FromForm, Debug)]
+pub struct AuthorizeFormData {
+	authorized: bool,
+}
+
+#[post("/oauth/authorize", data = "<form>")]
+pub async fn do_authorize(
+	cookies: &CookieJar<'_>,
+	form: Form<AuthorizeFormData>,
+) -> Result<Redirect> {
+	let state = AuthState::from_cookies(cookies)?;
+	if form.into_inner().authorized {
+		Ok(ensure_logged_in_and_redirect(cookies, uri!(grant_get)))
+	} else {
+		Ok(authorization_denied(state))
 	}
 }
 
