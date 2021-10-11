@@ -65,7 +65,7 @@ async fn show_user_as_user() {
 		.unwrap();
 
 		let response = http_client
-			.get(format!("/users/{}", other.id))
+			.get(format!("/users/{}", other.username))
 			.dispatch()
 			.await;
 
@@ -76,7 +76,7 @@ async fn show_user_as_user() {
 		);
 
 		let response = http_client
-			.get(format!("/users/{}", user.id))
+			.get(format!("/users/{}", user.username))
 			.dispatch()
 			.await;
 
@@ -108,7 +108,7 @@ async fn show_user_as_admin() {
 		.unwrap();
 
 		let response = http_client
-			.get(format!("/users/{}", other.id))
+			.get(format!("/users/{}", other.username))
 			.dispatch()
 			.await;
 
@@ -119,7 +119,7 @@ async fn show_user_as_admin() {
 		);
 
 		let response = http_client
-			.get(format!("/users/{}", admin.id))
+			.get(format!("/users/{}", admin.username))
 			.dispatch()
 			.await;
 
@@ -136,7 +136,7 @@ async fn show_user_as_admin() {
 async fn update_self() {
 	common::as_user(async move |http_client, db, user| {
 		let response = http_client
-			.put(format!("/users/{}", user.id))
+			.put(format!("/users/{}", user.username))
 			.header(ContentType::Form)
 			.header(Accept::JSON)
 			.body("ssh_key=ssh-rsa%20supersecretkey")
@@ -149,7 +149,7 @@ async fn update_self() {
 			"user should be able to edit themself"
 		);
 
-		let updated = User::find(user.id, &db).await.unwrap();
+		let updated = User::find_by_username(user.username, &db).await.unwrap();
 
 		assert_eq!(
 			Some(String::from("ssh-rsa supersecretkey")),
@@ -172,7 +172,7 @@ async fn update_self() {
 		.unwrap();
 
 		let response = http_client
-			.put(format!("/users/{}", other.id))
+			.put(format!("/users/{}", other.username))
 			.header(ContentType::Form)
 			.header(Accept::JSON)
 			.body("ssh_key=ssh-rsa%20supersecretkey")
@@ -207,7 +207,7 @@ async fn make_admin() {
 		.unwrap();
 
 		let response = http_client
-			.post(format!("/users/{}/admin", other.id))
+			.post(format!("/users/{}/admin", other.username))
 			.header(ContentType::Form)
 			.header(Accept::JSON)
 			.body("admin=true")
@@ -220,7 +220,8 @@ async fn make_admin() {
 			"admin should be able to make other admin"
 		);
 
-		let updated = User::find(other.id, &db).await.unwrap();
+		let updated =
+			User::find_by_username(other.username, &db).await.unwrap();
 
 		assert!(updated.admin, "other user should be admin now");
 	})
@@ -246,7 +247,7 @@ async fn try_make_admin() {
 		.unwrap();
 
 		let response = http_client
-			.post(format!("/users/{}/admin", other.id))
+			.post(format!("/users/{}/admin", other.username))
 			.header(ContentType::Form)
 			.header(Accept::JSON)
 			.body("admin=true")
@@ -748,7 +749,7 @@ async fn user_approval_flow() {
 
 		common::expect_mail_to(vec![&email], async || {
 			let response = http_client
-				.post(format!("/users/{}/approve/", user.id))
+				.post(format!("/users/{}/approve/", user.username))
 				.header(Accept::HTML)
 				.header(ContentType::Form)
 				.dispatch()

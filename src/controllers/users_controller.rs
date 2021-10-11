@@ -33,15 +33,16 @@ pub fn current_user_as_client(session: ClientSession) -> Json<User> {
 	Json(session.user)
 }
 
-#[get("/users/<id>")]
+#[get("/users/<username>")]
 pub async fn show_user<'r>(
 	session: UserSession,
 	db: DbConn,
-	id: i32,
+	username: String,
 ) -> Result<impl Responder<'r, 'static>> {
-	let user = User::find(id, &db).await?;
+	// Cloning the username is necessary because it's used later
+	let user = User::find_by_username(username.clone(), &db).await?;
 	// Check whether the current session is allowed to view this user
-	if session.user.admin || session.user.id == id {
+	if session.user.admin || session.user.username == username {
 		Ok(Accepter {
 			html: template!("users/show.html";
 							user: User = user.clone(),
@@ -51,8 +52,8 @@ pub async fn show_user<'r>(
 		})
 	} else {
 		Err(ZauthError::not_found(&format!(
-			"User with id {} not found",
-			id
+			"User with username {} not found",
+			username
 		)))
 	}
 }
@@ -98,8 +99,9 @@ pub async fn create_user<'r>(
 	let user = User::create(user.into_inner(), config.bcrypt_cost, &db)
 		.await
 		.map_err(ZauthError::from)?;
+	// Cloning the username is necessary because it's used later
 	Ok(Accepter {
-		html: Redirect::to(uri!(show_user(user.id))),
+		html: Redirect::to(uri!(show_user(user.username.clone()))),
 		json: Json(user),
 	})
 }
@@ -171,9 +173,9 @@ pub async fn register<'r>(
 	}
 }
 
-#[put("/users/<id>", data = "<change>")]
+#[put("/users/<username>", data = "<change>")]
 pub async fn update_user<'r>(
-	id: i32,
+	username: String,
 	change: Api<UserChange>,
 	session: UserSession,
 	db: DbConn,
@@ -183,12 +185,12 @@ pub async fn update_user<'r>(
 		Custom<impl Debug + Responder<'r, 'static>>,
 	>,
 > {
-	let mut user = User::find(id, &db).await?;
+	let mut user = User::find_by_username(username, &db).await?;
 	if session.user.id == user.id || session.user.admin {
 		user.change_with(change.into_inner())?;
 		let user = user.update(&db).await?;
 		Ok(Left(Accepter {
-			html: Redirect::to(uri!(show_user(user.id))),
+			html: Redirect::to(uri!(show_user(user.username))),
 			json: Custom(Status::NoContent, ()),
 		}))
 	} else {
@@ -196,31 +198,31 @@ pub async fn update_user<'r>(
 	}
 }
 
-#[post("/users/<id>/admin", data = "<value>")]
+#[post("/users/<username>/admin", data = "<value>")]
 pub async fn set_admin<'r>(
-	id: i32,
+	username: String,
 	value: Api<ChangeAdmin>,
 	_session: AdminSession,
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
-	let mut user = User::find(id, &db).await?;
+	let mut user = User::find_by_username(username, &db).await?;
 	user.admin = value.into_inner().admin;
 	let user = user.update(&db).await?;
 	Ok(Accepter {
-		html: Redirect::to(uri!(show_user(user.id))),
+		html: Redirect::to(uri!(show_user(user.username))),
 		json: Custom(Status::NoContent, ()),
 	})
 }
 
-#[post("/users/<id>/approve")]
+#[post("/users/<username>/approve")]
 pub async fn set_approved<'r>(
-	id: i32,
+	username: String,
 	_session: AdminSession,
 	mailer: &'r State<Mailer>,
 	conf: &'r State<Config>,
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
-	let user = User::find(id, &db).await?;
+	let user = User::find_by_username(username, &db).await?;
 	let user = user.approve(&db).await?;
 
 	let login_url = uri!(conf.base_url(), new_session);
@@ -240,7 +242,7 @@ pub async fn set_approved<'r>(
 		.await?;
 
 	Ok(Accepter {
-		html: Redirect::to(uri!(show_user(user.id))),
+		html: Redirect::to(uri!(show_user(user.username))),
 		json: Custom(Status::NoContent, ()),
 	})
 }

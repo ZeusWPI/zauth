@@ -41,7 +41,7 @@
 					<tr>
 						<!-- Username -->
 						<td data-label="Username">
-							<a href="/users/{{ user.id }}">{{ user.username }}</a>
+							<a href="/users/{{ user.username }}">{{ user.username }}</a>
 						</td>
 
 						<!-- Fullname -->
@@ -55,7 +55,7 @@
 
 						<!-- Approve -->
 						<td>
-							<form action="/users/{{ user.id }}/approve" method="post">
+							<form action="/users/{{ user.username }}/approve" method="post">
 								<button class="button is-success is-small" type="submit">Approve</button>
 							</form>
 						</td>
@@ -107,7 +107,7 @@
 
 						<!-- Username -->
 						<td data-label="Username">
-							<a href="/users/{{ user.id }}">{{ user.username }}</a>
+							<a href="/users/{{ user.username }}">{{ user.username }}</a>
 						</td>
 
 						<!-- Is Admin -->
@@ -131,7 +131,7 @@
 						<td data-label="SSH Keys">
 							{% match user.ssh_key %}
 								{% when Some with (val) %}
-									<a class="button is-small is-light" href="#ssh-key-{{ user.id }}">View</a>
+									<a class="button is-small is-light" href="#ssh-key-{{ user.username }}">View</a>
 								{% when None %}
 
 								N/A
@@ -162,7 +162,7 @@
 					<!-- SSH Key Spoiler -->
 					{% match user.ssh_key %}
 						{% when Some with (val) %}
-							<div class="modal modal-target" id="ssh-key-{{ user.id }}">
+							<div class="modal modal-target" id="ssh-key-{{ user.username }}">
 								<a class="modal-background" href="#"></a>
 
 								<div class="modal-card">

@@ -15,7 +15,7 @@
       </div>
 
       <div class="navbar-end">
-        <a class="navbar-item" href="/users/{{ current_user.id }}">Profile</a>
+        <a class="navbar-item" href="/users/{{ current_user.username }}">Profile</a>
 
         {% if current_user.admin %}
           <a class="navbar-item" href="/users/">Users</a>

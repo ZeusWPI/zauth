@@ -264,7 +264,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
       operationId: get-current_user
-  '/users/{id}':
+  '/users/{username}':
     get:
       summary: Show user
       tags: []
@@ -295,7 +295,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UserChange'
-  '/users/{id}/admin':
+  '/users/{username}/admin':
     parameters:
       - schema:
           type: number
