@@ -6,11 +6,11 @@ use crate::models::user::User;
 use askama::Template;
 use lettre::message::Mailbox;
 use rocket::tokio::sync::mpsc;
-use rocket::tokio::sync::mpsc::Receiver;
+use rocket::tokio::sync::mpsc::UnboundedReceiver;
 
 #[derive(Clone)]
 pub struct Hooker {
-	queue: mpsc::Sender<User>,
+	queue: mpsc::UnboundedSender<User>,
 }
 
 impl Hooker {
@@ -19,7 +19,9 @@ impl Hooker {
 		mailer: &Mailer,
 		admin_email: &AdminEmail,
 	) -> Result<Hooker> {
-		let (sender, recv) = mpsc::channel(5); // TODO(chvp): actual size limit
+		// Webhooks are only triggered by admin actions, so no need to worry
+		// about abuse
+		let (sender, recv) = mpsc::unbounded_channel();
 
 		if let Some(url) = &config.webhook_url {
 			rocket::tokio::spawn(Self::http_sender(
@@ -38,12 +40,11 @@ impl Hooker {
 	pub async fn user_approved(&self, user: &User) -> Result<()> {
 		self.queue
 			.send(user.clone())
-			.await
 			.map_err(|e| ZauthError::from(InternalError::from(e)))
 	}
 
 	fn stub_sender(
-		mut receiver: Receiver<User>,
+		mut receiver: UnboundedReceiver<User>,
 	) -> impl std::future::Future<Output = impl Send + 'static> {
 		async move {
 			// no URL configured, so we just drop the received users
@@ -53,7 +54,7 @@ impl Hooker {
 
 	fn http_sender(
 		url: String,
-		mut receiver: Receiver<User>,
+		mut receiver: UnboundedReceiver<User>,
 		admin_email: Mailbox,
 		mailer: Mailer,
 	) -> impl std::future::Future<Output = impl Send + 'static> {
