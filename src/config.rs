@@ -19,7 +19,7 @@ pub struct Config {
 	pub mail_from: String,
 	pub mail_server: String,
 	pub maximum_pending_users: usize,
-	pub webhook_url: String,
+	pub webhook_url: Option<String>,
 }
 
 impl Config {
@@ -41,10 +41,6 @@ impl Config {
 
 	pub fn base_url(&self) -> Absolute<'_> {
 		Absolute::parse(&self.base_url).expect("valid base_url")
-	}
-
-	pub fn webhook_url(&self) -> Absolute<'_> {
-		Absolute::parse(&self.webhook_url).expect("valid webhook_url")
 	}
 }
 

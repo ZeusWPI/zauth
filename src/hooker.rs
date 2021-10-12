@@ -1,16 +1,16 @@
 use crate::config::{AdminEmail, Config};
-use crate::errors::{InternalError, Result};
+use crate::errors::{InternalError, Result, ZauthError};
 use crate::mailer::Mailer;
 use crate::models::user::User;
 
 use askama::Template;
 use lettre::message::Mailbox;
+use rocket::tokio::sync::mpsc;
+use rocket::tokio::sync::mpsc::Receiver;
 
 #[derive(Clone)]
 pub struct Hooker {
-	admin_email: Mailbox,
-	url:         String,
-	mailer:      Mailer,
+	queue: mpsc::Sender<User>,
 }
 
 impl Hooker {
@@ -19,20 +19,68 @@ impl Hooker {
 		mailer: &Mailer,
 		admin_email: &AdminEmail,
 	) -> Result<Hooker> {
-		Ok(Hooker {
-			admin_email: admin_email.0.clone(),
-			url:         config.webhook_url.clone(),
-			mailer:      mailer.clone(),
-		})
+		let (sender, recv) = mpsc::channel(5); // TODO(chvp): actual size limit
+
+		if let Some(url) = &config.webhook_url {
+			rocket::tokio::spawn(Self::http_sender(
+				url.into(),
+				recv,
+				admin_email.0.clone(),
+				mailer.clone(),
+			));
+		} else {
+			rocket::tokio::spawn(Self::stub_sender(recv));
+		}
+
+		Ok(Hooker { queue: sender })
 	}
 
 	pub async fn user_approved(&self, user: &User) -> Result<()> {
-		let client = reqwest::Client::new();
-		if let Err(err) = client.post(self.url.clone()).json(user).send().await
-		{
-			self.mailer
+		self.queue
+			.send(user.clone())
+			.await
+			.map_err(|e| ZauthError::from(InternalError::from(e)))
+	}
+
+	fn stub_sender(
+		mut receiver: Receiver<User>,
+	) -> impl std::future::Future<Output = impl Send + 'static> {
+		async move {
+			// no URL configured, so we just drop the received users
+			while let Some(_) = receiver.recv().await {}
+		}
+	}
+
+	fn http_sender(
+		url: String,
+		mut receiver: Receiver<User>,
+		admin_email: Mailbox,
+		mailer: Mailer,
+	) -> impl std::future::Future<Output = impl Send + 'static> {
+		async move {
+			let client = reqwest::Client::new();
+			while let Some(user) = receiver.recv().await {
+				if let Err(err) =
+					Self::do_send(&client, &url, &admin_email, &mailer, &user)
+						.await
+				{
+					println!("Error sending webhook: {:?}", err);
+				}
+			}
+		}
+	}
+
+	async fn do_send(
+		client: &reqwest::Client,
+		url: &str,
+		admin_email: &Mailbox,
+		mailer: &Mailer,
+		user: &User,
+	) -> Result<()> {
+		if let Err(err) = client.post(url.clone()).json(&user).send().await {
+			mailer
 				.create(
-					self.admin_email.clone(),
+					admin_email.clone(),
 					String::from("[Zauth] Confirm webhook failed"),
 					template!(
 						"mails/registration_webhook_failed.txt";

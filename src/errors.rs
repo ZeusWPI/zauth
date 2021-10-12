@@ -10,6 +10,7 @@ use rocket::tokio::sync::mpsc::error::{SendError, TrySendError};
 use std::convert::Infallible;
 use validator::ValidationErrors;
 
+use crate::models::user::User;
 use crate::views::accepter::Accepter;
 
 #[derive(Error, Debug)]
@@ -203,6 +204,8 @@ pub enum InternalError {
 	InvalidEmail(#[from] lettre::address::AddressError),
 	#[error("Mailer error")]
 	MailError(#[from] lettre::error::Error),
+	#[error("Hooker stopped processing items")]
+	HookerStopped(#[from] SendError<User>),
 	#[error("Mailer stopped processing items")]
 	MailerStopped(#[from] SendError<Message>),
 	#[error("Mail queue full")]
