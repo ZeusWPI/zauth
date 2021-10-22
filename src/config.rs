@@ -19,6 +19,7 @@ pub struct Config {
 	pub mail_from: String,
 	pub mail_server: String,
 	pub maximum_pending_users: usize,
+	pub webhook_url: Option<String>,
 }
 
 impl Config {

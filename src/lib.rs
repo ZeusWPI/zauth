@@ -31,6 +31,7 @@ pub mod controllers;
 pub mod db_seed;
 pub mod ephemeral;
 pub mod errors;
+pub mod hooker;
 pub mod http_authentication;
 pub mod mailer;
 pub mod models;
@@ -51,6 +52,7 @@ use crate::db_seed::Seeder;
 use crate::errors::{
 	internal_server_error, not_found, not_implemented, unauthorized,
 };
+use crate::hooker::Hooker;
 use crate::mailer::Mailer;
 use crate::token_store::TokenStore;
 
@@ -82,6 +84,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 	);
 	let token_store = TokenStore::<oauth_controller::UserToken>::new(&config);
 	let mailer = Mailer::new(&config).unwrap();
+	let hooker = Hooker::new(&config, &mailer, &admin_email).unwrap();
 
 	let rocket = rocket
 		.mount(
@@ -133,6 +136,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 		.mount("/static/", FileServer::from("static/"))
 		.manage(token_store)
 		.manage(mailer)
+		.manage(hooker)
 		.manage(admin_email)
 		.attach(DbConn::fairing())
 		.attach(AdHoc::config::<Config>())

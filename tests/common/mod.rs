@@ -50,6 +50,7 @@ pub fn config() -> Config {
 		mail_from: "zauth@example.com".to_string(),
 		mail_server: "stub".to_string(),
 		maximum_pending_users: 5,
+		webhook_url: None,
 	}
 }
 
