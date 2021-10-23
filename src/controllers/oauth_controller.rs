@@ -113,6 +113,7 @@ pub async fn authorize<'r>(
 			cookies.add_private(state.into_cookie()?);
 			Ok(template! {
 				"oauth/authorize.html";
+				authorize_post_url: String = uri!(do_authorize).to_string(),
 				client_name: String = client_name,
 			})
 		} else {
