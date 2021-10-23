@@ -22,7 +22,7 @@
       </div>
 
       <!-- Form -->
-      <form class="is-flex" action="authorize" method="post">
+      <form class="is-flex" action="{{ authorize_post_url }}" method="post">
         <button class="button is-success is-medium" type="submit" name="authorized" value="true">Yes</button>
         <button class="button is-danger is-medium ml-2" type="submit" name="authorized" value="false">No</button>
       </form>
