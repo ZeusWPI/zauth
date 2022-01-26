@@ -237,10 +237,16 @@ fn authorization_denied(state: AuthState) -> Redirect {
 }
 
 #[derive(Serialize, Debug)]
+pub struct Info {
+	user: String,
+}
+
+#[derive(Serialize, Debug)]
 pub struct TokenSuccess {
 	access_token: String,
 	token_type:   String,
 	expires_in:   i64,
+	info:         Info,
 }
 
 #[derive(FromForm, Debug)]
@@ -309,10 +315,14 @@ pub async fn token(
 		let session =
 			Session::create_client_session(&user, &client, &config, &db)
 				.await?;
+		let info = Info {
+			user: user.username.to_string(),
+		};
 		Ok(Json(TokenSuccess {
 			access_token: session.key.unwrap().clone(),
-			token_type:   String::from("bearer"),
-			expires_in:   config.client_session_seconds,
+			token_type: String::from("bearer"),
+			info,
+			expires_in: config.client_session_seconds,
 		}))
 	}
 }
