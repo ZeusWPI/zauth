@@ -30,6 +30,7 @@
 			<thead>
 				<tr>
 					<th>Name</th>
+					<th>Secret</th>
 					<th>Description</th>
 					<th>Needs grant</th>
 					<th></th>
@@ -45,6 +46,7 @@
 							<a href="/clients/{{client.id}}/edit">{{ client.name }}</a>
 						</td>
 
+						<td>{{ client.secret }}</td>
 						<!-- Description -->
 						<td data-label="Description">{{ client.description }}</td>
 
