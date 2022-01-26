@@ -16,8 +16,10 @@ pub struct Mailer {
 	queue: mpsc::Sender<Message>,
 }
 
-pub static STUB_MAILER_OUTBOX: (Mutex<Vec<Message>>, Condvar) =
-	(Mutex::new(vec![]), Condvar::new());
+lazy_static! {
+	pub static ref STUB_MAILER_OUTBOX: (Mutex<Vec<Message>>, Condvar) =
+		(Mutex::new(vec![]), Condvar::new());
+}
 
 impl Mailer {
 	pub fn build<E: Into<ZauthError>, M: TryInto<Mailbox, Error = E>>(
@@ -99,13 +101,12 @@ impl Mailer {
 		async move {
 			while let Some(mail) = receiver.recv().await {
 				{
-					let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
 					println!(
 						"\n==> [STUB MAILER] Sending email:\n\n{}\n",
 						String::from_utf8_lossy(&mail.formatted())
 					);
-					mailbox.lock().push(mail);
-					condvar.notify_all();
+					STUB_MAILER_OUTBOX.0.lock().push(mail);
+					STUB_MAILER_OUTBOX.1.notify_all();
 				}
 
 				// sleep for a while to prevent sending mails too fast

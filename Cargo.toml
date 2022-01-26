@@ -30,9 +30,9 @@ diesel-derive-enum = { version = "1", features = ["postgres"] }
 diesel_migrations = "1.4"
 tempfile = "3.1"
 maplit = "1.0"
-parking_lot = { version = "0.12", features = ["nightly"] }
-thiserror = "1.0"
-threads_pool = "0.2"
+parking_lot = { version = "0.11" }
+thiserror = "1.0.29"
+threads_pool = "0.2.6"
 validator = "0.14"
 validator_derive = "0.14"
 
