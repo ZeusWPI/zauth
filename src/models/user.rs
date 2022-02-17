@@ -1,5 +1,5 @@
 use self::schema::users;
-use crate::errors::{InternalError, LoginError, Result, ZauthError};
+use crate::errors::{self, InternalError, LoginError, ZauthError};
 use crate::DbConn;
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
@@ -11,11 +11,13 @@ use chrono::{NaiveDateTime, Utc};
 use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
-use rocket::serde::Serialize;
+use rocket::{serde::Serialize, FromFormField};
 use std::convert::TryFrom;
 use validator::{Validate, ValidationError, ValidationErrors};
 
-#[derive(DbEnum, Debug, Serialize, Clone, PartialEq)]
+#[derive(
+	DbEnum, Debug, Deserialize, FromFormField, Serialize, Clone, PartialEq,
+)]
 pub enum UserState {
 	PendingApproval,
 	PendingMailConfirmation,
@@ -163,6 +165,11 @@ pub struct ChangeAdmin {
 	pub admin: bool,
 }
 
+#[derive(FromForm, Deserialize, Debug, Clone)]
+pub struct ChangeStatus {
+	pub state: UserState,
+}
+
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct ChangePassword {
 	#[validate(length(
@@ -173,7 +180,7 @@ pub struct ChangePassword {
 }
 
 impl User {
-	pub async fn all(db: &DbConn) -> Result<Vec<User>> {
+	pub async fn all(db: &DbConn) -> errors::Result<Vec<User>> {
 		let all_users =
 			db.run(move |conn| users::table.load::<User>(conn)).await?;
 		Ok(all_users)
@@ -186,7 +193,7 @@ impl User {
 	pub async fn find_by_username<'r>(
 		username: String,
 		db: &DbConn,
-	) -> Result<User> {
+	) -> errors::Result<User> {
 		db.run(move |conn| {
 			users::table
 				.filter(users::username.eq(username))
@@ -196,13 +203,16 @@ impl User {
 		.await
 	}
 
-	pub async fn find_by_email(email: String, db: &DbConn) -> Result<User> {
+	pub async fn find_by_email(
+		email: String,
+		db: &DbConn,
+	) -> errors::Result<User> {
 		let query = users::table.filter(users::email.eq(email));
 		db.run(move |conn| query.first(conn).map_err(ZauthError::from))
 			.await
 	}
 
-	pub async fn delete(self, db: &DbConn) -> Result<()> {
+	pub async fn delete(self, db: &DbConn) -> errors::Result<()> {
 		db.run(move |conn| {
 			diesel::delete(users::table.find(self.id))
 				.execute(conn)
@@ -215,7 +225,7 @@ impl User {
 	pub async fn find_by_password_token<'r>(
 		token: String,
 		db: &DbConn,
-	) -> Result<Option<User>> {
+	) -> errors::Result<Option<User>> {
 		let token = token.to_owned();
 		let result = db
 			.run(move |conn| {
@@ -248,7 +258,7 @@ impl User {
 	pub async fn find_by_email_token<'r>(
 		token: String,
 		db: &DbConn,
-	) -> Result<Option<User>> {
+	) -> errors::Result<Option<User>> {
 		let token = token.to_owned();
 		let result = db
 			.run(move |conn| {
@@ -266,7 +276,7 @@ impl User {
 		}
 	}
 
-	pub async fn find_by_pending(db: &DbConn) -> Result<Vec<User>> {
+	pub async fn find_by_pending(db: &DbConn) -> errors::Result<Vec<User>> {
 		let pending_users = db
 			.run(move |conn| {
 				users::table
@@ -281,7 +291,7 @@ impl User {
 		user: NewUser,
 		bcrypt_cost: u32,
 		db: &DbConn,
-	) -> Result<User> {
+	) -> errors::Result<User> {
 		user.validate()?;
 		let user = NewUserHashed {
 			username:        user.username,
@@ -309,7 +319,7 @@ impl User {
 		user: NewUser,
 		conf: &Config,
 		db: &DbConn,
-	) -> Result<User> {
+	) -> errors::Result<User> {
 		user.validate()?;
 		if Self::pending_count(&db).await? >= conf.maximum_pending_users {
 			let mut err = ValidationErrors::new();
@@ -349,7 +359,7 @@ impl User {
 		.await
 	}
 
-	pub async fn approve(mut self, db: &DbConn) -> Result<User> {
+	pub async fn approve(mut self, db: &DbConn) -> errors::Result<User> {
 		if self.state != UserState::PendingApproval {
 			return Err(ZauthError::Unprocessable(String::from(
 				"user is not in the pending approval state",
@@ -359,7 +369,7 @@ impl User {
 		self.update(&db).await
 	}
 
-	pub async fn confirm_email(mut self, db: &DbConn) -> Result<User> {
+	pub async fn confirm_email(mut self, db: &DbConn) -> errors::Result<User> {
 		if self.state == UserState::PendingMailConfirmation {
 			self.state = UserState::PendingApproval;
 		}
@@ -375,7 +385,7 @@ impl User {
 		self.update(&db).await
 	}
 
-	pub fn change_with(&mut self, change: UserChange) -> Result<()> {
+	pub fn change_with(&mut self, change: UserChange) -> errors::Result<()> {
 		if let Some(email) = change.email {
 			self.email = email;
 		}
@@ -385,7 +395,7 @@ impl User {
 		Ok(())
 	}
 
-	pub async fn update(self, db: &DbConn) -> Result<Self> {
+	pub async fn update(self, db: &DbConn) -> errors::Result<Self> {
 		let id = self.id;
 		db.run(move |conn| {
 			conn.transaction(|| {
@@ -407,7 +417,7 @@ impl User {
 		change: ChangePassword,
 		conf: &Config,
 		db: &DbConn,
-	) -> Result<Self> {
+	) -> errors::Result<Self> {
 		change.validate()?;
 		self.hashed_password = hash(&change.password, conf.bcrypt_cost)?;
 		self.password_reset_token = None;
@@ -415,23 +425,26 @@ impl User {
 		self.update(db).await
 	}
 
-	pub async fn reload(self, db: &DbConn) -> Result<User> {
+	pub async fn reload(self, db: &DbConn) -> errors::Result<User> {
 		Self::find(self.id, db).await
 	}
 
-	pub async fn update_last_login(mut self, db: &DbConn) -> Result<Self> {
+	pub async fn update_last_login(
+		mut self,
+		db: &DbConn,
+	) -> errors::Result<Self> {
 		self.last_login = Utc::now().naive_utc();
 		self.update(db).await
 	}
 
-	pub async fn find(id: i32, db: &DbConn) -> Result<User> {
+	pub async fn find(id: i32, db: &DbConn) -> errors::Result<User> {
 		db.run(move |conn| {
 			users::table.find(id).first(conn).map_err(ZauthError::from)
 		})
 		.await
 	}
 
-	pub async fn pending_count(db: &DbConn) -> Result<usize> {
+	pub async fn pending_count(db: &DbConn) -> errors::Result<usize> {
 		let count: i64 = db
 			.run(move |conn| {
 				users::table
@@ -447,7 +460,7 @@ impl User {
 		Ok(count as usize)
 	}
 
-	pub async fn last(db: &DbConn) -> Result<User> {
+	pub async fn last(db: &DbConn) -> errors::Result<User> {
 		db.run(move |conn| {
 			users::table
 				.order(users::id.desc())
@@ -461,7 +474,7 @@ impl User {
 		username: String,
 		password: String,
 		db: &DbConn,
-	) -> Result<User> {
+	) -> errors::Result<User> {
 		match Self::find_by_username(username, db).await {
 			Ok(user) if !verify(&password, &user.hashed_password) => {
 				Err(ZauthError::LoginError(LoginError::UsernamePasswordError))
@@ -506,7 +519,7 @@ fn verify(password: &str, hash: &str) -> bool {
 impl TryFrom<&User> for Mailbox {
 	type Error = ZauthError;
 
-	fn try_from(value: &User) -> Result<Mailbox> {
+	fn try_from(value: &User) -> errors::Result<Mailbox> {
 		Ok(Mailbox::new(
 			Some(value.username.to_string()),
 			value.email.clone().parse().map_err(InternalError::from)?,
