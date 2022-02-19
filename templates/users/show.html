@@ -11,7 +11,7 @@
 
 <div class="profile-subtitle">
 	{% if user.admin %}
-  	Zeus Admin
+		Zeus Admin
 	{% else %}
 		Zeus Member
 	{% endif %}
@@ -29,27 +29,27 @@
 				<input type="hidden" name="_method" value="put"/>
 
 				<div class="field">
-          <label class="label">Username</label>
-          <input class="input" name="username" type="text" placeholder="Username" value="{{ user.username }}" disabled />
-        </div>
+					<label class="label">Username</label>
+					<input class="input" name="username" type="text" placeholder="Username" value="{{ user.username }}" disabled />
+				</div>
 
 				<div class="field">
-          <label class="label">Full Name</label>
-          <input class="input" name="full_name" type="text" placeholder="Full Name" value="{{ user.full_name }}" disabled />
-        </div>
+					<label class="label">Full Name</label>
+					<input class="input" name="full_name" type="text" placeholder="Full Name" value="{{ user.full_name }}" disabled />
+				</div>
 
 				<div class="field">
-          <label class="label">Email</label>
-          <input class="input" name="email" type="email" placeholder="Email" value="{{ user.email }}" required />
-        </div>
+					<label class="label">Email</label>
+					<input class="input" name="email" type="email" placeholder="Email" value="{{ user.email }}" required />
+				</div>
 
 				<div class="field">
-          <label class="label">Password</label>
-          <input class="input" name="password" type="password" placeholder="Password" disabled />
-        </div>
+					<label class="label">Password</label>
+					<input class="input" name="password" type="password" placeholder="Password" disabled />
+				</div>
 
 				<div class="field">
-          <label class="label">SSH Keys</label>
+					<label class="label">SSH Keys</label>
 					<textarea class="textarea" name="ssh_key" placeholder="SSH Keys">{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}</textarea>
 				</div>
 
@@ -58,11 +58,27 @@
 		</div>
 	</div>
 
-	<!-- Change password -->
 	<div class="column is-5">
-		<div class="card card-content">
+		<!-- Change password -->
+		<div class="card card-content mb-4">
 			<a class="button is-primary" href="/users/forgot_password">Change password</a>
 		</div>
+
+		{% if current_user.admin %}
+		<!-- Change status -->
+		<div class="card card-content">
+			<form class="profile-edit-form" action="/users/{{ user.username }}/change_state" autocomplete="off" method="POST">
+				<div class="field">
+					<select class="select" name="state">
+						<option value="active" {% if user.state == UserState::Active %}selected{% endif %}>Active</option>
+						<option value="disabled" {% if user.state == UserState::Disabled %}selected{% endif %}>Disabled</option>
+					</select>
+				</div>
+
+				<button class="button is-primary" type="submit">Change state</button>
+			</form>
+		</div>
+		{% endif %}
 	</div>
 </div>
 {% endblock content %}

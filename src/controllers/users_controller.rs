@@ -215,6 +215,22 @@ pub async fn set_admin<'r>(
 	})
 }
 
+#[post("/users/<username>/change_state", data = "<value>")]
+pub async fn change_state<'r>(
+	username: String,
+	value: Api<ChangeStatus>,
+	_session: AdminSession,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let mut user = User::find_by_username(username, &db).await?;
+	user.state = value.into_inner().state;
+	let user = user.update(&db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_user(user.username))),
+		json: Custom(Status::NoContent, ()),
+	})
+}
+
 #[post("/users/<username>/approve")]
 pub async fn set_approved<'r>(
 	username: String,

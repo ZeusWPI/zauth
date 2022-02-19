@@ -879,3 +879,52 @@ async fn validate_on_admin_create() {
 	})
 	.await;
 }
+
+#[rocket::async_test]
+async fn disable_user() {
+	common::as_admin(async move |http_client, db, _admin| {
+		let user = User::create(
+			NewUser {
+				username:    String::from("somebody"),
+				password:    String::from("once told me"),
+				full_name:   String::from("zeus"),
+				email:       String::from("would@be.forever"),
+				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
+				not_a_robot: true,
+			},
+			common::BCRYPT_COST,
+			&db,
+		)
+		.await
+		.unwrap();
+
+		assert_eq!(
+			user.state,
+			UserState::Active,
+			"user should be active before state change"
+		);
+
+		let response = http_client
+			.post(format!("/users/{}/change_state", user.username))
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.body("state=Disabled")
+			.dispatch()
+			.await;
+
+		assert_eq!(
+			response.status(),
+			Status::NoContent,
+			"admin should be able to disable user"
+		);
+
+		let user = user.reload(&db).await.expect("reload user");
+
+		assert_eq!(
+			user.state,
+			UserState::Disabled,
+			"user should be disabled after state change"
+		);
+	})
+	.await;
+}
