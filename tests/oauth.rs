@@ -185,8 +185,10 @@ async fn normal_flow() {
 
 		let response = req.dispatch().await;
 		assert_eq!(response.status(), Status::Ok);
-		let response_body = response.into_string().await.expect("response body");
-		let data: Value = serde_json::from_str(&response_body).expect("response json values");
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
 		assert_eq!(data["active"], false);
 
 		// 7a. Client requests access code while sending its credentials
@@ -284,8 +286,10 @@ async fn normal_flow() {
 
 		let response = req.dispatch().await;
 		assert_eq!(response.status(), Status::Ok);
-		let response_body = response.into_string().await.expect("response body");
-		let data: Value = serde_json::from_str(&response_body).expect("response json values");
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
 		assert_eq!(data["active"], true);
 
 		let response = http_client
@@ -323,8 +327,10 @@ async fn normal_flow() {
 
 		let response = req.dispatch().await;
 		assert_eq!(response.status(), Status::Ok);
-		let response_body = response.into_string().await.expect("response body");
-		let data: Value = serde_json::from_str(&response_body).expect("response json values");
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
 		assert_eq!(data["active"], false);
 	})
 	.await;
