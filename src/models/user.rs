@@ -565,7 +565,7 @@ fn handle_constraint_errors(error: diesel::result::Error) -> ZauthError {
 		DieselError::DatabaseError(
 			DatabaseErrorKind::UniqueViolation,
 			info,
-		) if info.constraint_name() == Some("user_username_key") => {
+		) if info.constraint_name() == Some("users_username_key") => {
 			let mut err = ValidationErrors::new();
 			err.add("username", ValidationError::new("Username already taken"));
 			ZauthError::from(err)
@@ -573,7 +573,7 @@ fn handle_constraint_errors(error: diesel::result::Error) -> ZauthError {
 		DieselError::DatabaseError(
 			DatabaseErrorKind::UniqueViolation,
 			info,
-		) if info.constraint_name() == Some("user_email_key") => {
+		) if info.constraint_name() == Some("users_email_key") => {
 			let mut err = ValidationErrors::new();
 			err.add("email", ValidationError::new("Email already taken"));
 			ZauthError::from(err)

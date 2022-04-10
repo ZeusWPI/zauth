@@ -888,3 +888,107 @@ async fn disable_user() {
 	})
 	.await;
 }
+
+#[rocket::async_test]
+async fn validate_unique_email() {
+	common::as_visitor(async move |http_client, db| {
+		let user_count = User::all(&db).await.unwrap().len();
+
+		let email = "spaghet@zeus.ugent.be";
+		let response = post_registration(
+			&http_client,
+			"somebody",
+			"toucha    ",
+			"maa",
+			email,
+			true,
+		)
+		.await;
+
+		assert_eq!(response.status(), Status::Created);
+		assert_eq!(
+			user_count + 1,
+			User::all(&db).await.unwrap().len(),
+			"should have created user"
+		);
+
+		let user_count = User::all(&db).await.unwrap().len();
+
+		let response = post_registration(
+			&http_client,
+			"duplicated",
+			"email     ",
+			"address   ",
+			email,
+			true,
+		)
+		.await;
+
+		let status = response.status();
+		let body = response.into_string().await.expect("response body");
+		assert!(
+			body.contains("Email already taken"),
+			"should mention that email is already taken to user"
+		);
+
+		assert_eq!(status, Status::UnprocessableEntity);
+		assert_eq!(
+			user_count,
+			User::all(&db).await.unwrap().len(),
+			"should not have created user"
+		);
+	})
+	.await;
+}
+
+#[rocket::async_test]
+async fn validate_unique_username() {
+	common::as_visitor(async move |http_client, db| {
+		let user_count = User::all(&db).await.unwrap().len();
+
+		let username = "somebody";
+		let response = post_registration(
+			&http_client,
+			username,
+			"toucha    ",
+			"maa",
+			"spaghet@zeus.ugent.be",
+			true,
+		)
+		.await;
+
+		assert_eq!(response.status(), Status::Created);
+		assert_eq!(
+			user_count + 1,
+			User::all(&db).await.unwrap().len(),
+			"should have created user"
+		);
+
+		let user_count = User::all(&db).await.unwrap().len();
+
+		let response = post_registration(
+			&http_client,
+			username,
+			"duplicated",
+			"username  ",
+			"carbonara@zeus.ugent.be",
+			true,
+		)
+		.await;
+
+		let status = response.status();
+		let body = response.into_string().await.expect("response body");
+		assert!(
+			body.contains("Username already taken"),
+			"should mention that username is already taken to user"
+		);
+
+		assert_eq!(status, Status::UnprocessableEntity);
+		assert_eq!(
+			user_count,
+			User::all(&db).await.unwrap().len(),
+			"should not have created user"
+		);
+	})
+	.await;
+}
