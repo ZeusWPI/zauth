@@ -117,6 +117,14 @@ pub async fn register_page<'r>(
 		"users/registration_form.html";
 		registrations_full: bool = full,
 		errors: Option<ValidationErrors> = None,
+		user: NewUser = NewUser {
+			username: "".to_string(),
+			full_name: "".to_string(),
+			email: "".to_string(),
+			password: "".to_string(),
+			ssh_key: None,
+			not_a_robot: false,
+		}
 	})
 }
 
@@ -127,7 +135,8 @@ pub async fn register<'r>(
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
-	let pending = User::create_pending(user.into_inner(), &conf, &db).await;
+	let new_user = user.into_inner();
+	let pending = User::create_pending(new_user.clone(), &conf, &db).await;
 	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
 	match pending {
 		Ok(user) => {
@@ -165,6 +174,7 @@ pub async fn register<'r>(
 				template! {
 					"users/registration_form.html";
 					registrations_full: bool = full,
+					user: NewUser = new_user,
 					errors: Option<ValidationErrors> = Some(errors.clone()),
 				},
 			),

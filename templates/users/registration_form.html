@@ -37,20 +37,20 @@
       <form class="form mb-2" action="/register" method="post">
         <div class="field">
           <label class="label">Username</label>
-          <input class="input" name="username" type="text" placeholder="username" minlength="3" maxlength="32" pattern="[a-z][a-z0-9_-]{2,32}" title="Username may only contain alphanumeric characters, hyphens or underscores, and must begin with a letter." required />
+          <input class="input" name="username" type="text" placeholder="username" value="{{user.username}}" minlength="3" maxlength="32" pattern="[a-z][a-z0-9_-]{2,32}" title="Username may only contain alphanumeric characters, hyphens or underscores, and must begin with a letter." required />
         </div>
         <div class="field">
           <label class="label">Full name</label>
-          <input class="input" name="full_name" type="text" placeholder="Firstname Lastname" minlength="3" maxlength="254" title="In the format 'Firstname Lastname' if possible" required />
+          <input class="input" name="full_name" type="text" placeholder="Firstname Lastname" value="{{user.full_name}}" minlength="3" maxlength="254" title="In the format 'Firstname Lastname' if possible" required />
         </div>
         <div class="field">
           <label class="label">Email</label>
-          <input class="input" name="email" type="email" placeholder="example@example.com" required />
+          <input class="input" name="email" type="email" placeholder="example@example.com" value="{{user.email}}" required />
         </div>
 
         <div class="field">
           <label class="label">Password</label>
-          <input class="input" name="password" type="password" placeholder="Password" required />
+          <input class="input" name="password" type="password" placeholder="Password" value="{{user.password}}" required />
           <p class="help">
           We recommend using a password manager like
           <a href="https://bitwarden.com/" target="_blank">bitwarden</a> or
@@ -61,7 +61,7 @@
 
         <div class="field">
           <label class="checkbox">
-            <input type="checkbox" name="not_a_robot" class="big-checkbox" onclick="greetNotARobot(event)"/>
+            <input type="checkbox" name="not_a_robot" class="big-checkbox" {% if user.not_a_robot %} checked {% endif %} onclick="greetNotARobot(event)"/>
             I'm not a robot
           </label>
         </div>
