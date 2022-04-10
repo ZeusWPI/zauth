@@ -11,6 +11,34 @@ use zauth::models::user::*;
 
 mod common;
 
+async fn post_registration<'a>(
+	http_client: &'a common::HttpClient,
+	username: &str,
+	password: &str,
+	full_name: &str,
+	email: &str,
+	not_a_robot: bool,
+) -> LocalResponse<'a> {
+	let response = http_client
+		.get("/register")
+		.header(Accept::HTML)
+		.dispatch()
+		.await;
+
+	assert_eq!(response.status(), Status::Ok);
+
+	http_client
+		.post("/register")
+		.header(Accept::HTML)
+		.header(ContentType::Form)
+		.body(format!(
+			"username={}&password={}&full_name={}&email={}&not_a_robot={}",
+			username, password, full_name, email, not_a_robot
+		))
+		.dispatch()
+		.await
+}
+
 #[rocket::async_test]
 async fn get_all_users() {
 	common::as_visitor(async move |http_client, _db| {
@@ -536,34 +564,6 @@ async fn reset_password_invalid_token() {
 	.await;
 }
 
-async fn post_registration<'a>(
-	http_client: &'a common::HttpClient,
-	username: &str,
-	password: &str,
-	full_name: &str,
-	email: &str,
-	not_a_robot: bool,
-) -> LocalResponse<'a> {
-	let response = http_client
-		.get("/register")
-		.header(Accept::HTML)
-		.dispatch()
-		.await;
-
-	assert_eq!(response.status(), Status::Ok);
-
-	http_client
-		.post("/register")
-		.header(Accept::HTML)
-		.header(ContentType::Form)
-		.body(format!(
-			"username={}&password={}&full_name={}&email={}&not_a_robot={}",
-			username, password, full_name, email, not_a_robot
-		))
-		.dispatch()
-		.await
-}
-
 #[rocket::async_test]
 async fn limit_pending_users() {
 	common::as_visitor(async move |http_client, db| {
@@ -769,29 +769,17 @@ async fn user_approval_flow() {
 #[rocket::async_test]
 async fn refuse_robots() {
 	common::as_visitor(async move |http_client, db| {
-		let response = http_client
-			.get("/register")
-			.header(Accept::HTML)
-			.dispatch()
-			.await;
-
-		assert_eq!(response.status(), Status::Ok);
-
 		let username = "somebody";
-		let password = "toucha    ";
-		let full_name = "maa";
-		let email = "spaghet@zeus.ugent.be";
 
-		let response = http_client
-			.post("/register")
-			.header(Accept::HTML)
-			.header(ContentType::Form)
-			.body(format!(
-				"username={}&password={}&full_name={}&email={}",
-				username, password, full_name, email
-			))
-			.dispatch()
-			.await;
+		let response = post_registration(
+			&http_client,
+			username,
+			"toucha    ",
+			"maa",
+			"spaghet@zeus.ugent.be",
+			false,
+		)
+		.await;
 
 		assert_eq!(response.status(), Status::UnprocessableEntity);
 
@@ -805,31 +793,17 @@ async fn refuse_robots() {
 #[rocket::async_test]
 async fn validate_on_registration() {
 	common::as_visitor(async move |http_client, db| {
-		let response = http_client
-			.get("/register")
-			.header(Accept::HTML)
-			.dispatch()
-			.await;
-
-		assert_eq!(response.status(), Status::Ok);
-
-		let username = "somebody";
-		let password = "toucha    ";
-		let invalid_full_name = "?";
-		let email = "spaghet@zeus.ugent.be";
-
 		let user_count = User::all(&db).await.unwrap().len();
 
-		let response = http_client
-			.post("/register")
-			.header(Accept::HTML)
-			.header(ContentType::Form)
-			.body(format!(
-				"username={}&password={}&full_name={}&email={}",
-				username, password, invalid_full_name, email
-			))
-			.dispatch()
-			.await;
+		let response = post_registration(
+			&http_client,
+			"somebody",
+			"toucha    ",
+			"?",
+			"spaghet@zeus.ugent.be",
+			true,
+		)
+		.await;
 
 		assert_eq!(response.status(), Status::UnprocessableEntity);
 		assert_eq!(
@@ -844,31 +818,17 @@ async fn validate_on_registration() {
 #[rocket::async_test]
 async fn validate_on_admin_create() {
 	common::as_visitor(async move |http_client, db| {
-		let response = http_client
-			.get("/register")
-			.header(Accept::HTML)
-			.dispatch()
-			.await;
-
-		assert_eq!(response.status(), Status::Ok);
-
-		let username = "somebody";
-		let password = "toucha    ";
-		let invalid_full_name = "?";
-		let email = "spaghet@zeus.ugent.be";
-
 		let user_count = User::all(&db).await.unwrap().len();
 
-		let response = http_client
-			.post("/register")
-			.header(Accept::HTML)
-			.header(ContentType::Form)
-			.body(format!(
-				"username={}&password={}&full_name={}&email={}",
-				username, password, invalid_full_name, email
-			))
-			.dispatch()
-			.await;
+		let response = post_registration(
+			&http_client,
+			"somebody",
+			"toucha    ",
+			"?",
+			"spaghet@zeus.ugent.be",
+			true,
+		)
+		.await;
 
 		assert_eq!(response.status(), Status::UnprocessableEntity);
 		assert_eq!(
