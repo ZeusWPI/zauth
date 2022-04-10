@@ -8,6 +8,7 @@ use std::fmt;
 use crate::util::random_token;
 use crate::Config;
 use chrono::{NaiveDateTime, Utc};
+use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
@@ -345,18 +346,53 @@ impl User {
 			state:                UserState::PendingMailConfirmation,
 			last_login:           Utc::now().naive_utc(),
 		};
-		db.run(move |conn| {
-			conn.transaction(|| {
-				// Create a new user
-				diesel::insert_into(users::table)
-					.values(&user)
-					.execute(conn)?;
-				// Fetch the last created user
-				let user = users::table.order(users::id.desc()).first(conn)?;
-				Ok(user)
+		let res = db
+			.run(move |conn| {
+				conn.transaction(|| {
+					// Create a new user
+					diesel::insert_into(users::table)
+						.values(&user)
+						.execute(conn)?;
+					// Fetch the last created user
+					let user =
+						users::table.order(users::id.desc()).first(conn)?;
+					Ok(user)
+				})
 			})
-		})
-		.await
+			.await;
+
+		match res {
+			Err(DieselError::DatabaseError(
+				DatabaseErrorKind::UniqueViolation,
+				error_info,
+			)) => {
+				match error_info.constraint_name() {
+					Some("users_username_key") => {
+						let mut err = ValidationErrors::new();
+						err.add(
+							"username",
+							ValidationError::new("Username already taken"),
+						);
+						Err(ZauthError::from(err))
+					},
+					Some("users_email_key") => {
+						let mut err = ValidationErrors::new();
+						err.add(
+							"email",
+							ValidationError::new("Email already taken"),
+						);
+						Err(ZauthError::from(err))
+					},
+					// unexpected error; handle it as a generic database error
+					_ => Err(ZauthError::from(DieselError::DatabaseError(
+						DatabaseErrorKind::UniqueViolation,
+						error_info,
+					))),
+				}
+			},
+			Err(err) => Err(ZauthError::from(err)),
+			Ok(user) => Ok(user),
+		}
 	}
 
 	pub async fn approve(mut self, db: &DbConn) -> errors::Result<User> {
