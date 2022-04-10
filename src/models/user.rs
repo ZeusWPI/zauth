@@ -314,6 +314,7 @@ impl User {
 			})
 		})
 		.await
+		.map_err(handle_constraint_errors)
 	}
 
 	pub async fn create_pending(
@@ -346,53 +347,19 @@ impl User {
 			state:                UserState::PendingMailConfirmation,
 			last_login:           Utc::now().naive_utc(),
 		};
-		let res = db
-			.run(move |conn| {
-				conn.transaction(|| {
-					// Create a new user
-					diesel::insert_into(users::table)
-						.values(&user)
-						.execute(conn)?;
-					// Fetch the last created user
-					let user =
-						users::table.order(users::id.desc()).first(conn)?;
-					Ok(user)
-				})
+		db.run(move |conn| {
+			conn.transaction(|| {
+				// Create a new user
+				diesel::insert_into(users::table)
+					.values(&user)
+					.execute(conn)?;
+				// Fetch the last created user
+				let user = users::table.order(users::id.desc()).first(conn)?;
+				Ok(user)
 			})
-			.await;
-
-		match res {
-			Err(DieselError::DatabaseError(
-				DatabaseErrorKind::UniqueViolation,
-				error_info,
-			)) => {
-				match error_info.constraint_name() {
-					Some("users_username_key") => {
-						let mut err = ValidationErrors::new();
-						err.add(
-							"username",
-							ValidationError::new("Username already taken"),
-						);
-						Err(ZauthError::from(err))
-					},
-					Some("users_email_key") => {
-						let mut err = ValidationErrors::new();
-						err.add(
-							"email",
-							ValidationError::new("Email already taken"),
-						);
-						Err(ZauthError::from(err))
-					},
-					// unexpected error; handle it as a generic database error
-					_ => Err(ZauthError::from(DieselError::DatabaseError(
-						DatabaseErrorKind::UniqueViolation,
-						error_info,
-					))),
-				}
-			},
-			Err(err) => Err(ZauthError::from(err)),
-			Ok(user) => Ok(user),
-		}
+		})
+		.await
+		.map_err(handle_constraint_errors)
 	}
 
 	pub async fn approve(mut self, db: &DbConn) -> errors::Result<User> {
@@ -445,7 +412,7 @@ impl User {
 			})
 		})
 		.await
-		.map_err(ZauthError::from)
+		.map_err(handle_constraint_errors)
 	}
 
 	pub async fn change_password(
@@ -591,6 +558,28 @@ fn validate_not_a_robot(
 		));
 	}
 	Ok(())
+}
+
+fn handle_constraint_errors(error: diesel::result::Error) -> ZauthError {
+	match error {
+		DieselError::DatabaseError(
+			DatabaseErrorKind::UniqueViolation,
+			info,
+		) if info.constraint_name() == Some("user_username_key") => {
+			let mut err = ValidationErrors::new();
+			err.add("username", ValidationError::new("Username already taken"));
+			ZauthError::from(err)
+		},
+		DieselError::DatabaseError(
+			DatabaseErrorKind::UniqueViolation,
+			info,
+		) if info.constraint_name() == Some("user_email_key") => {
+			let mut err = ValidationErrors::new();
+			err.add("email", ValidationError::new("Email already taken"));
+			ZauthError::from(err)
+		},
+		other => ZauthError::from(other),
+	}
 }
 
 /// used as a default for not_a_robot field
