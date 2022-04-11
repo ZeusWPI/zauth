@@ -560,12 +560,17 @@ fn validate_not_a_robot(
 	Ok(())
 }
 
+// These constraints are not explicitly named in the database migration scripts:
+// {table}_{column}_key is the default name given to UNIQUE column constraints in postgresql.
+const USERNAME_UNIQUENESS_CONSTRAINT_NAME: &str = "users_username_key";
+const EMAIL_UNIQUENESS_CONSTRAINT_NAME: &str = "users_email_key";
+
 fn handle_constraint_errors(error: diesel::result::Error) -> ZauthError {
 	match error {
 		DieselError::DatabaseError(
 			DatabaseErrorKind::UniqueViolation,
 			info,
-		) if info.constraint_name() == Some("users_username_key") => {
+		) if info.constraint_name() == Some(USERNAME_UNIQUENESS_CONSTRAINT_NAME) => {
 			let mut err = ValidationErrors::new();
 			err.add("username", ValidationError::new("Username already taken"));
 			ZauthError::from(err)
@@ -573,7 +578,7 @@ fn handle_constraint_errors(error: diesel::result::Error) -> ZauthError {
 		DieselError::DatabaseError(
 			DatabaseErrorKind::UniqueViolation,
 			info,
-		) if info.constraint_name() == Some("users_email_key") => {
+		) if info.constraint_name() == Some(EMAIL_UNIQUENESS_CONSTRAINT_NAME) => {
 			let mut err = ValidationErrors::new();
 			err.add("email", ValidationError::new("Email already taken"));
 			ZauthError::from(err)
