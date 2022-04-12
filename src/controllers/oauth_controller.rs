@@ -316,3 +316,33 @@ pub async fn token(
 		}))
 	}
 }
+
+#[derive(Serialize, Debug)]
+pub struct IntrospectResp {
+	active: bool,
+}
+
+#[derive(FromForm, Debug)]
+pub struct IntrospectFormData {
+	token:           String,
+	token_type_hint: Option<String>,
+}
+
+#[post("/oauth/introspect", data = "<form>")]
+pub async fn introspect(
+	auth: Option<BasicAuthentication>,
+	form: Form<IntrospectFormData>,
+	db: DbConn,
+) -> Result<Json<IntrospectResp>> {
+	let auth = auth
+		.map(|auth| (auth.user, auth.password))
+		.ok_or(ZauthError::from(OAuthError::InvalidRequest))?;
+
+	Client::find_and_authenticate(auth.0.to_string(), &auth.1, &db).await?;
+
+	let IntrospectFormData { token, .. } = form.into_inner();
+	let maybe_session = Session::find_by_key(token, &db).await;
+	Ok(Json(IntrospectResp {
+		active: maybe_session.is_ok(),
+	}))
+}

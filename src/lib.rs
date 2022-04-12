@@ -101,6 +101,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				oauth_controller::grant_get,
 				oauth_controller::grant_post,
 				oauth_controller::token,
+				oauth_controller::introspect,
 				pages_controller::home_page,
 				sessions_controller::create_session,
 				sessions_controller::new_session,

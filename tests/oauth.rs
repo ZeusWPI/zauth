@@ -170,6 +170,27 @@ async fn normal_flow() {
 
 		assert_eq!(response.status(), Status::SeeOther);
 
+		let credentials =
+			base64::encode(&format!("{}:{}", client_id, client.secret));
+
+		let form_body = format!("token=1234");
+		let req = http_client
+			.post("/oauth/introspect")
+			.header(ContentType::Form)
+			.header(Header::new(
+				"Authorization",
+				format!("Basic {}", credentials),
+			))
+			.body(form_body);
+
+		let response = req.dispatch().await;
+		assert_eq!(response.status(), Status::Ok);
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
+		assert_eq!(data["active"], false);
+
 		// 7a. Client requests access code while sending its credentials
 		//     trough HTTP Auth.
 		let token_url = "/oauth/token";
@@ -177,9 +198,6 @@ async fn normal_flow() {
 			"grant_type=authorization_code&code={}&redirect_uri={}",
 			authorization_code, redirect_uri
 		);
-
-		let credentials =
-			base64::encode(&format!("{}:{}", client_id, client.secret));
 
 		let req = http_client
 			.post(token_url)
@@ -256,6 +274,24 @@ async fn normal_flow() {
 		assert_eq!(data["token_type"], "bearer");
 		let token = data["access_token"].as_str().expect("access token");
 
+		let form_body = format!("token={}", token);
+		let req = http_client
+			.post("/oauth/introspect")
+			.header(ContentType::Form)
+			.header(Header::new(
+				"Authorization",
+				format!("Basic {}", credentials),
+			))
+			.body(form_body);
+
+		let response = req.dispatch().await;
+		assert_eq!(response.status(), Status::Ok);
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
+		assert_eq!(data["active"], true);
+
 		let response = http_client
 			.get("/current_user")
 			.header(Accept::JSON)
@@ -276,6 +312,26 @@ async fn normal_flow() {
 
 		assert!(data["id"].is_number());
 		assert_eq!(data["username"], user_username);
+
+		http_client.post("/logout").dispatch().await;
+
+		let form_body = format!("token=1234");
+		let req = http_client
+			.post("/oauth/introspect")
+			.header(ContentType::Form)
+			.header(Header::new(
+				"Authorization",
+				format!("Basic {}", credentials),
+			))
+			.body(form_body);
+
+		let response = req.dispatch().await;
+		assert_eq!(response.status(), Status::Ok);
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
+		assert_eq!(data["active"], false);
 	})
 	.await;
 }
