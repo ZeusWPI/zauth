@@ -4,7 +4,7 @@ The name is open for discussion.
 
 ## Development setup
 
-1. Make sure you have a recent version of rust installed. We used 1.57-nightly.
+1. Make sure you have a recent version of rust installed. You probably need 1.61-nightly or above.
 
 2. We currently use a postgresql server for persistent storage (also in development mode). So you'll have to install and run your own postgresql server. After installation, you can start a postgresql shell with `psql`, but you will likely need access it as the postgres user, so use e.g. `sudo -u postgres psql`.
 
