@@ -103,14 +103,15 @@ where
 	as_visitor(async move |client, db| {
 		let user = User::create(
 			NewUser {
-				username:    String::from("username"),
-				password:    String::from("password"),
-				full_name:   String::from("full"),
-				email:       String::from("user@domain.tld"),
-				ssh_key:     Some(String::from(
+				username:            String::from("username"),
+				password:            String::from("password"),
+				full_name:           String::from("full"),
+				email:               String::from("user@domain.tld"),
+				ssh_key:             Some(String::from(
 					"ssh-rsa base64== key@hostname",
 				)),
-				not_a_robot: true,
+				mattermost_username: Some(String::from("udomain")),
+				not_a_robot:         true,
 			},
 			BCRYPT_COST,
 			&db,
@@ -141,12 +142,15 @@ where
 	as_visitor(async move |client, db| {
 		let mut user = User::create(
 			NewUser {
-				username:    String::from("admin"),
-				password:    String::from("password"),
-				full_name:   String::from("admin name"),
-				email:       String::from("admin@domain.tld"),
-				ssh_key:     Some(String::from("ssh-rsa admin admin@hostname")),
-				not_a_robot: true,
+				username:            String::from("admin"),
+				password:            String::from("password"),
+				full_name:           String::from("admin name"),
+				email:               String::from("admin@domain.tld"),
+				ssh_key:             Some(String::from(
+					"ssh-rsa admin admin@hostname",
+				)),
+				mattermost_username: Some(String::from("admin")),
+				not_a_robot:         true,
 			},
 			BCRYPT_COST,
 			&db,

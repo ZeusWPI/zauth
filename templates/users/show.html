@@ -53,6 +53,11 @@
 					<textarea class="textarea" name="ssh_key" placeholder="SSH Keys">{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}</textarea>
 				</div>
 
+				<div class="field">
+					<label class="label">Mattermost username</label>
+					<input class="input" name="mattermost_username" placeholder="Mattermost username" value="{% match user.mattermost_username %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}" />
+				</div>
+
 				<button class="button is-primary" type="submit">Update</button>
 			</form>
 		</div>

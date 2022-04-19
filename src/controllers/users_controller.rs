@@ -123,6 +123,7 @@ pub async fn register_page<'r>(
 			email: "".to_string(),
 			password: "".to_string(),
 			ssh_key: None,
+			mattermost_username: None,
 			not_a_robot: false,
 		}
 	})

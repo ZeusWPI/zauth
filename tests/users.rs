@@ -51,12 +51,15 @@ async fn show_user_as_user() {
 	common::as_user(async move |http_client, db, user| {
 		let other = User::create(
 			NewUser {
-				username:    String::from("somebody"),
-				password:    String::from("once told me"),
-				full_name:   String::from("zeus"),
-				email:       String::from("would@be.forever"),
-				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
-				not_a_robot: true,
+				username:            String::from("somebody"),
+				password:            String::from("once told me"),
+				full_name:           String::from("zeus"),
+				email:               String::from("would@be.forever"),
+				ssh_key:             Some(String::from(
+					"ssh-rsa nananananananaaa",
+				)),
+				mattermost_username: Some(String::from("sonce")),
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -94,12 +97,15 @@ async fn show_user_as_admin() {
 	common::as_admin(async move |http_client, db, admin| {
 		let other = User::create(
 			NewUser {
-				username:    String::from("somebody"),
-				password:    String::from("once told me"),
-				full_name:   String::from("zeus"),
-				email:       String::from("would@be.forever"),
-				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
-				not_a_robot: true,
+				username:            String::from("somebody"),
+				password:            String::from("once told me"),
+				full_name:           String::from("zeus"),
+				email:               String::from("would@be.forever"),
+				ssh_key:             Some(String::from(
+					"ssh-rsa nananananananaaa",
+				)),
+				mattermost_username: Some(String::from("sonce")),
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -139,7 +145,10 @@ async fn update_self() {
 			.put(format!("/users/{}", user.username))
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body("ssh_key=ssh-rsa%20supersecretkey")
+			.body(
+				"ssh_key=ssh-rsa%20supersecretkey&\
+				 mattermost_username=cool_person",
+			)
 			.dispatch()
 			.await;
 
@@ -156,14 +165,22 @@ async fn update_self() {
 			updated.ssh_key
 		);
 
+		assert_eq!(
+			Some(String::from("cool_person")),
+			updated.mattermost_username
+		);
+
 		let other = User::create(
 			NewUser {
-				username:    String::from("somebody"),
-				password:    String::from("once told me"),
-				full_name:   String::from("zeus"),
-				email:       String::from("would@be.forever"),
-				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
-				not_a_robot: true,
+				username:            String::from("somebody"),
+				password:            String::from("once told me"),
+				full_name:           String::from("zeus"),
+				email:               String::from("would@be.forever"),
+				ssh_key:             Some(String::from(
+					"ssh-rsa nananananananaaa",
+				)),
+				mattermost_username: Some(String::from("sonce")),
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -175,7 +192,10 @@ async fn update_self() {
 			.put(format!("/users/{}", other.username))
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body("ssh_key=ssh-rsa%20supersecretkey")
+			.body(
+				"ssh_key=ssh-rsa%20supersecretkey&\
+				 mattermost_username=cool_person",
+			)
 			.dispatch()
 			.await;
 
@@ -193,12 +213,15 @@ async fn make_admin() {
 	common::as_admin(async move |http_client, db, _admin| {
 		let other = User::create(
 			NewUser {
-				username:    String::from("somebody"),
-				password:    String::from("once told me"),
-				full_name:   String::from("zeus"),
-				email:       String::from("would@be.forever"),
-				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
-				not_a_robot: true,
+				username:            String::from("somebody"),
+				password:            String::from("once told me"),
+				full_name:           String::from("zeus"),
+				email:               String::from("would@be.forever"),
+				ssh_key:             Some(String::from(
+					"ssh-rsa nananananananaaa",
+				)),
+				mattermost_username: Some(String::from("sonce")),
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -233,12 +256,15 @@ async fn try_make_admin() {
 	common::as_user(async move |http_client, db, _user| {
 		let other = User::create(
 			NewUser {
-				username:    String::from("somebody"),
-				password:    String::from("once told me"),
-				full_name:   String::from("zeus"),
-				email:       String::from("would@be.forever"),
-				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
-				not_a_robot: true,
+				username:            String::from("somebody"),
+				password:            String::from("once told me"),
+				full_name:           String::from("zeus"),
+				email:               String::from("would@be.forever"),
+				ssh_key:             Some(String::from(
+					"ssh-rsa nananananananaaa",
+				)),
+				mattermost_username: Some(String::from("sonce")),
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -275,7 +301,7 @@ async fn create_user_form() {
 			.body(
 				"username=testuser&password=testpassword&full_name=abc&\
 				 email=hij@klm.op&ssh_key=ssh-rsa%20base64%3D%3D%20user@\
-				 hostname&not_a_robot=true",
+				 hostname&not_a_robot=true&mattermost_username=nice_person",
 			)
 			.dispatch()
 			.await;
@@ -302,7 +328,9 @@ async fn create_user_json() {
 			.body(
 				"{\"username\": \"testuser\", \"password\": \"testpassword\", \
 				 \"full_name\": \"abc\", \"email\": \"hij@klm.op\", \
-				 \"ssh_key\": \"ssh-rsa qrs tuv@wxyz\", \"not_a_robot\": true}",
+				 \"ssh_key\": \"ssh-rsa qrs tuv@wxyz\", \
+				 \"mattermost_username\": \"nice_person\", \"not_a_robot\": \
+				 true}",
 			)
 			.dispatch()
 			.await;
@@ -323,12 +351,13 @@ async fn forgot_password() {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
-				username:    String::from("user"),
-				password:    String::from("password"),
-				full_name:   String::from("name"),
-				email:       email.clone(),
-				ssh_key:     None,
-				not_a_robot: true,
+				username:            String::from("user"),
+				password:            String::from("password"),
+				full_name:           String::from("name"),
+				email:               email.clone(),
+				ssh_key:             None,
+				mattermost_username: None,
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -448,12 +477,13 @@ async fn forgot_password_non_existing_email() {
 		let email = String::from("test@example.com");
 		let _user = User::create(
 			NewUser {
-				username:    String::from("user"),
-				password:    String::from("password"),
-				full_name:   String::from("name"),
-				email:       email.clone(),
-				ssh_key:     None,
-				not_a_robot: true,
+				username:            String::from("user"),
+				password:            String::from("password"),
+				full_name:           String::from("name"),
+				email:               email.clone(),
+				ssh_key:             None,
+				mattermost_username: None,
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -487,12 +517,13 @@ async fn reset_password_invalid_token() {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
-				username:    String::from("user"),
-				password:    String::from("password"),
-				full_name:   String::from("name"),
-				email:       email.clone(),
-				ssh_key:     None,
-				not_a_robot: true,
+				username:            String::from("user"),
+				password:            String::from("password"),
+				full_name:           String::from("name"),
+				email:               email.clone(),
+				ssh_key:             None,
+				mattermost_username: None,
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,
@@ -701,12 +732,13 @@ async fn user_approval_flow() {
 		let email = String::from("test@example.com");
 		let user = User::create_pending(
 			NewUser {
-				username:    String::from("user"),
-				password:    String::from("password"),
-				full_name:   String::from("name"),
-				email:       email.clone(),
-				ssh_key:     None,
-				not_a_robot: true,
+				username:            String::from("user"),
+				password:            String::from("password"),
+				full_name:           String::from("name"),
+				email:               email.clone(),
+				ssh_key:             None,
+				mattermost_username: None,
+				not_a_robot:         true,
 			},
 			&common::config(),
 			&db,
@@ -885,12 +917,15 @@ async fn disable_user() {
 	common::as_admin(async move |http_client, db, _admin| {
 		let user = User::create(
 			NewUser {
-				username:    String::from("somebody"),
-				password:    String::from("once told me"),
-				full_name:   String::from("zeus"),
-				email:       String::from("would@be.forever"),
-				ssh_key:     Some(String::from("ssh-rsa nananananananaaa")),
-				not_a_robot: true,
+				username:            String::from("somebody"),
+				password:            String::from("once told me"),
+				full_name:           String::from("zeus"),
+				email:               String::from("would@be.forever"),
+				ssh_key:             Some(String::from(
+					"ssh-rsa nananananananaaa",
+				)),
+				mattermost_username: Some(String::from("sonce")),
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,

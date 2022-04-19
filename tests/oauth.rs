@@ -39,12 +39,13 @@ async fn normal_flow() {
 
 		let user = User::create(
 			NewUser {
-				username:    String::from(user_username),
-				password:    String::from(user_password),
-				full_name:   String::from("abc"),
-				email:       String::from("ghi@jkl.mno"),
-				ssh_key:     Some(String::from("ssh-rsa pqrstuvwxyz")),
-				not_a_robot: true,
+				username:            String::from(user_username),
+				password:            String::from(user_password),
+				full_name:           String::from("abc"),
+				email:               String::from("ghi@jkl.mno"),
+				ssh_key:             Some(String::from("ssh-rsa pqrstuvwxyz")),
+				mattermost_username: Some(String::from("aghi")),
+				not_a_robot:         true,
 			},
 			common::BCRYPT_COST,
 			&db,

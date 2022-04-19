@@ -58,6 +58,7 @@ pub mod schema {
 			pending_email_token -> Nullable<Varchar>,
 			pending_email_expiry -> Nullable<Timestamp>,
 			ssh_key -> Nullable<Text>,
+			mattermost_username -> Nullable<Varchar>,
 			state -> UserStateMapping,
 			last_login -> Timestamp,
 			created_at -> Timestamp,
@@ -95,6 +96,7 @@ pub struct User {
 	pub pending_email_expiry:  Option<NaiveDateTime>,
 	#[validate(custom = "validate_ssh_key_list")]
 	pub ssh_key:               Option<String>,
+	pub mattermost_username:   Option<String>,
 	#[serde(skip)]
 	pub state:                 UserState,
 	pub last_login:            NaiveDateTime,
@@ -109,21 +111,22 @@ lazy_static! {
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
 	#[validate(regex = "NEW_USER_REGEX")]
-	pub username:    String,
+	pub username:            String,
 	#[validate(length(
 		min = 8,
 		message = "Password too short, must be at least 8 characters"
 	))]
-	pub password:    String,
+	pub password:            String,
 	#[validate(length(min = 3, max = 254))]
-	pub full_name:   String,
+	pub full_name:           String,
 	#[validate(email)]
-	pub email:       String,
+	pub email:               String,
 	#[validate(custom = "validate_ssh_key_list")]
-	pub ssh_key:     Option<String>,
+	pub ssh_key:             Option<String>,
+	pub mattermost_username: Option<String>,
 	#[validate(custom(function = "validate_not_a_robot"))]
 	#[serde(default = "const_false")]
-	pub not_a_robot: bool,
+	pub not_a_robot:         bool,
 }
 
 #[derive(Serialize, Insertable, Debug, Clone)]
@@ -153,11 +156,12 @@ struct NewUserHashed {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct UserChange {
-	pub username:  Option<String>,
-	pub password:  Option<String>,
-	pub full_name: Option<String>,
-	pub email:     Option<String>,
-	pub ssh_key:   Option<String>,
+	pub username:            Option<String>,
+	pub password:            Option<String>,
+	pub full_name:           Option<String>,
+	pub email:               Option<String>,
+	pub ssh_key:             Option<String>,
+	pub mattermost_username: Option<String>,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -391,6 +395,9 @@ impl User {
 		}
 		if let Some(ssh_key) = change.ssh_key {
 			self.ssh_key = Some(ssh_key);
+		}
+		if let Some(mattermost_username) = change.mattermost_username {
+			self.mattermost_username = Some(mattermost_username);
 		}
 		Ok(())
 	}

@@ -95,6 +95,7 @@
 					<th>Full Name</th>
 					<th>Email</th>
 					<th>SSH key</th>
+					<th>Mattermost username</th>
 					<th>State</th>
 					<th>Last login</th>
 					<th>Created at</th>
@@ -136,7 +137,16 @@
 
 								N/A
 							{% endmatch %}
-        		</td>
+						</td>
+
+                                                <td data-label="Mattermost username">
+                                                    {% match user.mattermost_username %}
+                                                    	{% when Some with (val) %}
+                                                    		{{ val }}
+                                                    	{% when None %}
+                                                    		not given
+                                                    {% endmatch %}
+                                                </td>
 
 						<!-- State -->
 						<td data-label="State">
