@@ -14,7 +14,7 @@ bincode = "1.0"
 pwhash = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.1"
-lettre = { version = "0.10.0-rc.4", features = ["builder", "smtp-transport"] }
+lettre = { version = "0.10.0-rc.6", features = ["builder", "smtp-transport"] }
 urlencoding = "2.1"
 toml = "0.5"
 rand = "0.8"
