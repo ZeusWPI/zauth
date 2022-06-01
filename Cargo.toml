@@ -37,4 +37,4 @@ parking_lot = { version = "0.12" }
 thiserror = "1.0"
 threads_pool = "0.2"
 validator = "0.14"
-validator_derive = "0.14"
+validator_derive = "0.15"
