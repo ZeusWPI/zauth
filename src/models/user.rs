@@ -8,6 +8,7 @@ use std::fmt;
 use crate::util::random_token;
 use crate::Config;
 use chrono::{NaiveDateTime, Utc};
+use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
@@ -313,6 +314,7 @@ impl User {
 			})
 		})
 		.await
+		.map_err(db_error_to_client_error)
 	}
 
 	pub async fn create_pending(
@@ -357,6 +359,7 @@ impl User {
 			})
 		})
 		.await
+		.map_err(db_error_to_client_error)
 	}
 
 	pub async fn approve(mut self, db: &DbConn) -> errors::Result<User> {
@@ -409,7 +412,7 @@ impl User {
 			})
 		})
 		.await
-		.map_err(ZauthError::from)
+		.map_err(db_error_to_client_error)
 	}
 
 	pub async fn change_password(
@@ -555,6 +558,50 @@ fn validate_not_a_robot(
 		));
 	}
 	Ok(())
+}
+
+// These constraints are not explicitly named in the database migration scripts:
+// {table}_{column}_key is the default name given to UNIQUE column constraints
+// in postgresql.
+const USERNAME_UNIQUENESS_CONSTRAINT_NAME: &str = "users_username_key";
+const EMAIL_UNIQUENESS_CONSTRAINT_NAME: &str = "users_email_key";
+
+/// Map an database error to an error in the user domain.
+///
+/// Normally, a database error would result in an InternalError (5xx) - server
+/// side error. In some cases however, it is clear that these errors are the
+/// direct consequence of user actions, such as when an user requests to
+/// register an username that is already taken. (UNIQUE constraint violation).
+/// In these cases we would like to 'lift' the internal error into the client
+/// error (4xx) realm. This pattern is desirable because it allows us to do
+/// atomic constraint checking.
+///
+/// In summary: `run_my_query().map_err(db_error_to_client_error)` basically
+/// means "no its your fault".
+fn db_error_to_client_error(error: DieselError) -> ZauthError {
+	match error {
+		DieselError::DatabaseError(
+			DatabaseErrorKind::UniqueViolation,
+			info,
+		) if info.constraint_name()
+			== Some(USERNAME_UNIQUENESS_CONSTRAINT_NAME) =>
+		{
+			let mut err = ValidationErrors::new();
+			err.add("username", ValidationError::new("Username already taken"));
+			ZauthError::from(err)
+		},
+		DieselError::DatabaseError(
+			DatabaseErrorKind::UniqueViolation,
+			info,
+		) if info.constraint_name()
+			== Some(EMAIL_UNIQUENESS_CONSTRAINT_NAME) =>
+		{
+			let mut err = ValidationErrors::new();
+			err.add("email", ValidationError::new("Email already taken"));
+			ZauthError::from(err)
+		},
+		other => ZauthError::from(other),
+	}
 }
 
 /// used as a default for not_a_robot field
