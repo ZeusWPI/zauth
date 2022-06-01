@@ -69,14 +69,14 @@ mod test {
 	use super::*;
 	use rocket::http::{Accept, Header, Status};
 	use rocket::local::blocking::Client;
-	use rocket::response::content::Html;
+	use rocket::response::content::RawHtml;
 	use rocket::response::Redirect;
 	use rocket::serde::json::Json;
 
 	#[get("/simple")]
 	fn test_simple<'r>() -> impl Responder<'r, 'static> {
 		Accepter {
-			html: Html("<html><h1>Hello HTML"),
+			html: RawHtml("<html><h1>Hello HTML"),
 			json: Json(vec!["hello json"]),
 		}
 	}
