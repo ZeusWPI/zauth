@@ -5,6 +5,7 @@ use thiserror::Error;
 
 use diesel::result::Error::NotFound;
 use lettre::Message;
+use log::warn;
 use rocket::serde::json::Json;
 use rocket::tokio::sync::mpsc::error::{SendError, TrySendError};
 use std::convert::Infallible;
@@ -68,6 +69,7 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 				);
 			},
 			ZauthError::Internal(e) => {
+				warn!("Internal error occurred: {:?}", e);
 				let message = if debug {
 					format!("{:?}", e)
 				} else {
@@ -84,6 +86,7 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 				builder.merge(unauthorized().respond_to(request)?);
 			},
 			_ => {
+				warn!("Unmapped error occurred: {:?}", self);
 				let message = if debug {
 					format!("{:?}", self)
 				} else {

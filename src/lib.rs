@@ -6,6 +6,7 @@ extern crate lettre;
 extern crate pwhash;
 extern crate rand;
 extern crate regex;
+extern crate simple_logger;
 extern crate thiserror;
 extern crate toml;
 extern crate validator;
@@ -17,6 +18,7 @@ extern crate rocket_sync_db_pools;
 extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
+extern crate log;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
@@ -45,6 +47,7 @@ use rocket::fs::FileServer;
 use rocket::{Build, Rocket};
 use rocket_sync_db_pools::database;
 use rocket_sync_db_pools::diesel::PgConnection;
+use simple_logger::SimpleLogger;
 
 use crate::config::{AdminEmail, Config};
 use crate::controllers::*;
@@ -72,6 +75,7 @@ pub fn prepare_custom(config: Figment) -> Rocket<Build> {
 }
 
 pub fn prepare() -> Rocket<Build> {
+	SimpleLogger::new().env().init().unwrap();
 	assemble(rocket::build())
 }
 

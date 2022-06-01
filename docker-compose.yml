@@ -8,7 +8,7 @@ services:
     depends_on:
       - database
     command: >
-      sh -c "diesel --database-url 'postgresql://zauth:zauth@database/zauth' database setup && ROCKET_ENV=production zauth"
+      sh -c "diesel --database-url 'postgresql://zauth:zauth@database/zauth' database setup && RUST_LOG=info ROCKET_PROFILE=release zauth"
     volumes:
       - ${PWD}/Rocket.toml:/usr/src/zauth/Rocket.toml
 
