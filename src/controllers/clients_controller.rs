@@ -1,3 +1,4 @@
+use rocket::form::Lenient;
 use rocket::http::Status;
 use rocket::response::status;
 use rocket::response::status::Custom;
@@ -6,12 +7,52 @@ use rocket::serde::json::Json;
 use std::fmt::Debug;
 
 use crate::ephemeral::from_api::Api;
+use crate::ephemeral::from_api::SplitApi;
 use crate::ephemeral::session::AdminSession;
 use crate::errors::Result;
 use crate::models::client::*;
 use crate::models::user::User;
 use crate::views::accepter::Accepter;
 use crate::DbConn;
+
+#[derive(Deserialize, Debug)]
+pub struct JsonClientChange {
+	pub name:              Option<String>,
+	pub needs_grant:       Option<bool>,
+	pub description:       Option<String>,
+	pub redirect_uri_list: Option<String>,
+}
+
+#[derive(FromForm, Debug)]
+pub struct FormClientChange {
+	pub name:              Option<String>,
+	pub needs_grant:       Option<Lenient<bool>>,
+	pub description:       Option<String>,
+	pub redirect_uri_list: Option<String>,
+}
+
+impl std::convert::From<JsonClientChange> for ClientChange {
+	fn from(val: JsonClientChange) -> Self {
+		ClientChange {
+			name:              val.name,
+			needs_grant:       val.needs_grant,
+			description:       val.description,
+			redirect_uri_list: val.redirect_uri_list,
+		}
+	}
+}
+
+impl std::convert::From<FormClientChange> for ClientChange {
+	fn from(val: FormClientChange) -> Self {
+		info!("Parsed data: {:?}", val);
+		ClientChange {
+			name:              val.name,
+			needs_grant:       val.needs_grant.map(|n| n.into_inner()),
+			description:       val.description,
+			redirect_uri_list: val.redirect_uri_list,
+		}
+	}
+}
 
 #[get("/clients")]
 pub async fn list_clients<'r>(
@@ -46,7 +87,7 @@ pub async fn update_client_page<'r>(
 #[put("/clients/<id>", data = "<change>")]
 pub async fn update_client<'r>(
 	id: i32,
-	change: Api<ClientChange>,
+	change: SplitApi<FormClientChange, JsonClientChange, ClientChange>,
 	_session: AdminSession,
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
