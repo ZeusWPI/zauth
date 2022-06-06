@@ -52,7 +52,7 @@ pub struct NewClientWithSecret {
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct ClientChange {
 	pub name:              Option<String>,
-	pub needs_grant:       Option<bool>,
+	pub needs_grant:       Vec<bool>,
 	pub description:       Option<String>,
 	pub redirect_uri_list: Option<String>,
 }
@@ -93,8 +93,8 @@ impl Client {
 		if let Some(name) = change.name {
 			self.name = name;
 		}
-		if let Some(needs_grant) = change.needs_grant {
-			self.needs_grant = needs_grant;
+		if let Some(needs_grant) = change.needs_grant.last() {
+			self.needs_grant = *needs_grant;
 		}
 		if let Some(description) = change.description {
 			self.description = description;
