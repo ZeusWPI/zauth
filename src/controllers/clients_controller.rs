@@ -50,7 +50,6 @@ impl std::convert::From<JsonClientChange> for ClientChange {
 
 impl std::convert::From<FormClientChange> for ClientChange {
 	fn from(val: FormClientChange) -> Self {
-		info!("Parsed data: {:?}", val);
 		ClientChange {
 			name:              val.name,
 			needs_grant:       val.needs_grant.map(|n| n.into_inner()),
