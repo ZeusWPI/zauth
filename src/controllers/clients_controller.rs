@@ -15,6 +15,13 @@ use crate::models::user::User;
 use crate::views::accepter::Accepter;
 use crate::DbConn;
 
+
+// These structs need to be defined separately. Because we use a hidden field in
+// the HTML to make sure we always get some value for `needs_grant`, we need
+// Rocket to be lenient when parsing the form data. However, the `Lenient`
+// struct does not play nice with any other libraries. (So it can't be
+// deserialized by serde.)
+
 #[derive(Deserialize, Debug)]
 pub struct JsonClientChange {
 	pub name:              Option<String>,
