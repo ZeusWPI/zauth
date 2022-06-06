@@ -30,7 +30,9 @@ async fn create_and_update_client() {
 
 		assert_eq!(response.status(), Status::Created);
 
-		let created = Client::find_by_name(client_name.to_owned(), &db).await.unwrap();
+		let created = Client::find_by_name(client_name.to_owned(), &db)
+			.await
+			.unwrap();
 
 		let client_form = "needs_grant=on&needs_grant=false".to_owned();
 
@@ -44,7 +46,9 @@ async fn create_and_update_client() {
 
 		assert_eq!(response.status(), Status::NoContent);
 
-		let updated = Client::find_by_name(client_name.to_owned(), &db).await.unwrap();
+		let updated = Client::find_by_name(client_name.to_owned(), &db)
+			.await
+			.unwrap();
 
 		assert!(updated.needs_grant);
 	})
