@@ -49,7 +49,7 @@ pub struct NewClientWithSecret {
 	pub secret: String,
 }
 
-#[derive(FromForm, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct ClientChange {
 	pub name:              Option<String>,
 	pub needs_grant:       Option<bool>,

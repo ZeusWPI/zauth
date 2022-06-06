@@ -44,9 +44,15 @@
 				<div class="field">
 					<label class="label">Needs Grant?</label>
 					<label class="switch">
-						<input type="hidden" name="needs_grant" value="false">
 						<input type="checkbox" name="needs_grant" {% if client.needs_grant %} checked {% endif %}>
 						<span class="switch-slider"></span>
+						{# Do not switch the order of
+						    these inputs. Rocket takes the
+						    first supplied input, which is
+						    the checkbox if it is checked or
+						    the hidden field otherwise
+						#}
+						<input type="hidden" name="needs_grant" value="false">
 					</label>
 				</div>
 			</div>
