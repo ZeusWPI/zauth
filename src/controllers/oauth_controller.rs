@@ -108,13 +108,13 @@ pub async fn authorize<'r>(
 		Client::find_by_name(req.client_id.to_owned(), &db).await
 	{
 		if client.redirect_uri_acceptable(&req.redirect_uri) {
-			let client_name = client.name.clone();
+			let client_description = client.description.clone();
 			let state = AuthState::from_req(client, req);
 			cookies.add_private(state.into_cookie()?);
 			Ok(template! {
 				"oauth/authorize.html";
 				authorize_post_url: String = uri!(do_authorize).to_string(),
-				client_name: String = client_name,
+				client_description: String = client_description,
 			})
 		} else {
 			Err(AuthenticationError::Unauthorized(format!(
@@ -175,7 +175,7 @@ pub async fn grant_get<'r>(
 		if client.needs_grant {
 			Ok(Left(template! {
 				"oauth/grant.html";
-				client_name: String = state.client_name.clone(),
+				client_description: String = client.description.clone(),
 			}))
 		} else {
 			Ok(Right(
