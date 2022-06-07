@@ -51,6 +51,25 @@ async fn create_and_update_client() {
 			.unwrap();
 
 		assert!(updated.needs_grant);
+
+		let client_form = "name=test2".to_owned();
+
+		let response = http_client
+			.put(format!("/clients/{}", created.id))
+			.body(client_form)
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::NoContent);
+
+		let updated = Client::find_by_name("test2".to_owned(), &db)
+			.await
+			.unwrap();
+
+		assert!(updated.needs_grant);
+		assert_eq!(updated.name, "test2".to_owned());
 	})
 	.await;
 }
