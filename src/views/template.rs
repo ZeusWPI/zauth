@@ -9,7 +9,7 @@ macro_rules! template {
 				#[allow(dead_code)]
 				zauth_version: &'static str
 			}
-			TemplateStruct{
+			TemplateStruct {
 				zauth_version: crate::ZAUTH_VERSION,
 			}
 		}
