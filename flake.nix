@@ -26,6 +26,7 @@
         openssl.dev
         pkg-config
         docker-compose
+        cargo-udeps
         cargo-watch
         cargo-limit
         postgresql
