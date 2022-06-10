@@ -65,6 +65,8 @@ use std::str::FromStr;
 pub struct DbConn(PgConnection);
 pub type ConcreteConnection = PgConnection;
 
+pub const ZAUTH_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[get("/favicon.ico")]
 pub fn favicon() -> &'static str {
 	""
