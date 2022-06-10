@@ -51,7 +51,7 @@ impl std::convert::From<FormClientChange> for ClientChange {
 	fn from(val: FormClientChange) -> Self {
 		ClientChange {
 			name:              val.name,
-			needs_grant:       val.needs_grant.last().map(|b| *b),
+			needs_grant:       val.needs_grant.last().cloned(),
 			description:       val.description,
 			redirect_uri_list: val.redirect_uri_list,
 		}
