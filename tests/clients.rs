@@ -34,7 +34,7 @@ async fn create_and_update_client() {
 			.await
 			.unwrap();
 
-		let client_form = "needs_grant=on&needs_grant=false".to_owned();
+		let client_form = "needs_grant=false&needs_grant=on".to_owned();
 
 		let response = http_client
 			.put(format!("/clients/{}", created.id))
