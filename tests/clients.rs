@@ -64,9 +64,8 @@ async fn create_and_update_client() {
 
 		assert_eq!(response.status(), Status::NoContent);
 
-		let updated = Client::find_by_name("test2".to_owned(), &db)
-			.await
-			.unwrap();
+		let updated =
+			Client::find_by_name("test2".to_owned(), &db).await.unwrap();
 
 		assert!(updated.needs_grant);
 		assert_eq!(updated.name, "test2".to_owned());
