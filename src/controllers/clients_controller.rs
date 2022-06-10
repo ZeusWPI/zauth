@@ -1,4 +1,3 @@
-use rocket::form::Lenient;
 use rocket::http::Status;
 use rocket::response::status;
 use rocket::response::status::Custom;
@@ -32,7 +31,7 @@ pub struct JsonClientChange {
 #[derive(FromForm, Debug)]
 pub struct FormClientChange {
 	pub name:              Option<String>,
-	pub needs_grant:       Option<Lenient<bool>>,
+	pub needs_grant:       Vec<bool>,
 	pub description:       Option<String>,
 	pub redirect_uri_list: Option<String>,
 }
@@ -52,7 +51,7 @@ impl std::convert::From<FormClientChange> for ClientChange {
 	fn from(val: FormClientChange) -> Self {
 		ClientChange {
 			name:              val.name,
-			needs_grant:       val.needs_grant.map(|n| n.into_inner()),
+			needs_grant:       val.needs_grant.last().cloned(),
 			description:       val.description,
 			redirect_uri_list: val.redirect_uri_list,
 		}
