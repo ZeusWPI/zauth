@@ -75,7 +75,7 @@ pub struct User {
 	#[validate(length(min = 1, max = 254))]
 	pub username:              String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
-	pub hashed_password:       String,
+	pub hashed_password: String,
 	pub admin:                 bool,
 	#[serde(skip)]
 	pub password_reset_token:  Option<String>,
@@ -87,7 +87,7 @@ pub struct User {
 	#[serde(skip)]
 	// Don't send backing email address of users, applications could
 	// accidentally use this
-	pub email:                 String,
+	pub email: String,
 	#[serde(skip)]
 	pub pending_email:         Option<String>,
 	#[serde(skip)]
