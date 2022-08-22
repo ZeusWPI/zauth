@@ -3,8 +3,6 @@
 extern crate diesel;
 extern crate rocket;
 
-use zauth::models::client::Client;
-
 use rocket::http::Accept;
 use rocket::http::ContentType;
 use rocket::http::Status;
