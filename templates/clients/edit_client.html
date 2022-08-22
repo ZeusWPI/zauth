@@ -79,48 +79,21 @@
 
 		<!-- Secret -->
 			<label class="label">Secret</label>
-			<div class="field has-addons">
+			<div class="field">
 				<div class="control is-expanded">
-					<input
-						class="input"
+					<textarea
+						class="textarea"
 						type="text"
-						value="{{ client.secret }}"
-						disabled>
+						disabled>{{ client.secret.trim_end() }}</textarea>
 				</div>
+			</div>
+
+			<div class="field">
 				<div class="control">
 					<a class="button is-secondary" href="/clients/{{ client.id }}/generate_secret">Generate new secret</a>
 				</div>
 			</div>
 		</div>
-
-			<!-- Needs Grant -->
-			<div title="When this is enabled, users have to confirm they want to share their information with the client. After logging in, they will see the name and description of the client. Users have to explicitly confirm in order to complete the OAuth flow. This should only be disabled for fully trusted applications.">
-				<div class="field">
-					<label class="label">Needs Grant?</label>
-					<label class="switch">
-						{#
-						   Do not switch the order of these inputs. We take the
-						   last supplied value for `needs_grant`, which is the
-						   hidden input if unchecked and the checkbox input if
-						   checked.
-						#}
-						<input type="hidden" name="needs_grant" value="false">
-						<input type="checkbox" name="needs_grant" {% if client.needs_grant %} checked {% endif %}>
-						<span class="switch-slider"></span>
-					</label>
-				</div>
-			</div>
-
-			<!-- Redirect URI's -->
-			<div class="field">
-				<label class="label">Redirect URI's</label>
-        <textarea class="textarea" name="redirect_uri_list" rows="4" cols="50" placeholder="http://localhost:3000/auth/callback
-https://example.com/auth/callback"
-				>{{- client.redirect_uri_list -}}</textarea>
-			</div>
-
-		<button class="button is-primary" type="submit" form="update-client">Save</button>
-		</form>
 	</div>
 </div>
 

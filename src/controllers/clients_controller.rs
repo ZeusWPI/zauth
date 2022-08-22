@@ -134,12 +134,11 @@ pub async fn create_client<'r>(
 #[get("/clients/<id>/generate_secret")]
 pub async fn get_generate_secret<'r>(
 	id: i32,
-	session: AdminSession,
+	_session: AdminSession,
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
 	Ok(template! { "clients/confirm_generate_secret.html";
-		current_user: User = session.admin,
 		client: Client = client,
 	})
 }
