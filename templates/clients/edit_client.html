@@ -2,99 +2,97 @@
 
 <!-- Content -->
 {% block content %}
-<div class="columns">
+	<div class="columns">
+		<div class="column is-8">
+			<div class="card card-content">
 
-	<div class="column is-8">
-		<div class="card card-content mb-4">
+				<!-- Title -->
+				<div class="title">
+					Update {{ client.name }}
+				</div>
 
-			<!-- Title -->
-			<div class="title">
-				Update {{ client.name }}
+				<!-- Form -->
+				<form class="form" action="/clients/{{ client.id }}" method="post">
+					<input type="hidden" name="_method" value="put"/>
+
+					<!-- Name -->
+					<div class="field">
+						<label class="label">Name</label>
+				<input
+							class="input"
+							type="text"
+							placeholder="Application name"
+							name="name"
+							minlength="3"
+							maxlength="80"
+							value="{{ client.name }}"
+							required
+						>
+					</div>
+
+					<!-- Description -->
+					<div class="field">
+						<label class="label">Description</label>
+				<textarea
+							class="textarea"
+							name="description"
+							rows="4"
+							cols="50"
+							placeholder="Describe what the application does.">{{ client.description -}}</textarea>
+					</div>
+
+					<!-- Needs Grant -->
+					<div title="When this is enabled, users have to confirm they want to share their information with the client. After logging in, they will see the name and description of the client. Users have to explicitly confirm in order to complete the OAuth flow. This should only be disabled for fully trusted applications.">
+						<div class="field">
+							<label class="label">Needs Grant?</label>
+							<label class="switch">
+								{#
+								   Do not switch the order of these inputs. We take the
+								   last supplied value for `needs_grant`, which is the
+								   hidden input if unchecked and the checkbox input if
+								   checked.
+								#}
+								<input type="hidden" name="needs_grant" value="false">
+								<input type="checkbox" name="needs_grant" {% if client.needs_grant %} checked {% endif %}>
+								<span class="switch-slider"></span>
+							</label>
+						</div>
+					</div>
+
+					<!-- Redirect URI's -->
+					<div class="field">
+						<label class="label">Redirect URI's</label>
+				<textarea class="textarea" name="redirect_uri_list" rows="4" cols="50" placeholder="http://localhost:3000/auth/callback
+		https://example.com/auth/callback"
+						>{{- client.redirect_uri_list -}}</textarea>
+					</div>
+
+			  <button class="button is-primary" type="submit">Save</button>
+				</form>
 			</div>
+		</div>
+		<div class="column is-4">
+			<div class="card card-content">
+				<div class="title">
+					Secret
+				</div>
 
-			<!-- Form -->
-			<form id="update-client" action="/clients/{{ client.id }}" method="post"></form>
-			<input type="hidden" name="_method" value="put" form="update-client"/>
-
-			<!-- Name -->
-			<div class="field">
-				<label class="label">Name</label>
-		<input
-					class="input"
-					type="text"
-					placeholder="Application name"
-					name="name"
-					minlength="3"
-					maxlength="80"
-					value="{{ client.name }}"
-					required
-					form="update-client"
-				>
-			</div>
-
-			<!-- Description -->
-			<div class="field">
-				<label class="label">Description</label>
-		<textarea
-					class="textarea"
-					name="description"
-					rows="4"
-					cols="50"
-					form="update-client"
-					placeholder="Describe what the application does.">{{ client.description -}}</textarea>
-			</div>
-
-			<!-- Needs Grant -->
-			<div title="When this is enabled, users have to confirm they want to share their information with the client. After logging in, they will see the name and description of the client. Users have to explicitly confirm in order to complete the OAuth flow. This should only be disabled for fully trusted applications.">
 				<div class="field">
-					<label class="label">Needs Grant?</label>
-					<label class="switch">
-						<input type="hidden" name="needs_grant" value="false" form="update-client">
-						<input type="checkbox" name="needs_grant" form="update-client" {% if client.needs_grant %} checked {% endif %}>
-						<span class="switch-slider"></span>
-					</label>
+					<details>
+						<summary class="button is-primary is-outlined is-fullwidth">Show secret</summary>
+						<textarea
+							class="textarea"
+							type="text"
+							disabled>{{ client.secret.trim_end() }}</textarea>
+					</details>
 				</div>
-			</div>
 
-			<!-- Redirect URI's -->
-			<div class="field">
-				<label class="label">Redirect URI's</label>
-		<textarea class="textarea" name="redirect_uri_list" rows="4" cols="50" placeholder="http://localhost:3000/auth/callback
-	https://example.com/auth/callback"
-					form="update-client"
-				>{{- client.redirect_uri_list -}}</textarea>
-			</div>
-
-
-			<button class="button is-primary" type="submit" form="update-client">Save</button>
-			</form>
-		</div>
-	</div>
-
-	<div class="column is-4">
-		<div class="card card-content">
-			<div class="title">
-				Secret
-			</div>
-
-		<!-- Secret -->
-			<label class="label">Secret</label>
-			<div class="field">
-				<div class="control is-expanded">
-					<textarea
-						class="textarea"
-						type="text"
-						disabled>{{ client.secret.trim_end() }}</textarea>
-				</div>
-			</div>
-
-			<div class="field">
-				<div class="control">
-					<a class="button is-secondary" href="/clients/{{ client.id }}/generate_secret">Generate new secret</a>
+				<div class="field">
+					<div class="control">
+						<a class="button is-danger is-outlined is-fullwidth" href="/clients/{{ client.id }}/generate_secret">Generate new secret</a>
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-</div>
-
 {% endblock content %}
