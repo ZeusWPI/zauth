@@ -420,9 +420,18 @@ dependencies = [
  "bitflags",
  "byteorder",
  "chrono",
- "diesel_derives",
+ "diesel_derives 1.4.1",
  "pq-sys",
  "r2d2",
+]
+
+[[package]]
+name = "diesel"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01e2adfd0a7a81070ed7beec0c62636458926326c16fedb77796d41e447b282d"
+dependencies = [
+ "diesel_derives 2.0.0",
 ]
 
 [[package]]
@@ -449,11 +458,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "diesel_migrations"
-version = "1.4.0"
+name = "diesel_derives"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf3cde8413353dc7f5d72fa8ce0b99a560a359d2c5ef1e5817ca731cd9008f4c"
+checksum = "22a7ab9d7967e6a1a247ea38aedf88ab808b4ac0c159576bc71866ab8f9f9250"
 dependencies = [
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "diesel_migrations"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9ae22beef5e9d6fab9225ddb073c1c6c1a7a6ded5019d5da11d1e5c5adc34e2"
+dependencies = [
+ "diesel 2.0.0",
  "migrations_internals",
  "migrations_macros",
 ]
@@ -1019,23 +1041,23 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
 name = "migrations_internals"
-version = "1.4.1"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b4fc84e4af020b837029e017966f86a1c2d5e83e64b589963d5047525995860"
+checksum = "c493c09323068c01e54c685f7da41a9ccf9219735c3766fbfd6099806ea08fbc"
 dependencies = [
- "diesel",
+ "serde",
+ "toml",
 ]
 
 [[package]]
 name = "migrations_macros"
-version = "1.4.2"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9753f12909fd8d923f75ae5c3258cae1ed3c8ec052e1b38c93c21a6d157f789c"
+checksum = "8a8ff27a350511de30cdabb77147501c36ef02e0451d957abea2f30caffb2b58"
 dependencies = [
  "migrations_internals",
  "proc-macro2",
  "quote",
- "syn",
 ]
 
 [[package]]
@@ -1618,7 +1640,7 @@ version = "0.1.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5fa48b6ab25013e9812f1b0c592741900b3a2a83c0936292e0565c0ac842f558"
 dependencies = [
- "diesel",
+ "diesel 1.4.8",
  "r2d2",
  "rocket",
  "rocket_sync_db_pools_codegen",
@@ -2493,7 +2515,7 @@ dependencies = [
  "base64",
  "bincode",
  "chrono",
- "diesel",
+ "diesel 1.4.8",
  "diesel-derive-enum",
  "diesel_migrations",
  "lazy_static",
