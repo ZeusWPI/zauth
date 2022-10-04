@@ -1,3 +1,4 @@
+pub mod announcements_controller;
 pub mod clients_controller;
 pub mod oauth_controller;
 pub mod pages_controller;
