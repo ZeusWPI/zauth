@@ -64,6 +64,20 @@
 			<a class="button is-primary" href="/users/forgot_password">Change password</a>
 		</div>
 
+		<div class="card card-content mb-4">
+			<form action="/users/{{ user.username }}/set_subscribed" class="profile-edit-form" autocomplete="off" method="post">
+				<input type="hidden" name="set_subscribed" value="{{ !(current_user.subscribed_to_mailing_list) }}">
+
+				<button class="button is-primary" type="submit">
+					{% if current_user.subscribed_to_mailing_list -%}
+						Unsubscribe from mailing list
+					{% else -%}
+						Subscribe to mailing list
+					{% endif %}
+				</button>
+			</form>
+		</div>
+
 		{% if current_user.admin %}
 		<!-- Change status -->
 		<div class="card card-content">

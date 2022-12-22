@@ -241,6 +241,24 @@ pub async fn change_state<'r>(
 	})
 }
 
+/// Set whether or not a user is subscribed to the mailing list
+#[post("/users/<username>/set_subscribed", data = "<set_subscribed>")]
+pub async fn set_subscribed<'r>(
+	username: String,
+	set_subscribed: Api<bool>,
+	_session: UserSession,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let mut user = User::find_by_username(username, &db).await?;
+	user.subscribed_to_mailing_list = set_subscribed.into_inner();
+	let user = user.update(&db).await?;
+
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_user(user.username))),
+		json: Custom(Status::NoContent, ()),
+	})
+}
+
 #[post("/users/<username>/approve")]
 pub async fn set_approved<'r>(
 	username: String,
