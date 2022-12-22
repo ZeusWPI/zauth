@@ -35,6 +35,33 @@ impl Mailer {
 			.into())
 	}
 
+	/// Build an email with a list of addresses in bcc
+	pub fn build_with_bcc<E, M, R, B>(
+		&self,
+		receiver: M,
+		bcc: Vec<B>,
+		subject: String,
+		text: String,
+	) -> Result<Message>
+	where
+		E: Into<ZauthError>,
+		M: TryInto<Mailbox, Error = E>,
+		R: Into<ZauthError>,
+		B: TryInto<Mailbox, Error = R>,
+	{
+		let mut builder = Message::builder()
+			.to(receiver.try_into().map_err(|e| e.into())?)
+			.keep_bcc()
+			.subject(subject)
+			.from(Mailbox::new(None, self.from.clone()));
+
+		for addr in bcc {
+			builder.bcc(addr.try_into().map_err(|e| e.into())?);
+		}
+
+		Ok(builder.body(text).map_err(InternalError::from)?.into())
+	}
+
 	/// Send an email, but fail when the mail queue is full.
 	///
 	/// Use this method for less important emails where abuse may be possible.
@@ -45,6 +72,28 @@ impl Mailer {
 		text: String,
 	) -> Result<()> {
 		let email = self.build(receiver, subject, text)?;
+		self.queue
+			.try_send(email)
+			.map_err(|e| ZauthError::from(InternalError::from(e)))
+	}
+
+	/// Try to send an email with a list of addresses in BCC
+	pub fn try_create_with_bcc<
+		E: Into<ZauthError>,
+		M: TryInto<Mailbox, Error = E>,
+	>(
+		&self,
+		bcc: Vec<M>,
+		subject: String,
+		text: String,
+	) -> Result<()> {
+		let receiver = Mailbox::new(
+			Some("Leden".to_string()),
+			"leden@zeus.ugent.be".parse().map_err(InternalError::from)?,
+		);
+
+		let email = self.build_with_bcc(receiver, bcc, subject, text)?;
+
 		self.queue
 			.try_send(email)
 			.map_err(|e| ZauthError::from(InternalError::from(e)))
