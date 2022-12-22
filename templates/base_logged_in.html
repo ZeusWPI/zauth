@@ -18,6 +18,7 @@
         <a class="navbar-item" href="/users/{{ current_user.username }}">Profile</a>
 
         {% if current_user.admin %}
+          <a class="navbar-item" href="/mails/">Mails</a>
           <a class="navbar-item" href="/users/">Users</a>
           <a class="navbar-item" href="/clients/">Clients</a>
         {% endif %}
