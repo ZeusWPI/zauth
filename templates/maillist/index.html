@@ -1,0 +1,51 @@
+{% extends "base_logged_in.html" %}
+
+<!-- Content -->
+{% block content %}
+<div class="columns is-multiline mt-4">
+
+	<!-- Mails -->
+	<div class="card card-content mt-5">
+
+		<!-- Title -->
+		<div class="columns is-multiline is-justify-content-space-between">
+			<div class="column is-narrow">
+				<div class="title">Mails ({{ mails.len() }})</div>
+			</div>
+
+			<div class="column is-narrow">
+				<a class="button is-primary" href="/mails/new">New mail</a>
+			</div>
+		</div>
+
+		<!-- Table -->
+		<table class="table table--responsive table--responsive--labels is-fullwidth">
+			<thead>
+				<tr>
+					<th>Sent on</th>
+					<th>Subject</th>
+					<th>Body</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for mail in mails %}
+					<tr>
+						<a href="/mails/{{ mail.id }}">
+							<!-- Sent On -->
+							<td data-label="Sent on">
+								{{ mail.sent_on.format("%d/%m/%y").to_string() }}
+							</td>
+
+							<!-- Subject -->
+							<td data-label="Subject">{{ mail.subject }}</td>
+
+							<!-- Body -->
+							<td data-label="Body">{{ mail.body|truncate(50) }}</td>
+						</a>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+{% endblock content %}
