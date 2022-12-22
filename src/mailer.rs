@@ -56,7 +56,7 @@ impl Mailer {
 			.from(Mailbox::new(None, self.from.clone()));
 
 		for addr in bcc {
-			builder.bcc(addr.try_into().map_err(|e| e.into())?);
+			builder = builder.bcc(addr.try_into().map_err(|e| e.into())?);
 		}
 
 		Ok(builder.body(text).map_err(InternalError::from)?.into())
