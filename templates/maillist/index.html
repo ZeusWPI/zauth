@@ -31,18 +31,18 @@
 			<tbody>
 				{% for mail in mails %}
 					<tr>
-						<a href="/mails/{{ mail.id }}">
-							<!-- Sent On -->
-							<td data-label="Sent on">
+						<!-- Sent On -->
+						<td data-label="Sent on">
+							<a href="/mails/{{ mail.id }}">
 								{{ mail.sent_on.format("%d/%m/%y").to_string() }}
-							</td>
+							</a>
+						</td>
 
-							<!-- Subject -->
-							<td data-label="Subject">{{ mail.subject }}</td>
+						<!-- Subject -->
+						<td data-label="Subject">{{ mail.subject }}</td>
 
-							<!-- Body -->
-							<td data-label="Body">{{ mail.body|truncate(50) }}</td>
-						</a>
+						<!-- Body -->
+						<td data-label="Body">{{ mail.body|truncate(50) }}</td>
 				{% endfor %}
 			</tbody>
 		</table>
