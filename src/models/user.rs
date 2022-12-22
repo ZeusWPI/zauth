@@ -62,6 +62,7 @@ pub mod schema {
 			state -> UserStateMapping,
 			last_login -> Timestamp,
 			created_at -> Timestamp,
+			subscribed_to_mailing_list -> Bool,
 		}
 	}
 }
@@ -71,35 +72,36 @@ pub mod schema {
 #[changeset_options(treat_none_as_null = "true")]
 #[serde(crate = "rocket::serde")]
 pub struct User {
-	pub id:                    i32,
+	pub id: i32,
 	#[validate(length(min = 1, max = 254))]
-	pub username:              String,
+	pub username: String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password: String,
-	pub admin:                 bool,
+	pub admin: bool,
 	#[serde(skip)]
-	pub password_reset_token:  Option<String>,
+	pub password_reset_token: Option<String>,
 	#[serde(skip)]
 	pub password_reset_expiry: Option<NaiveDateTime>,
 	#[validate(length(min = 3, max = 254))]
-	pub full_name:             String,
+	pub full_name: String,
 	#[validate(email)]
 	#[serde(skip)]
 	// Don't send backing email address of users, applications could
 	// accidentally use this
 	pub email: String,
 	#[serde(skip)]
-	pub pending_email:         Option<String>,
+	pub pending_email: Option<String>,
 	#[serde(skip)]
-	pub pending_email_token:   Option<String>,
+	pub pending_email_token: Option<String>,
 	#[serde(skip)]
-	pub pending_email_expiry:  Option<NaiveDateTime>,
+	pub pending_email_expiry: Option<NaiveDateTime>,
 	#[validate(custom = "validate_ssh_key_list")]
-	pub ssh_key:               Option<String>,
+	pub ssh_key: Option<String>,
 	#[serde(skip)]
-	pub state:                 UserState,
-	pub last_login:            NaiveDateTime,
-	pub created_at:            NaiveDateTime,
+	pub state: UserState,
+	pub last_login: NaiveDateTime,
+	pub created_at: NaiveDateTime,
+	pub subscribed_to_mailing_list: bool,
 }
 
 lazy_static! {
