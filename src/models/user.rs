@@ -215,6 +215,17 @@ impl User {
 			.await
 	}
 
+	/// Find all users that are subscribed to the mailing list
+	pub async fn find_subscribed(db: &DbConn) -> errors::Result<Vec<Self>> {
+		db.run(move |conn| {
+			users::table
+				.filter(users::subscribed_to_mailing_list.eq(true))
+				.load::<Self>(conn)
+		})
+		.await
+		.map_err(ZauthError::from)
+	}
+
 	pub async fn delete(self, db: &DbConn) -> errors::Result<()> {
 		db.run(move |conn| {
 			diesel::delete(users::table.find(self.id))
