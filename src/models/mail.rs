@@ -1,3 +1,5 @@
+use std::cmp::Reverse;
+
 use self::schema::mails;
 use crate::errors::{self, ZauthError};
 use crate::DbConn;
@@ -63,7 +65,7 @@ impl Mail {
 		let mut all_mails =
 			db.run(move |conn| mails::table.load::<Self>(conn)).await?;
 
-		all_mails.sort_by_key(|m| m.sent_on);
+		all_mails.sort_by_key(|m| Reverse(m.sent_on));
 
 		Ok(all_mails)
 	}
