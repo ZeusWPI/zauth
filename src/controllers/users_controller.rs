@@ -233,11 +233,7 @@ pub async fn change_state<'r>(
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mut user = User::find_by_username(username, &db).await?;
-	let state_update = value.into_inner().state;
-	if state_update == UserState::Disabled {
-		user.subscribed_to_mailing_list = false;
-	}
-	user.state = state_update;
+	user.state = value.into_inner().state;
 	let user = user.update(&db).await?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user(user.username))),
