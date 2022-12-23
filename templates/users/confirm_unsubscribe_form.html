@@ -1,0 +1,17 @@
+{% extends "base_logged_in.html" %}
+
+{% block content %}
+	<div class="columns is-multiline mt-4 is-justify-content-center">
+		<div class="column is-5">
+			<div class="card card-content">
+				<div class="title">Confirm you want to unsubscribe</div>
+
+				<form class="profile-edit-form" action="/users/unsubscribe" method="post">
+					<input type="hidden" name="token" value="{{ token }}">
+
+					<button class="button is-primary" type="submit">Unsubscribe</button>
+				</form>
+			</div>
+		</div>
+	</div>
+{% endblock content %}

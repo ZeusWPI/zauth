@@ -2,6 +2,8 @@ use lettre::message::Mailbox;
 use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;
 
+use crate::config::Config;
+use crate::controllers::users_controller::rocket_uri_macro_show_confirm_unsubscribe;
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::AdminSession;
 use crate::errors::Result;
@@ -38,6 +40,7 @@ pub async fn send_mail<'r>(
 	_session: AdminSession,
 	new_mail: Api<NewMail>,
 	db: DbConn,
+	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mail = new_mail.into_inner().save(&db).await?;
@@ -48,7 +51,15 @@ pub async fn send_mail<'r>(
 		.map(|u| Mailbox::try_from(u))
 		.collect::<Result<Vec<Mailbox>>>()?;
 
-	mailer.try_create_with_bcc(bcc, mail.subject.clone(), mail.body.clone())?;
+	let unsubscribe_url = uri!(conf.base_url(), show_confirm_unsubscribe,);
+
+	let body = mail.body.clone()
+		+ &format!(
+			"\n\nYou can unsubscribe from the mailing list at {}",
+			unsubscribe_url
+		);
+
+	mailer.try_create_with_bcc(bcc, mail.subject.clone(), body)?;
 
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_mail(mail.id))),

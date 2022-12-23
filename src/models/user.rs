@@ -63,6 +63,7 @@ pub mod schema {
 			last_login -> Timestamp,
 			created_at -> Timestamp,
 			subscribed_to_mailing_list -> Bool,
+			unsubscribe_token -> Varchar,
 		}
 	}
 }
@@ -102,6 +103,8 @@ pub struct User {
 	pub last_login: NaiveDateTime,
 	pub created_at: NaiveDateTime,
 	pub subscribed_to_mailing_list: bool,
+	#[serde(skip)]
+	pub unsubscribe_token: String,
 }
 
 lazy_static! {
@@ -226,6 +229,28 @@ impl User {
 		})
 		.await
 		.map_err(ZauthError::from)
+	}
+
+	/// Find a user given their unique unsubscribe token
+	pub async fn find_by_unsubscribe_token<'r>(
+		token: String,
+		db: &DbConn,
+	) -> errors::Result<Option<User>> {
+		let token = token.to_owned();
+		let result = db
+			.run(move |conn| {
+				users::table
+					.filter(users::unsubscribe_token.eq(token))
+					.first::<Self>(conn)
+			})
+			.await
+			.map_err(ZauthError::from);
+
+		match result {
+			Ok(user) => Ok(Some(user)),
+			Err(ZauthError::NotFound(_)) => Ok(None),
+			Err(e) => Err(e),
+		}
 	}
 
 	pub async fn delete(self, db: &DbConn) -> errors::Result<()> {

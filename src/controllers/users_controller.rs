@@ -333,6 +333,46 @@ pub async fn forgot_password_post<'r>(
 	})
 }
 
+#[get("/users/unsubscribe")]
+pub fn show_confirm_unsubscribe<'r>(
+	session: UserSession,
+) -> impl Responder<'r, 'static> {
+	let unsubscribe_token = session.user.unsubscribe_token.clone();
+
+	template! {
+		"users/confirm_unsubscribe_form.html";
+		current_user: User = session.user,
+		token: String = unsubscribe_token,
+	}
+}
+
+#[derive(Debug, FromForm)]
+pub struct UnsubscribeForm {
+	token: String,
+}
+
+#[post("/users/unsubscribe", data = "<form>")]
+pub async fn unsubscribe_user<'r>(
+	session: UserSession,
+	form: Form<UnsubscribeForm>,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let user =
+		User::find_by_unsubscribe_token(form.into_inner().token, &db).await?;
+
+	if let Some(mut user) = user {
+		let new_token = util::random_token(32);
+		user.unsubscribe_token = new_token;
+		user.subscribed_to_mailing_list = false;
+		user.update(&db).await?;
+	};
+
+	Ok(template! {
+		"users/unsubscribed.html";
+		current_user: User = session.user,
+	})
+}
+
 #[get("/users/reset_password/<token>")]
 pub fn reset_password_get<'r>(token: String) -> impl Responder<'r, 'static> {
 	template! {
