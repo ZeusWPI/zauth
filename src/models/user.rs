@@ -215,11 +215,12 @@ impl User {
 			.await
 	}
 
-	/// Find all users that are subscribed to the mailing list
+	/// Find all active users that are subscribed to the mailing list
 	pub async fn find_subscribed(db: &DbConn) -> errors::Result<Vec<Self>> {
 		db.run(move |conn| {
 			users::table
 				.filter(users::subscribed_to_mailing_list.eq(true))
+				.filter(users::state.eq(UserState::Active))
 				.load::<Self>(conn)
 		})
 		.await
