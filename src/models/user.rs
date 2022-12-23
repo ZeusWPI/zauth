@@ -382,6 +382,7 @@ impl User {
 			)));
 		}
 		self.state = UserState::Active;
+		self.subscribed_to_mailing_list = true;
 		self.update(&db).await
 	}
 
