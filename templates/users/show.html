@@ -49,6 +49,15 @@
 				</div>
 
 				<div class="field">
+					<label for="subscribed_to_mailing_list" class="label">Subscribe to Mailing List</label>
+					{% if current_user.subscribed_to_mailing_list -%}
+						<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list" checked>
+					{% else -%}
+						<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list">
+					{% endif %}
+				</div>
+
+				<div class="field">
 					<label class="label">SSH Keys</label>
 					<textarea class="textarea" name="ssh_key" placeholder="SSH Keys">{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}</textarea>
 				</div>
@@ -62,20 +71,6 @@
 		<!-- Change password -->
 		<div class="card card-content mb-4">
 			<a class="button is-primary" href="/users/forgot_password">Change password</a>
-		</div>
-
-		<div class="card card-content mb-4">
-			<form action="/users/{{ user.username }}/set_subscribed" class="profile-edit-form" autocomplete="off" method="post">
-				<input type="hidden" name="set_subscribed" value="{{ !(current_user.subscribed_to_mailing_list) }}">
-
-				<button class="button is-primary" type="submit">
-					{% if current_user.subscribed_to_mailing_list -%}
-						Unsubscribe from mailing list
-					{% else -%}
-						Subscribe to mailing list
-					{% endif %}
-				</button>
-			</form>
 		</div>
 
 		{% if current_user.admin %}

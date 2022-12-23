@@ -156,11 +156,12 @@ struct NewUserHashed {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct UserChange {
-	pub username:  Option<String>,
-	pub password:  Option<String>,
+	pub username: Option<String>,
+	pub password: Option<String>,
 	pub full_name: Option<String>,
-	pub email:     Option<String>,
-	pub ssh_key:   Option<String>,
+	pub email: Option<String>,
+	pub ssh_key: Option<String>,
+	pub subscribed_to_mailing_list: bool,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -409,6 +410,7 @@ impl User {
 		if let Some(ssh_key) = change.ssh_key {
 			self.ssh_key = Some(ssh_key);
 		}
+		self.subscribed_to_mailing_list = change.subscribed_to_mailing_list;
 		Ok(())
 	}
 
