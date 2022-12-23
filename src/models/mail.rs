@@ -8,6 +8,7 @@ use diesel::{self, prelude::*};
 
 use diesel::result::Error as DieselError;
 use rocket::serde::Serialize;
+use validator::Validate;
 
 pub mod schema {
 	table! {
@@ -31,10 +32,12 @@ pub struct Mail {
 	pub body:    String,
 }
 
-#[derive(Clone, Debug, Deserialize, FromForm, Insertable)]
+#[derive(Clone, Debug, Deserialize, FromForm, Insertable, Validate)]
 #[table_name = "mails"]
 pub struct NewMail {
+	#[validate(length(min = 3, max = 255))]
 	pub subject: String,
+	#[validate(length(min = 3))]
 	pub body:    String,
 }
 
@@ -42,6 +45,8 @@ impl NewMail {
 	/// Save the [`NewMail`] to the database and return the newly stored
 	/// [`Mail`] object
 	pub async fn save(self, db: &DbConn) -> errors::Result<Mail> {
+		self.validate()?;
+
 		db.run(move |conn| {
 			conn.transaction::<_, DieselError, _>(|| {
 				// Insert the new mail
