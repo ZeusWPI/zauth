@@ -154,15 +154,16 @@ async fn visitor_cannot_unsubscribe() {
 /// Ensure that users can use unsubscribe endpoints
 #[rocket::async_test]
 async fn user_can_unsubscribe() {
-	common::as_user(async move |http_client, _db, _user| {
-		let response = http_client.get("/users/unsubscribe").dispatch().await;
+	common::as_user(async move |http_client, _db, user| {
+		let page_response =
+			http_client.get("/users/unsubscribe").dispatch().await;
 		assert_eq!(
-			response.status(),
+			page_response.status(),
 			Status::Ok,
 			"users should be able to see unsubscribe page"
 		);
 
-		let response = http_client
+		let invalid_token_response = http_client
 			.post("/users/unsubscribe")
 			.header(ContentType::Form)
 			.header(Accept::JSON)
@@ -170,10 +171,23 @@ async fn user_can_unsubscribe() {
 			.dispatch()
 			.await;
 		assert_eq!(
-			response.status(),
+			invalid_token_response.status(),
+			Status::Unauthorized,
+			"users should not be able to unsubscribe with an invalid token"
+		);
+
+		let valid_token_response = http_client
+			.post("/users/unsubscribe")
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.body(format!("token={}", user.unsubscribe_token))
+			.dispatch()
+			.await;
+		assert_eq!(
+			valid_token_response.status(),
 			Status::Ok,
-			"users should be able to unsubscribe"
-		)
+			"users should be able to unsubscribe with a valid token"
+		);
 	})
 	.await;
 }
@@ -181,7 +195,7 @@ async fn user_can_unsubscribe() {
 /// Ensure that admins can use unsubscribe endpoints
 #[rocket::async_test]
 async fn admin_can_unsubscribe() {
-	common::as_admin(async move |http_client, _db, _user| {
+	common::as_admin(async move |http_client, _db, user| {
 		let response = http_client.get("/users/unsubscribe").dispatch().await;
 		assert_eq!(
 			response.status(),
@@ -193,7 +207,7 @@ async fn admin_can_unsubscribe() {
 			.post("/users/unsubscribe")
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body("token=foo")
+			.body(format!("token={}", user.unsubscribe_token))
 			.dispatch()
 			.await;
 		assert_eq!(

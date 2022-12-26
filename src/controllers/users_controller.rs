@@ -352,21 +352,30 @@ pub async fn unsubscribe_user<'r>(
 	session: UserSession,
 	form: Form<UnsubscribeForm>,
 	db: DbConn,
-) -> Result<impl Responder<'r, 'static>> {
+) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
 	let user =
 		User::find_by_unsubscribe_token(form.into_inner().token, &db).await?;
 
-	if let Some(mut user) = user {
-		let new_token = util::random_token(32);
-		user.unsubscribe_token = new_token;
-		user.subscribed_to_mailing_list = false;
-		user.update(&db).await?;
-	};
+	if user.is_none() {
+		return Ok(Either::Left(Custom(
+			Status::Unauthorized,
+			template! {
+				"users/unsubscribe_invalid.html";
+				current_user: User = session.user,
+			},
+		)));
+	}
 
-	Ok(template! {
+	let mut user = user.unwrap();
+	let new_token = util::random_token(32);
+	user.unsubscribe_token = new_token;
+	user.subscribed_to_mailing_list = false;
+	user.update(&db).await?;
+
+	Ok(Either::Right(template! {
 		"users/unsubscribed.html";
 		current_user: User = session.user,
-	})
+	}))
 }
 
 #[get("/users/reset_password/<token>")]
