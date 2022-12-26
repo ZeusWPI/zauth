@@ -6,7 +6,6 @@ extern crate rocket;
 use lettre::message::Mailbox;
 use rocket::http::{Accept, ContentType, Status};
 
-use zauth::config::Config;
 use zauth::mailer::Mailer;
 use zauth::models::mail::NewMail;
 use zauth::models::user::*;
@@ -73,24 +72,7 @@ async fn get_valid_subscribed_users() {
 			.map(|u| Mailbox::try_from(u).unwrap())
 			.collect();
 
-		let test_cfg = Config {
-			admin_email: "".to_string(),
-			user_session_seconds: 0,
-			client_session_seconds: 0,
-			authorization_token_seconds: 0,
-			email_confirmation_token_seconds: 0,
-			secure_token_length: 0,
-			bcrypt_cost: 0,
-			base_url: "".to_string(),
-			mail_queue_size: 5,
-			mail_queue_wait_seconds: 5,
-			mail_from: "test@example.com".to_string(),
-			mail_server: "stub".to_string(),
-			mailing_list_name: "Leden".to_string(),
-			mailing_list_email: "leden@zeus.ugent.be".to_string(),
-			maximum_pending_users: 0,
-			webhook_url: None,
-		};
+		let test_cfg = common::config();
 		let test_mailer = Mailer::new(&test_cfg).unwrap();
 
 		let test_receiver = Mailbox::new(
