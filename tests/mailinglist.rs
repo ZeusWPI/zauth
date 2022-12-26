@@ -22,8 +22,8 @@ const TEST_USERS: [(&'static str, UserState, bool); 10] = [
 	("pending_email1", UserState::PendingMailConfirmation, true),
 	("disabled0", UserState::Disabled, true),
 	("disabled1", UserState::Disabled, true),
-	("unsubbed0", UserState::Disabled, false),
-	("unsubbed01", UserState::Disabled, false),
+	("unsubbed0", UserState::Active, false),
+	("unsubbed01", UserState::Active, false),
 ];
 
 async fn setup_test_users(db: &DbConn) {
