@@ -292,7 +292,7 @@ async fn user_can_see_mailinglist() {
 /// Ensure admins can see mails pages and create new mails
 #[rocket::async_test]
 async fn admin_can_use_mailinglist() {
-	common::as_admin(async move |http_client, db, _user| {
+	common::as_admin(async move |http_client, db, user| {
 		let test_mail = NewMail {
 			subject: "foo".to_string(),
 			body:    "bar".to_string(),
@@ -305,13 +305,20 @@ async fn admin_can_use_mailinglist() {
 			.get(format!("/mails/{}", test_mail.id))
 			.dispatch()
 			.await;
-		let create_mail_response = http_client
-			.post("/mails")
-			.header(ContentType::Form)
-			.header(Accept::JSON)
-			.body("subject=foosubject&body=foobody")
-			.dispatch()
-			.await;
+
+		let create_mail_response = common::expect_mail_to(
+			vec![&common::config().mailing_list_email, &user.email],
+			async || {
+				http_client
+					.post("/mails")
+					.header(ContentType::Form)
+					.header(Accept::JSON)
+					.body("subject=foosubject&body=foobody")
+					.dispatch()
+					.await
+			},
+		)
+		.await;
 
 		assert_eq!(
 			mails_response.status(),
