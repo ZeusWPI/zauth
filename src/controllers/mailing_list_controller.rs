@@ -6,7 +6,7 @@ use crate::config::Config;
 use crate::controllers::users_controller::rocket_uri_macro_show_confirm_unsubscribe;
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::{AdminSession, UserSession};
-use crate::errors::Result;
+use crate::errors::{InternalError, Result};
 use crate::mailer::Mailer;
 use crate::models::mail::*;
 use crate::models::user::User;
@@ -53,11 +53,13 @@ pub async fn send_mail<'r>(
 
 	let unsubscribe_url = uri!(conf.base_url(), show_confirm_unsubscribe,);
 
-	let body = mail.body.clone()
-		+ &format!(
-			"\n\nYou can unsubscribe from the mailing list at {}",
-			unsubscribe_url
-		);
+	let body = template!(
+		"mails/mailinglist_mail.txt";
+		body: String = mail.body.clone(),
+		unsubscribe_url: String = unsubscribe_url.to_string(),
+	)
+	.render()
+	.map_err(InternalError::from)?;
 
 	mailer.try_create_with_bcc(
 		&conf.mailing_list_name,
