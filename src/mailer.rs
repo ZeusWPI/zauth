@@ -83,13 +83,15 @@ impl Mailer {
 		M: TryInto<Mailbox, Error = E>,
 	>(
 		&self,
+		receiver_name: &str,
+		receiver_email: &str,
 		bcc: Vec<M>,
 		subject: String,
 		text: String,
 	) -> Result<()> {
 		let receiver = Mailbox::new(
-			Some("Leden".to_string()),
-			"leden@zeus.ugent.be".parse().map_err(InternalError::from)?,
+			Some(receiver_name.to_string()),
+			receiver_email.parse().map_err(InternalError::from)?,
 		);
 
 		let email = self.build_with_bcc(receiver, bcc, subject, text)?;

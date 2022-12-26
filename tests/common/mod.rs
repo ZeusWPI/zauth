@@ -49,6 +49,8 @@ pub fn config() -> Config {
 		mail_queue_wait_seconds: 0,
 		mail_from: "zauth@example.com".to_string(),
 		mail_server: "stub".to_string(),
+		mailing_list_name: "Leden".to_string(),
+		mailing_list_email: "leden@zeus.ugent.be".to_string(),
 		maximum_pending_users: 5,
 		webhook_url: None,
 	}

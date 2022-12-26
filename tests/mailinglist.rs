@@ -86,14 +86,16 @@ async fn get_valid_subscribed_users() {
 			mail_queue_wait_seconds: 5,
 			mail_from: "test@example.com".to_string(),
 			mail_server: "stub".to_string(),
+			mailing_list_name: "Leden".to_string(),
+			mailing_list_email: "leden@zeus.ugent.be".to_string(),
 			maximum_pending_users: 0,
 			webhook_url: None,
 		};
 		let test_mailer = Mailer::new(&test_cfg).unwrap();
 
 		let test_receiver = Mailbox::new(
-			Some("Leden".to_string()),
-			"leden@zeus.ugent.be".parse().unwrap(),
+			Some(test_cfg.mailing_list_name),
+			test_cfg.mailing_list_email.parse().unwrap(),
 		);
 
 		let test_mail = test_mailer

@@ -59,7 +59,13 @@ pub async fn send_mail<'r>(
 			unsubscribe_url
 		);
 
-	mailer.try_create_with_bcc(bcc, mail.subject.clone(), body)?;
+	mailer.try_create_with_bcc(
+		&conf.mailing_list_name,
+		&conf.mailing_list_email,
+		bcc,
+		mail.subject.clone(),
+		body,
+	)?;
 
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_mail(mail.id))),
