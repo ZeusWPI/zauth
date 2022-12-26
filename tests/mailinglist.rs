@@ -245,14 +245,22 @@ async fn visitor_cannot_use_mailinglist() {
 	.await;
 }
 
-/// Ensure users cannot see mails pages
+/// Ensure users can see the mailinglist, but cannot create any mails
 #[rocket::async_test]
-async fn user_cannot_use_mailinglist() {
-	common::as_user(async move |http_client, _db, _user| {
+async fn user_can_see_mailinglist() {
+	common::as_user(async move |http_client, db, _user| {
+		let test_mail = NewMail {
+			subject: "foo".to_string(),
+			body:    "bar".to_string(),
+		};
+		let test_mail = test_mail.save(&db).await.unwrap();
+
 		let mails_response = http_client.get("/mails").dispatch().await;
 		let new_mail_response = http_client.get("/mails/new").dispatch().await;
-		let specific_mail_response =
-			http_client.get("/mails/0").dispatch().await;
+		let specific_mail_response = http_client
+			.get(format!("/mails/{}", test_mail.id))
+			.dispatch()
+			.await;
 		let create_mail_response = http_client
 			.post("/mails")
 			.header(ContentType::Form)
@@ -263,8 +271,8 @@ async fn user_cannot_use_mailinglist() {
 
 		assert_eq!(
 			mails_response.status(),
-			Status::Forbidden,
-			"users should not be able to see mails overview page"
+			Status::Ok,
+			"users should be able to see mails overview page"
 		);
 		assert_eq!(
 			new_mail_response.status(),
@@ -273,8 +281,8 @@ async fn user_cannot_use_mailinglist() {
 		);
 		assert_eq!(
 			specific_mail_response.status(),
-			Status::Forbidden,
-			"users should not be able to see specific mail page"
+			Status::Ok,
+			"users should be able to see specific mail page"
 		);
 		assert_eq!(
 			create_mail_response.status(),
@@ -285,7 +293,7 @@ async fn user_cannot_use_mailinglist() {
 	.await;
 }
 
-/// Ensure admins can see mails pages
+/// Ensure admins can see mails pages and create new mails
 #[rocket::async_test]
 async fn admin_can_use_mailinglist() {
 	common::as_admin(async move |http_client, db, _user| {

@@ -13,9 +13,11 @@
 				<div class="title">Mails ({{ mails.len() }})</div>
 			</div>
 
-			<div class="column is-narrow">
-				<a class="button is-primary" href="/mails/new">New mail</a>
-			</div>
+			{% if current_user.admin %}
+				<div class="column is-narrow">
+					<a class="button is-primary" href="/mails/new">New mail</a>
+				</div>
+			{% endif %}
 		</div>
 
 		<!-- Table -->

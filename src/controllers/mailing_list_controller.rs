@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use crate::config::Config;
 use crate::controllers::users_controller::rocket_uri_macro_show_confirm_unsubscribe;
 use crate::ephemeral::from_api::Api;
-use crate::ephemeral::session::AdminSession;
+use crate::ephemeral::session::{AdminSession, UserSession};
 use crate::errors::Result;
 use crate::mailer::Mailer;
 use crate::models::mail::*;
@@ -19,7 +19,7 @@ use rocket::State;
 /// Show an overview of all mails, sorted by send date
 #[get("/mails")]
 pub async fn list_mails<'r>(
-	session: AdminSession,
+	session: UserSession,
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mails = Mail::all(&db).await?;
@@ -27,7 +27,7 @@ pub async fn list_mails<'r>(
 	Ok(Accepter {
 		html: template! {
 			"maillist/index.html";
-			current_user: User = session.admin,
+			current_user: User = session.user,
 			mails: Vec<Mail> = mails.clone(),
 		},
 		json: Json(mails),
@@ -87,7 +87,7 @@ pub async fn show_create_mail_page<'r>(
 /// Show a specific mail
 #[get("/mails/<id>")]
 pub async fn show_mail<'r>(
-	session: AdminSession,
+	session: UserSession,
 	db: DbConn,
 	id: i32,
 ) -> Result<impl Responder<'r, 'static>> {
@@ -96,7 +96,7 @@ pub async fn show_mail<'r>(
 	Ok(Accepter {
 		html: template! {
 			"maillist/show_mail.html";
-			current_user: User = session.admin,
+			current_user: User = session.user,
 			mail: Mail = mail.clone(),
 		},
 		json: Json(mail),
