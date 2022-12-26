@@ -37,7 +37,7 @@ pub struct Mail {
 pub struct NewMail {
 	#[validate(length(min = 3, max = 255))]
 	pub subject: String,
-	#[validate(length(min = 3))]
+	#[validate(length(min = 3, max = 10_000))]
 	pub body:    String,
 }
 
