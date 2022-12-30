@@ -329,16 +329,13 @@ pub async fn forgot_password_post<'r>(
 	})
 }
 
-#[get("/users/unsubscribe")]
+#[get("/users/unsubscribe/<token>")]
 pub fn show_confirm_unsubscribe<'r>(
-	session: UserSession,
+	token: String,
 ) -> impl Responder<'r, 'static> {
-	let unsubscribe_token = session.user.unsubscribe_token.clone();
-
 	template! {
 		"users/confirm_unsubscribe_form.html";
-		current_user: User = session.user,
-		token: String = unsubscribe_token,
+		token: String = token,
 	}
 }
 
@@ -349,7 +346,6 @@ pub struct UnsubscribeForm {
 
 #[post("/users/unsubscribe", data = "<form>")]
 pub async fn unsubscribe_user<'r>(
-	session: UserSession,
 	form: Form<UnsubscribeForm>,
 	db: DbConn,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
@@ -359,10 +355,7 @@ pub async fn unsubscribe_user<'r>(
 	if user.is_none() {
 		return Ok(Either::Left(Custom(
 			Status::Unauthorized,
-			template! {
-				"users/unsubscribe_invalid.html";
-				current_user: User = session.user,
-			},
+			template!("users/unsubscribe_invalid.html"),
 		)));
 	}
 
@@ -372,10 +365,7 @@ pub async fn unsubscribe_user<'r>(
 	user.subscribed_to_mailing_list = false;
 	user.update(&db).await?;
 
-	Ok(Either::Right(template! {
-		"users/unsubscribed.html";
-		current_user: User = session.user,
-	}))
+	Ok(Either::Right(template!("users/unsubscribed.html")))
 }
 
 #[get("/users/reset_password/<token>")]

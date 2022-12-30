@@ -3,10 +3,8 @@
 extern crate diesel;
 extern crate rocket;
 
-use lettre::message::Mailbox;
 use rocket::http::{Accept, ContentType, Status};
 
-use zauth::mailer::Mailer;
 use zauth::models::mail::NewMail;
 use zauth::models::user::*;
 use zauth::DbConn;
@@ -54,53 +52,53 @@ async fn setup_test_users(db: &DbConn) {
 }
 
 /// Check if the correct users are selected as being validly subscribed to the
-/// mailing list and if mailing list emails have them in bcc properly
+/// mailing list and if mailing list emails are sent to the correct users
+///
+/// Also asserts that admin accounts can use the POST /mails endpoint. Normally
+/// this would've gone in `admin_can_use_mailinglist`, but doing so can cause
+/// test to randomly fail due to the `common::as_admin` wrapper inserting a
+/// new, subscribed user
 #[rocket::async_test]
-async fn get_valid_subscribed_users() {
-	common::as_visitor(async move |_client, db| {
+async fn mailinglist_workflow() {
+	common::as_admin(async move |http_client, db, _admin| {
 		setup_test_users(&db).await;
 
 		let subscribed_users = User::find_subscribed(&db).await.unwrap();
+
+		let receivers =
+			subscribed_users.iter().map(|u| u.email.as_str()).collect();
 
 		let subscribed_usernames: Vec<String> = subscribed_users
 			.iter()
 			.map(|u| u.username.clone())
 			.collect();
 
-		let bcc: Vec<Mailbox> = subscribed_users
-			.iter()
-			.map(|u| Mailbox::try_from(u).unwrap())
-			.collect();
-
-		let test_cfg = common::config();
-		let test_mailer = Mailer::new(&test_cfg).unwrap();
-
-		let test_receiver = Mailbox::new(
-			Some(test_cfg.mailing_list_name),
-			test_cfg.mailing_list_email.parse().unwrap(),
-		);
-
-		let test_mail = test_mailer
-			.build_with_bcc(
-				test_receiver,
-				bcc,
-				"foosubject".to_string(),
-				"foobody".to_string(),
-			)
-			.unwrap();
-
-		let bcc_header = test_mail.headers().get_raw("Bcc");
-
-		assert_eq!(
-			bcc_header,
-			Some("valid0 <valid0@example.com>, valid1 <valid1@example.com>"),
-			"incorrect bcc header",
-		);
-
 		assert_eq!(
 			subscribed_usernames,
-			vec!["valid0".to_string(), "valid1".to_string()],
+			vec![
+				"admin".to_string(),
+				"valid0".to_string(),
+				"valid1".to_string()
+			],
 			"did not get correct subscribed users"
+		);
+
+		let create_mails_response =
+			common::expect_mails_to(receivers, async || {
+				http_client
+					.post("/mails")
+					.header(ContentType::Form)
+					.header(Accept::JSON)
+					.body("subject=foosubject&body=foobody")
+					.dispatch()
+					.await
+			})
+			.await;
+
+		assert_eq!(
+			create_mails_response.status(),
+			Status::Ok,
+			"admins should be able to create mails"
 		);
 	})
 	.await;
@@ -109,40 +107,19 @@ async fn get_valid_subscribed_users() {
 /// Ensure that only logged-in users can unsubscribe
 #[rocket::async_test]
 async fn visitor_cannot_unsubscribe() {
-	common::as_visitor(async move |http_client, _db| {
-		let response = http_client.get("/users/unsubscribe").dispatch().await;
-		assert_eq!(
-			response.status(),
-			Status::Unauthorized,
-			"visitors should not be able to see unsubscribe page"
-		);
+	common::as_visitor(async move |http_client, db| {
+		setup_test_users(&db).await;
+		let test_user = &User::find_subscribed(&db).await.unwrap()[0];
+		let test_token = &test_user.unsubscribe_token;
 
-		let response = http_client
-			.post("/users/unsubscribe")
-			.header(ContentType::Form)
-			.header(Accept::JSON)
-			.body("token=foo")
+		let page_response = http_client
+			.get(format!("/users/unsubscribe/{}", test_token))
 			.dispatch()
 			.await;
 		assert_eq!(
-			response.status(),
-			Status::Unauthorized,
-			"visitors should not be able unsubscribe"
-		)
-	})
-	.await;
-}
-
-/// Ensure that users can use unsubscribe endpoints
-#[rocket::async_test]
-async fn user_can_unsubscribe() {
-	common::as_user(async move |http_client, _db, user| {
-		let page_response =
-			http_client.get("/users/unsubscribe").dispatch().await;
-		assert_eq!(
 			page_response.status(),
 			Status::Ok,
-			"users should be able to see unsubscribe page"
+			"should be able to see unsubscribe page"
 		);
 
 		let invalid_token_response = http_client
@@ -155,48 +132,21 @@ async fn user_can_unsubscribe() {
 		assert_eq!(
 			invalid_token_response.status(),
 			Status::Unauthorized,
-			"users should not be able to unsubscribe with an invalid token"
+			"should not be able to unsubscribe with an invalid token"
 		);
 
 		let valid_token_response = http_client
 			.post("/users/unsubscribe")
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body(format!("token={}", user.unsubscribe_token))
+			.body(format!("token={}", test_token))
 			.dispatch()
 			.await;
 		assert_eq!(
 			valid_token_response.status(),
 			Status::Ok,
-			"users should be able to unsubscribe with a valid token"
+			"should be able to unsubscribe with a valid token"
 		);
-	})
-	.await;
-}
-
-/// Ensure that admins can use unsubscribe endpoints
-#[rocket::async_test]
-async fn admin_can_unsubscribe() {
-	common::as_admin(async move |http_client, _db, user| {
-		let response = http_client.get("/users/unsubscribe").dispatch().await;
-		assert_eq!(
-			response.status(),
-			Status::Ok,
-			"admins should be able to see unsubscribe page"
-		);
-
-		let response = http_client
-			.post("/users/unsubscribe")
-			.header(ContentType::Form)
-			.header(Accept::JSON)
-			.body(format!("token={}", user.unsubscribe_token))
-			.dispatch()
-			.await;
-		assert_eq!(
-			response.status(),
-			Status::Ok,
-			"admins should be able to unsubscribe"
-		)
 	})
 	.await;
 }
@@ -292,7 +242,7 @@ async fn user_can_see_mailinglist() {
 /// Ensure admins can see mails pages and create new mails
 #[rocket::async_test]
 async fn admin_can_use_mailinglist() {
-	common::as_admin(async move |http_client, db, user| {
+	common::as_admin(async move |http_client, db, _user| {
 		let test_mail = NewMail {
 			subject: "foo".to_string(),
 			body:    "bar".to_string(),
@@ -305,20 +255,6 @@ async fn admin_can_use_mailinglist() {
 			.get(format!("/mails/{}", test_mail.id))
 			.dispatch()
 			.await;
-
-		let create_mail_response = common::expect_mail_to(
-			vec![&common::config().mailing_list_email, &user.email],
-			async || {
-				http_client
-					.post("/mails")
-					.header(ContentType::Form)
-					.header(Accept::JSON)
-					.body("subject=foosubject&body=foobody")
-					.dispatch()
-					.await
-			},
-		)
-		.await;
 
 		assert_eq!(
 			mails_response.status(),
@@ -334,11 +270,6 @@ async fn admin_can_use_mailinglist() {
 			specific_mail_response.status(),
 			Status::Ok,
 			"admins should be able to see specific mail page"
-		);
-		assert_eq!(
-			create_mail_response.status(),
-			Status::Ok,
-			"admins should be able to create mails"
 		);
 	})
 	.await;

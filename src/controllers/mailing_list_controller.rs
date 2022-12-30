@@ -46,28 +46,23 @@ pub async fn send_mail<'r>(
 	let mail = new_mail.into_inner().save(&db).await?;
 
 	let subscribed_users = User::find_subscribed(&db).await?;
-	let bcc = subscribed_users
-		.iter()
-		.map(|u| Mailbox::try_from(u))
-		.collect::<Result<Vec<Mailbox>>>()?;
 
-	let unsubscribe_url = uri!(conf.base_url(), show_confirm_unsubscribe,);
+	for user in &subscribed_users {
+		let receiver = Mailbox::try_from(user)?;
+		let token = user.unsubscribe_token.to_string();
+		let unsubscribe_url =
+			uri!(conf.base_url(), show_confirm_unsubscribe(token));
 
-	let body = template!(
-		"mails/mailinglist_mail.txt";
-		body: String = mail.body.clone(),
-		unsubscribe_url: String = unsubscribe_url.to_string(),
-	)
-	.render()
-	.map_err(InternalError::from)?;
+		let body = template!(
+			"mails/mailinglist_mail.txt";
+			body: String = mail.body.clone(),
+			unsubscribe_url: String = unsubscribe_url.to_string(),
+		)
+		.render()
+		.map_err(InternalError::from)?;
 
-	mailer.try_create_with_bcc(
-		&conf.mailing_list_name,
-		&conf.mailing_list_email,
-		bcc,
-		mail.subject.clone(),
-		body,
-	)?;
+		mailer.create_for_mailinglist(receiver, mail.subject.clone(), body)?;
+	}
 
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_mail(mail.id))),

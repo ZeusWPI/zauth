@@ -191,6 +191,23 @@ where
 	result
 }
 
+pub async fn expect_mails<T, F, R>(run: F) -> T
+where
+	F: FnOnce() -> R,
+	R: Future<Output = T>,
+{
+	let (mailbox, _condvar) = &STUB_MAILER_OUTBOX;
+	let outbox_size = { mailbox.lock().len() };
+	let result: T = run().await;
+	sleep(Duration::from_secs(1)).await;
+	assert_ne!(
+		outbox_size,
+		mailbox.lock().len(),
+		"Expected mails to be sent"
+	);
+	result
+}
+
 pub async fn expect_mail_to<T, F, R>(receivers: Vec<&str>, run: F) -> T
 where
 	F: FnOnce() -> R,
@@ -221,5 +238,83 @@ where
 		.map(|e| Address::from_str(e).unwrap())
 		.collect::<Vec<Address>>();
 	assert_eq!(last_mail.envelope().to(), receivers, "Unexpected receivers");
+	result
+}
+
+pub async fn expect_mails_to<T, F, R>(receivers: Vec<&str>, run: F) -> T
+where
+	F: FnOnce() -> R,
+	R: Future<Output = T>,
+{
+	let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
+	let outbox_size = { mailbox.lock().len() };
+	let result: T = run().await;
+
+	let mut mailbox = mailbox.lock();
+	while mailbox.len() != outbox_size + receivers.len() {
+		let wait_result =
+			condvar.wait_for(&mut mailbox, Duration::from_secs(1));
+		assert!(
+			!wait_result.timed_out(),
+			"Timed out while waiting for email"
+		);
+	}
+
+	assert!(
+		mailbox.len() >= outbox_size + 1,
+		"Expected at least one email to be sent"
+	);
+	let sent_mails = mailbox.clone();
+	let sent_receivers = sent_mails
+		.iter()
+		.map(|m| m.envelope().to().to_vec())
+		.collect::<Vec<Vec<Address>>>();
+
+	sent_receivers
+		.iter()
+		.zip(sent_mails)
+		.for_each(|(recvs, msg)| {
+			assert!(
+				recvs.len() == 1,
+				"Unexpected receivers {:?} for message {:?}",
+				recvs,
+				msg
+			)
+		});
+
+	let mut sent_receivers = sent_receivers
+		.into_iter()
+		.map(|r| r[0].clone())
+		.collect::<Vec<Address>>();
+
+	let mut receivers = receivers
+		.into_iter()
+		.map(|e| Address::from_str(e).unwrap())
+		.collect::<Vec<Address>>();
+
+	assert_eq!(
+		sent_receivers.len(),
+		receivers.len(),
+		"unexpected receivers ({:?}) <-> ({:?})",
+		sent_receivers,
+		receivers
+	);
+
+	sent_receivers.sort_unstable();
+	receivers.sort_unstable();
+
+	sent_receivers
+		.iter()
+		.zip(receivers)
+		.for_each(|(sent_recv, recv)| {
+			assert_eq!(*sent_recv, recv, "Unexpected receiver");
+		});
+
+	println!(
+		"sent {} mails to {:?}",
+		sent_receivers.len(),
+		sent_receivers
+	);
+
 	result
 }
