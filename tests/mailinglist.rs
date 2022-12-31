@@ -107,9 +107,9 @@ async fn mailinglist_workflow() {
 	.await;
 }
 
-/// Ensure that only logged-in users can unsubscribe
+/// Ensure that anyone can unsubscribe
 #[rocket::async_test]
-async fn visitor_cannot_unsubscribe() {
+async fn visitor_can_unsubscribe() {
 	common::as_visitor(async move |http_client, db| {
 		setup_test_users(&db).await;
 		let test_user = &User::find_subscribed(&db).await.unwrap()[0];
