@@ -25,6 +25,7 @@
 			<thead>
 				<tr>
 					<th>Sent on</th>
+					<th>Author</th>
 					<th>Subject</th>
 					<th>Body</th>
 				</tr>
@@ -39,6 +40,9 @@
 								{{ mail.sent_on.format("%d/%m/%y").to_string() }}
 							</a>
 						</td>
+
+						<!-- Author -->
+						<td data-label="Author">{{ mail.author }}</td>
 
 						<!-- Subject -->
 						<td data-label="Subject">{{ mail.subject }}</td>
