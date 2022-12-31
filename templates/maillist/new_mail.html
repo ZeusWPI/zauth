@@ -12,6 +12,10 @@
 		<!-- Form -->
 		<form class="form" action="/mails" method="post">
 			<div class="field">
+				<input type="hidden" name="author" value="{{ current_user.username }}">
+			</div>
+
+			<div class="field">
 				<label for="subject" class="label">Subject</label>
 				<input class="input" name="subject" type="text" placeholder="Subject" required />
 			</div>

@@ -60,7 +60,7 @@ async fn setup_test_users(db: &DbConn) {
 /// new, subscribed user
 #[rocket::async_test]
 async fn mailinglist_workflow() {
-	common::as_admin(async move |http_client, db, _admin| {
+	common::as_admin(async move |http_client, db, admin| {
 		setup_test_users(&db).await;
 
 		let subscribed_users = User::find_subscribed(&db).await.unwrap();
@@ -89,7 +89,10 @@ async fn mailinglist_workflow() {
 					.post("/mails")
 					.header(ContentType::Form)
 					.header(Accept::JSON)
-					.body("subject=foosubject&body=foobody")
+					.body(format!(
+						"author={}&subject=foosubject&body=foobody",
+						admin.username
+					))
 					.dispatch()
 					.await
 			})
@@ -163,7 +166,7 @@ async fn visitor_cannot_use_mailinglist() {
 			.post("/mails")
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body("subject=foosubject&body=foobody")
+			.body("author=fooauthor&subject=foosubject&body=foobody")
 			.dispatch()
 			.await;
 
@@ -194,8 +197,9 @@ async fn visitor_cannot_use_mailinglist() {
 /// Ensure users can see the mailinglist, but cannot create any mails
 #[rocket::async_test]
 async fn user_can_see_mailinglist() {
-	common::as_user(async move |http_client, db, _user| {
+	common::as_user(async move |http_client, db, user| {
 		let test_mail = NewMail {
+			author:  user.username,
 			subject: "foo".to_string(),
 			body:    "bar".to_string(),
 		};
@@ -211,7 +215,7 @@ async fn user_can_see_mailinglist() {
 			.post("/mails")
 			.header(ContentType::Form)
 			.header(Accept::JSON)
-			.body("subject=foosubject&body=foobody")
+			.body("author=fooauthor&subject=foosubject&body=foobody")
 			.dispatch()
 			.await;
 
@@ -242,8 +246,9 @@ async fn user_can_see_mailinglist() {
 /// Ensure admins can see mails pages and create new mails
 #[rocket::async_test]
 async fn admin_can_use_mailinglist() {
-	common::as_admin(async move |http_client, db, _user| {
+	common::as_admin(async move |http_client, db, user| {
 		let test_mail = NewMail {
+			author:  user.username,
 			subject: "foo".to_string(),
 			body:    "bar".to_string(),
 		};

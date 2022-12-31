@@ -19,6 +19,7 @@ pub mod schema {
 			sent_on -> Timestamp,
 			subject -> Text,
 			body -> Text,
+			author -> Varchar,
 		}
 	}
 }
@@ -30,11 +31,13 @@ pub struct Mail {
 	pub sent_on: NaiveDateTime,
 	pub subject: String,
 	pub body:    String,
+	pub author:  String,
 }
 
 #[derive(Clone, Debug, Deserialize, FromForm, Insertable, Validate)]
 #[table_name = "mails"]
 pub struct NewMail {
+	pub author:  String,
 	#[validate(length(min = 3, max = 255))]
 	pub subject: String,
 	#[validate(length(min = 3, max = 10_000))]
