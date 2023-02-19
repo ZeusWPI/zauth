@@ -78,10 +78,12 @@
 		<div class="card card-content">
 			<form class="profile-edit-form" action="/users/{{ user.username }}/change_state" autocomplete="off" method="POST">
 				<div class="field">
-					<select class="select" name="state">
-						<option value="active" {% if user.state == UserState::Active %}selected{% endif %}>Active</option>
-						<option value="disabled" {% if user.state == UserState::Disabled %}selected{% endif %}>Disabled</option>
-					</select>
+					<div class="select">
+						<select name="state">
+							<option value="active" {% if user.state == UserState::Active %}selected{% endif %}>Active</option>
+							<option value="disabled" {% if user.state == UserState::Disabled %}selected{% endif %}>Disabled</option>
+						</select>
+					</div>
 				</div>
 
 				<button class="button is-primary" type="submit">Change state</button>
