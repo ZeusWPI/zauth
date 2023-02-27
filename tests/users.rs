@@ -7,6 +7,8 @@ use rocket::http::{Accept, ContentType, Status};
 use rocket::local::asynchronous::LocalResponse;
 
 use pwhash::bcrypt;
+use rocket::tokio::time::sleep;
+use std::time::Duration;
 use zauth::models::user::*;
 
 mod common;
@@ -536,6 +538,9 @@ async fn reset_password_invalid_token() {
 			.dispatch()
 			.await;
 
+		// Make sure futures spawned during the above execution finish
+		sleep(Duration::from_secs(0)).await;
+
 		assert_eq!(response.status(), Status::Ok);
 
 		let user = user.reload(&db).await.unwrap();
@@ -713,6 +718,9 @@ async fn user_approval_flow() {
 		)
 		.await
 		.unwrap();
+
+		// Make sure futures spawned during the above execution finish
+		sleep(Duration::from_secs(0)).await;
 
 		let token = user
 			.pending_email_token
