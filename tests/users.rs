@@ -7,8 +7,6 @@ use rocket::http::{Accept, ContentType, Status};
 use rocket::local::asynchronous::LocalResponse;
 
 use pwhash::bcrypt;
-use rocket::tokio::time::sleep;
-use std::time::Duration;
 use zauth::models::user::*;
 
 mod common;
@@ -530,16 +528,16 @@ async fn reset_password_invalid_token() {
 		.await
 		.unwrap();
 
-		let response = http_client
-			.post("/users/forgot_password")
-			.header(ContentType::Form)
-			.header(Accept::HTML)
-			.body(format!("for_email={}", &email))
-			.dispatch()
-			.await;
-
-		// Make sure futures spawned during the above execution finish
-		sleep(Duration::from_secs(0)).await;
+		let response = common::expect_mail_to(vec![&email], async || {
+			http_client
+				.post("/users/forgot_password")
+				.header(ContentType::Form)
+				.header(Accept::HTML)
+				.body(format!("for_email={}", &email))
+				.dispatch()
+				.await
+		})
+		.await;
 
 		assert_eq!(response.status(), Status::Ok);
 
@@ -719,9 +717,6 @@ async fn user_approval_flow() {
 		.await
 		.unwrap();
 
-		// Make sure futures spawned during the above execution finish
-		sleep(Duration::from_secs(0)).await;
-
 		let token = user
 			.pending_email_token
 			.as_ref()
@@ -737,12 +732,16 @@ async fn user_approval_flow() {
 
 		assert_eq!(response.status(), Status::Ok);
 
-		let response = http_client
-			.post("/users/confirm")
-			.header(Accept::HTML)
-			.header(ContentType::Form)
-			.body(format!("token={}", token))
-			.dispatch()
+		let response =
+			common::expect_mail_to(vec!["admin@localhost"], async || {
+				http_client
+					.post("/users/confirm")
+					.header(Accept::HTML)
+					.header(ContentType::Form)
+					.body(format!("token={}", token))
+					.dispatch()
+					.await
+			})
 			.await;
 
 		assert_eq!(response.status(), Status::Ok);
