@@ -528,13 +528,16 @@ async fn reset_password_invalid_token() {
 		.await
 		.unwrap();
 
-		let response = http_client
-			.post("/users/forgot_password")
-			.header(ContentType::Form)
-			.header(Accept::HTML)
-			.body(format!("for_email={}", &email))
-			.dispatch()
-			.await;
+		let response = common::expect_mail_to(vec![&email], async || {
+			http_client
+				.post("/users/forgot_password")
+				.header(ContentType::Form)
+				.header(Accept::HTML)
+				.body(format!("for_email={}", &email))
+				.dispatch()
+				.await
+		})
+		.await;
 
 		assert_eq!(response.status(), Status::Ok);
 
@@ -729,12 +732,16 @@ async fn user_approval_flow() {
 
 		assert_eq!(response.status(), Status::Ok);
 
-		let response = http_client
-			.post("/users/confirm")
-			.header(Accept::HTML)
-			.header(ContentType::Form)
-			.body(format!("token={}", token))
-			.dispatch()
+		let response =
+			common::expect_mail_to(vec!["admin@localhost"], async || {
+				http_client
+					.post("/users/confirm")
+					.header(Accept::HTML)
+					.header(ContentType::Form)
+					.body(format!("token={}", token))
+					.dispatch()
+					.await
+			})
 			.await;
 
 		assert_eq!(response.status(), Status::Ok);
