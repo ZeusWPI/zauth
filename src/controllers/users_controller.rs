@@ -329,6 +329,45 @@ pub async fn forgot_password_post<'r>(
 	})
 }
 
+#[get("/users/unsubscribe/<token>")]
+pub fn show_confirm_unsubscribe<'r>(
+	token: String,
+) -> impl Responder<'r, 'static> {
+	template! {
+		"users/confirm_unsubscribe_form.html";
+		token: String = token,
+	}
+}
+
+#[derive(Debug, FromForm)]
+pub struct UnsubscribeForm {
+	token: String,
+}
+
+#[post("/users/unsubscribe", data = "<form>")]
+pub async fn unsubscribe_user<'r>(
+	form: Form<UnsubscribeForm>,
+	db: DbConn,
+) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
+	let user =
+		User::find_by_unsubscribe_token(form.into_inner().token, &db).await?;
+
+	if user.is_none() {
+		return Ok(Either::Left(Custom(
+			Status::Unauthorized,
+			template!("users/unsubscribe_invalid.html"),
+		)));
+	}
+
+	let mut user = user.unwrap();
+	let new_token = util::random_token(32);
+	user.unsubscribe_token = new_token;
+	user.subscribed_to_mailing_list = false;
+	user.update(&db).await?;
+
+	Ok(Either::Right(template!("users/unsubscribed.html")))
+}
+
 #[get("/users/reset_password/<token>")]
 pub fn reset_password_get<'r>(token: String) -> impl Responder<'r, 'static> {
 	template! {

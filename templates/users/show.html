@@ -49,6 +49,15 @@
 				</div>
 
 				<div class="field">
+					<label for="subscribed_to_mailing_list" class="label">Subscribe to Mailing List</label>
+					{% if current_user.subscribed_to_mailing_list -%}
+						<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list" checked>
+					{% else -%}
+						<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list">
+					{% endif %}
+				</div>
+
+				<div class="field">
 					<label class="label">SSH Keys</label>
 					<textarea class="textarea" name="ssh_key" placeholder="SSH Keys">{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}</textarea>
 				</div>

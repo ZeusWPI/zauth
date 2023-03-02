@@ -18,6 +18,8 @@ pub struct Config {
 	pub mail_queue_wait_seconds: u64,
 	pub mail_from: String,
 	pub mail_server: String,
+	pub mailing_list_name: String,
+	pub mailing_list_email: String,
 	pub maximum_pending_users: usize,
 	pub webhook_url: Option<String>,
 }

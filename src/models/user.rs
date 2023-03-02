@@ -62,6 +62,8 @@ pub mod schema {
 			state -> UserStateMapping,
 			last_login -> Timestamp,
 			created_at -> Timestamp,
+			subscribed_to_mailing_list -> Bool,
+			unsubscribe_token -> Varchar,
 		}
 	}
 }
@@ -71,35 +73,38 @@ pub mod schema {
 #[changeset_options(treat_none_as_null = "true")]
 #[serde(crate = "rocket::serde")]
 pub struct User {
-	pub id:                    i32,
+	pub id: i32,
 	#[validate(length(min = 1, max = 254))]
-	pub username:              String,
+	pub username: String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password: String,
-	pub admin:                 bool,
+	pub admin: bool,
 	#[serde(skip)]
-	pub password_reset_token:  Option<String>,
+	pub password_reset_token: Option<String>,
 	#[serde(skip)]
 	pub password_reset_expiry: Option<NaiveDateTime>,
 	#[validate(length(min = 3, max = 254))]
-	pub full_name:             String,
+	pub full_name: String,
 	#[validate(email)]
 	#[serde(skip)]
 	// Don't send backing email address of users, applications could
 	// accidentally use this
 	pub email: String,
 	#[serde(skip)]
-	pub pending_email:         Option<String>,
+	pub pending_email: Option<String>,
 	#[serde(skip)]
-	pub pending_email_token:   Option<String>,
+	pub pending_email_token: Option<String>,
 	#[serde(skip)]
-	pub pending_email_expiry:  Option<NaiveDateTime>,
+	pub pending_email_expiry: Option<NaiveDateTime>,
 	#[validate(custom = "validate_ssh_key_list")]
-	pub ssh_key:               Option<String>,
+	pub ssh_key: Option<String>,
 	#[serde(skip)]
-	pub state:                 UserState,
-	pub last_login:            NaiveDateTime,
-	pub created_at:            NaiveDateTime,
+	pub state: UserState,
+	pub last_login: NaiveDateTime,
+	pub created_at: NaiveDateTime,
+	pub subscribed_to_mailing_list: bool,
+	#[serde(skip)]
+	pub unsubscribe_token: String,
 }
 
 lazy_static! {
@@ -154,11 +159,12 @@ struct NewUserHashed {
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
 pub struct UserChange {
-	pub username:  Option<String>,
-	pub password:  Option<String>,
+	pub username: Option<String>,
+	pub password: Option<String>,
 	pub full_name: Option<String>,
-	pub email:     Option<String>,
-	pub ssh_key:   Option<String>,
+	pub email: Option<String>,
+	pub ssh_key: Option<String>,
+	pub subscribed_to_mailing_list: bool,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -211,6 +217,40 @@ impl User {
 		let query = users::table.filter(users::email.eq(email));
 		db.run(move |conn| query.first(conn).map_err(ZauthError::from))
 			.await
+	}
+
+	/// Find all active users that are subscribed to the mailing list
+	pub async fn find_subscribed(db: &DbConn) -> errors::Result<Vec<Self>> {
+		db.run(move |conn| {
+			users::table
+				.filter(users::subscribed_to_mailing_list.eq(true))
+				.filter(users::state.eq(UserState::Active))
+				.load::<Self>(conn)
+		})
+		.await
+		.map_err(ZauthError::from)
+	}
+
+	/// Find a user given their unique unsubscribe token
+	pub async fn find_by_unsubscribe_token<'r>(
+		token: String,
+		db: &DbConn,
+	) -> errors::Result<Option<User>> {
+		let token = token.to_owned();
+		let result = db
+			.run(move |conn| {
+				users::table
+					.filter(users::unsubscribe_token.eq(token))
+					.first::<Self>(conn)
+			})
+			.await
+			.map_err(ZauthError::from);
+
+		match result {
+			Ok(user) => Ok(Some(user)),
+			Err(ZauthError::NotFound(_)) => Ok(None),
+			Err(e) => Err(e),
+		}
 	}
 
 	pub async fn delete(self, db: &DbConn) -> errors::Result<()> {
@@ -395,6 +435,7 @@ impl User {
 		if let Some(ssh_key) = change.ssh_key {
 			self.ssh_key = Some(ssh_key);
 		}
+		self.subscribed_to_mailing_list = change.subscribed_to_mailing_list;
 		Ok(())
 	}
 

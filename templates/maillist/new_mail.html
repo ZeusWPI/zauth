@@ -1,0 +1,31 @@
+{% extends "base_logged_in.html" %}
+
+<!-- Content -->
+{% block content %}
+	<div class="card card-content mt-5">
+
+		<!-- Title -->
+		<div class="title">
+			Send new mail
+		</div>
+
+		<!-- Form -->
+		<form class="form" action="/mails" method="post">
+			<div class="field">
+				<input type="hidden" name="author" value="{{ current_user.username }}">
+			</div>
+
+			<div class="field">
+				<label for="subject" class="label">Subject</label>
+				<input class="input" name="subject" type="text" placeholder="Subject" required />
+			</div>
+
+			<div class="field">
+				<label for="body" class="label">Body</label>
+				<textarea name="body" id="body" cols="80" rows="24" placeholder="Body"></textarea>
+			</div>
+
+			<button class="button is-primary" type="submit">Send</button>
+		</form>
+	</div>
+{% endblock content %}

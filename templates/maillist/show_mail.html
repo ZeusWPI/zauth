@@ -1,0 +1,17 @@
+{% extends "base_logged_in.html" %}
+
+<!-- Content -->
+{% block content %}
+<div class="columns is-multiline mt-4">
+
+	<!-- Update profile -->
+	<div class="column is-7">
+		<div class="card card-content">
+
+			<div class="title">({{ mail.sent_on.format("%d/%m/%y").to_string() }}) {{ mail.subject }}</div>
+
+			<div style="white-space: pre-line">{{ mail.body }}</div>
+		</div>
+	</div>
+</div>
+{% endblock content %}
