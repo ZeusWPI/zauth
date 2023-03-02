@@ -13,7 +13,6 @@ use crate::ephemeral::session::{
 };
 use crate::errors::Either::{self, Left, Right};
 use crate::errors::{InternalError, OneOf, Result, ZauthError};
-use crate::hooker::Hooker;
 use crate::mailer::Mailer;
 use crate::models::user::*;
 use crate::views::accepter::Accepter;
@@ -246,7 +245,6 @@ pub async fn set_approved<'r>(
 	username: String,
 	_session: AdminSession,
 	mailer: &'r State<Mailer>,
-	hooker: &'r State<Hooker>,
 	conf: &'r State<Config>,
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
@@ -255,7 +253,6 @@ pub async fn set_approved<'r>(
 
 	let login_url = uri!(conf.base_url(), new_session);
 
-	hooker.user_approved(&user).await?;
 	mailer
 		.create(
 			&user,
