@@ -11,6 +11,12 @@ services:
       sh -c "diesel --database-url 'postgresql://zauth:zauth@database/zauth' database setup && RUST_LOG=info ROCKET_PROFILE=release zauth"
     volumes:
       - ${PWD}/Rocket.toml:/usr/src/zauth/Rocket.toml
+  
+  smtp-relay:
+    image: dcagatay/emailrelay
+    command: --forward-on-disconnect --forward-to smtp.ugent.be:25
+    volumes:
+      - zauth-mailrelay:/var/spool/emailrelay
 
   database:
     image: postgres:13-alpine
