@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::errors::{InternalError, LaunchError, Result, ZauthError};
 
-use lettre::message::Mailbox;
+use lettre::message::{header::ContentType, Mailbox};
 use lettre::{Address, Message, SmtpTransport, Transport};
 use parking_lot::{Condvar, Mutex};
 use rocket::tokio::sync::mpsc::Receiver;
@@ -29,6 +29,7 @@ impl Mailer {
 	) -> Result<Message> {
 		Ok(Message::builder()
 			.to(receiver.try_into().map_err(|e| e.into())?)
+			.header(ContentType::TEXT_PLAIN)
 			.subject(subject)
 			.from(Mailbox::new(None, self.from.clone()))
 			.body(text)
