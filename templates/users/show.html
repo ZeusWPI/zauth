@@ -50,7 +50,7 @@
 
 				<div class="field">
 					<label for="subscribed_to_mailing_list" class="label">Subscribe to Mailing List</label>
-					{% if current_user.subscribed_to_mailing_list -%}
+					{% if user.subscribed_to_mailing_list -%}
 						<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list" checked>
 					{% else -%}
 						<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list">
