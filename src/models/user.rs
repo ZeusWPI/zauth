@@ -69,8 +69,8 @@ pub mod schema {
 }
 
 #[derive(Validate, Serialize, AsChangeset, Queryable, Debug, Clone)]
-#[table_name = "users"]
-#[changeset_options(treat_none_as_null = "true")]
+#[diesel(table_name = users)]
+#[diesel(treat_none_as_null = true)]
 #[serde(crate = "rocket::serde")]
 pub struct User {
 	pub id: i32,
@@ -133,7 +133,7 @@ pub struct NewUser {
 }
 
 #[derive(Serialize, Insertable, Debug, Clone)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct PendingUserHashed {
 	username:             String,
 	hashed_password:      String,
@@ -147,7 +147,7 @@ struct PendingUserHashed {
 }
 
 #[derive(Serialize, Insertable, Debug, Clone)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct NewUserHashed {
 	username:        String,
 	hashed_password: String,
@@ -343,7 +343,7 @@ impl User {
 			last_login:      Utc::now().naive_utc(),
 		};
 		db.run(move |conn| {
-			conn.transaction(|| {
+			conn.transaction(|conn| {
 				// Create a new user
 				diesel::insert_into(users::table)
 					.values(&user)
@@ -388,7 +388,7 @@ impl User {
 			last_login:           Utc::now().naive_utc(),
 		};
 		db.run(move |conn| {
-			conn.transaction(|| {
+			conn.transaction(|conn| {
 				// Create a new user
 				diesel::insert_into(users::table)
 					.values(&user)
@@ -442,7 +442,7 @@ impl User {
 	pub async fn update(self, db: &DbConn) -> errors::Result<Self> {
 		let id = self.id;
 		db.run(move |conn| {
-			conn.transaction(|| {
+			conn.transaction(|conn| {
 				// Create a new user
 				diesel::update(users::table.find(id))
 					.set(self)

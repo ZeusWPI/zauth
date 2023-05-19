@@ -39,6 +39,7 @@ pub mod models;
 pub mod token_store;
 pub mod util;
 
+use diesel_migrations::MigrationHarness;
 use lettre::message::Mailbox;
 use rocket::fairing::AdHoc;
 use rocket::figment::Figment;
@@ -64,6 +65,8 @@ pub struct DbConn(PgConnection);
 pub type ConcreteConnection = PgConnection;
 
 pub const ZAUTH_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+	embed_migrations!("migrations");
 
 #[get("/favicon.ico")]
 pub fn favicon() -> &'static str {
@@ -161,17 +164,14 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 }
 
 async fn prepare_database(rocket: Rocket<Build>) -> Rocket<Build> {
-	// This macro from `diesel_migrations` defines an `embedded_migrations`
-	// module containing a function named `run` that runs the migrations in the
-	// specified directory, initializing the database.
-	embed_migrations!("migrations");
-
 	eprintln!("Requesting a database connection.");
 	let db = DbConn::get_one(&rocket).await.expect("database connection");
 	eprintln!("Running migrations.");
-	db.run(|conn| embedded_migrations::run(conn))
-		.await
-		.expect("diesel migrations");
+	db.run(|conn| {
+		conn.run_pending_migrations(MIGRATIONS)
+			.expect("diesel migrations");
+	})
+	.await;
 
 	if rocket.figment().profile() == "debug" {
 		eprintln!("Seeding database.");
