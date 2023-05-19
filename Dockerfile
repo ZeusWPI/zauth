@@ -2,7 +2,7 @@ FROM rustlang/rust:nightly-buster AS builder
 
 WORKDIR /usr/src/zauth
 
-RUN cargo install diesel_cli
+RUN cargo install --version=1.4.1 diesel_cli
 COPY . .
 RUN cargo install --path .
 
