@@ -26,9 +26,9 @@ pub mod schema {
 }
 
 #[derive(Serialize, AsChangeset, Queryable, Associations, Debug, Clone)]
-#[belongs_to(User)]
-#[belongs_to(Client)]
-#[table_name = "sessions"]
+#[diesel(belongs_to(User))]
+#[diesel(belongs_to(Client))]
+#[diesel(table_name = sessions)]
 pub struct Session {
 	pub id:         i32,
 	pub key:        Option<String>,
@@ -41,7 +41,7 @@ pub struct Session {
 }
 
 #[derive(Insertable, Debug, Clone)]
-#[table_name = "sessions"]
+#[diesel(table_name = sessions)]
 pub struct NewSession {
 	pub key:        Option<String>,
 	pub user_id:    i32,
@@ -66,7 +66,7 @@ impl Session {
 			expires_at,
 		};
 		db.run(move |conn| {
-			conn.transaction(|| {
+			conn.transaction(|conn| {
 				// Create a new session
 				diesel::insert_into(sessions::table)
 					.values(&session)
@@ -96,7 +96,7 @@ impl Session {
 			expires_at,
 		};
 		db.run(move |conn| {
-			conn.transaction(|| {
+			conn.transaction(|conn| {
 				// Create a new session
 				diesel::insert_into(sessions::table)
 					.values(&session)
@@ -112,7 +112,7 @@ impl Session {
 	pub async fn update(self, db: &DbConn) -> Result<Self> {
 		let id = self.id;
 		db.run(move |conn| {
-			conn.transaction(|| {
+			conn.transaction(|conn| {
 				// Update a session
 				diesel::update(sessions::table.find(id))
 					.set(self)

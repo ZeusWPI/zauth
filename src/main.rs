@@ -3,6 +3,6 @@ extern crate rocket;
 extern crate zauth;
 
 #[launch]
-fn zauth() -> _ {
+async fn zauth() -> _ {
 	zauth::prepare()
 }

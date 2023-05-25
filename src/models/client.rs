@@ -43,7 +43,7 @@ pub struct NewClient {
 }
 
 #[derive(Insertable, Debug, Clone)]
-#[table_name = "clients"]
+#[diesel(table_name = clients)]
 pub struct NewClientWithSecret {
 	pub name:   String,
 	pub secret: String,
@@ -76,7 +76,7 @@ impl Client {
 			secret: Self::generate_random_secret(),
 		};
 		db.run(move |conn| {
-			conn.transaction(|| {
+			conn.transaction(|conn| {
 				// Create a new client
 				diesel::insert_into(clients::table)
 					.values(&client)
@@ -111,7 +111,7 @@ impl Client {
 	pub async fn update(self, db: &DbConn) -> Result<Self> {
 		let id = self.id;
 		db.run(move |conn| {
-			conn.transaction(|| {
+			conn.transaction(|conn| {
 				// Update a client
 				diesel::update(clients::table.find(id))
 					.set(self)

@@ -35,7 +35,7 @@ pub struct Mail {
 }
 
 #[derive(Clone, Debug, Deserialize, FromForm, Insertable, Validate)]
-#[table_name = "mails"]
+#[diesel(table_name = mails)]
 pub struct NewMail {
 	pub author:  String,
 	#[validate(length(min = 3, max = 255))]
@@ -51,7 +51,7 @@ impl NewMail {
 		self.validate()?;
 
 		db.run(move |conn| {
-			conn.transaction::<_, DieselError, _>(|| {
+			conn.transaction::<_, DieselError, _>(|conn| {
 				// Insert the new mail
 				diesel::insert_into(mails::table)
 					.values(&self)
