@@ -1,3 +1,4 @@
+#![allow(renamed_and_removed_lints)]
 #![feature(decl_macro, proc_macro_hygiene, trace_macros)]
 #![recursion_limit = "256"]
 
