@@ -66,55 +66,51 @@ dependencies = [
 
 [[package]]
 name = "askama"
-version = "0.11.0"
-source = "git+https://github.com/djc/askama.git?rev=42d80ad#42d80ad6cdb1a4ff9ff8fcc088b25d5f7b66a393"
+version = "0.12.1"
+source = "git+https://github.com/djc/askama.git?rev=40bb338#40bb3382b0c98e97f484c81659207b6b950c5cb0"
 dependencies = [
  "askama_derive",
  "askama_escape",
- "askama_shared",
- "mime",
- "mime_guess",
+ "humansize",
+ "num-traits",
+ "percent-encoding",
 ]
 
 [[package]]
 name = "askama_derive"
-version = "0.11.0"
-source = "git+https://github.com/djc/askama.git?rev=42d80ad#42d80ad6cdb1a4ff9ff8fcc088b25d5f7b66a393"
+version = "0.12.2"
+source = "git+https://github.com/djc/askama.git?rev=40bb338#40bb3382b0c98e97f484c81659207b6b950c5cb0"
 dependencies = [
- "askama_shared",
+ "askama_parser",
+ "basic-toml",
+ "mime",
+ "mime_guess",
  "proc-macro2",
- "syn 1.0.109",
+ "quote",
+ "serde",
+ "syn 2.0.38",
 ]
 
 [[package]]
 name = "askama_escape"
-version = "0.10.2"
-source = "git+https://github.com/djc/askama.git?rev=42d80ad#42d80ad6cdb1a4ff9ff8fcc088b25d5f7b66a393"
+version = "0.10.3"
+source = "git+https://github.com/djc/askama.git?rev=40bb338#40bb3382b0c98e97f484c81659207b6b950c5cb0"
 
 [[package]]
-name = "askama_rocket"
-version = "0.11.0-rc.2"
-source = "git+https://github.com/djc/askama.git?rev=42d80ad#42d80ad6cdb1a4ff9ff8fcc088b25d5f7b66a393"
+name = "askama_parser"
+version = "0.1.1"
+source = "git+https://github.com/djc/askama.git?rev=40bb338#40bb3382b0c98e97f484c81659207b6b950c5cb0"
 dependencies = [
- "askama",
- "rocket",
+ "nom",
 ]
 
 [[package]]
-name = "askama_shared"
+name = "askama_rocket"
 version = "0.12.0"
-source = "git+https://github.com/djc/askama.git?rev=42d80ad#42d80ad6cdb1a4ff9ff8fcc088b25d5f7b66a393"
+source = "git+https://github.com/djc/askama.git?rev=40bb338#40bb3382b0c98e97f484c81659207b6b950c5cb0"
 dependencies = [
- "askama_escape",
- "humansize",
- "nom",
- "num-traits",
- "percent-encoding",
- "proc-macro2",
- "quote",
- "serde",
- "syn 1.0.109",
- "toml",
+ "askama",
+ "rocket",
 ]
 
 [[package]]
@@ -186,6 +182,15 @@ name = "base64"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4a4ddaa51a5bc52a6948f74c06d20aaaddb71924eab79b8c97a8c556e942d6a"
+
+[[package]]
+name = "basic-toml"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24c12265665aebaa236af9bbe266681bcc9c5666192119e3d8335cf083aca26f"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "binascii"
@@ -421,7 +426,7 @@ dependencies = [
  "proc-macro2",
  "proc-macro2-diagnostics 0.10.0",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.38",
 ]
 
 [[package]]
@@ -836,9 +841,12 @@ checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
 name = "humansize"
-version = "1.1.1"
+version = "2.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02296996cb8796d7c6e3bc2d9211b7802812d36999a51bb754123ead7d37d026"
+checksum = "6cb51c9a029ddc91b07a787f1d86b53ccfa49b0e86688c946ebe8d3555685dd7"
+dependencies = [
+ "libm",
+]
 
 [[package]]
 name = "hyper"
@@ -1000,6 +1008,12 @@ name = "libc"
 version = "0.2.144"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b00cc1c228a6782d0f076e7b232802e0c5689d41bb5df366f2a6b6621cfdfe1"
+
+[[package]]
+name = "libm"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
 name = "linux-raw-sys"
@@ -1400,9 +1414,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.56"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
+checksum = "134c189feb4956b20f6f547d2cf727d4c0fe06722b20a0eec87ed445a97f92da"
 dependencies = [
  "unicode-ident",
 ]
@@ -1428,7 +1442,7 @@ checksum = "606c4ba35817e2922a308af55ad51bab3645b59eae5c570d4a6cf07e36bd493b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.38",
  "version_check",
  "yansi",
 ]
@@ -1450,9 +1464,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.27"
+version = "1.0.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f4f29d145265ec1c483c7c654450edde0bfe043d3938d6972630663356d9500"
+checksum = "5267fca4496028628a95160fc423a33e8b2e6af8a5302579e322e4b520293cae"
 dependencies = [
  "proc-macro2",
 ]
@@ -1619,7 +1633,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rocket_http",
- "syn 2.0.15",
+ "syn 2.0.38",
  "unicode-xid",
 ]
 
@@ -1757,22 +1771,22 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.152"
+version = "1.0.190"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb7d1f0d3021d347a83e556fc4683dea2ea09d87bccdf88ff5c12545d89d5efb"
+checksum = "91d3c334ca1ee894a2c6f6ad698fe8c435b76d504b13d436f0685d648d6d96f7"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.152"
+version = "1.0.190"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af487d118eecd09402d70a5d72551860e788df87b464af30e5ea6a38c75c541e"
+checksum = "67c5609f394e5c2bd7fc51efda478004ea80ef42fee983d5c67a65e34f32c0e3"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.38",
 ]
 
 [[package]]
@@ -1934,9 +1948,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.15"
+version = "2.0.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a34fcf3e8b60f57e6a14301a2e916d323af98b0ea63c599441eec8558660c822"
+checksum = "e96b79aaa137db8f61e26363a0c9b47d8b4ec75da28b7d1d614c2303e232408b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2643,7 +2657,7 @@ checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"
 
 [[package]]
 name = "zauth"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "askama",
  "askama_rocket",
