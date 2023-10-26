@@ -1,3 +1,4 @@
+#![allow(renamed_and_removed_lints)]
 #![feature(decl_macro, proc_macro_hygiene, trace_macros)]
 #![recursion_limit = "256"]
 
@@ -23,8 +24,6 @@ extern crate log;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-#[macro_use]
-extern crate validator_derive;
 
 #[macro_use]
 pub mod views;

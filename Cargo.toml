@@ -5,10 +5,8 @@ edition = "2021"
 authors = ["Rien Maertens <rien.maertens@posteo.be>"]
 
 [dependencies]
-# askama = { version = "0.11", features = ["with-rocket", "mime", "mime_guess"] }
-askama = { git = "https://github.com/djc/askama.git", rev = "42d80ad", features = ["with-rocket", "mime", "mime_guess"] }
-# askama_rocket = "0.11"
-askama_rocket = { git = "https://github.com/djc/askama.git", rev = "42d80ad" }
+askama = { git = "https://github.com/djc/askama.git", rev = "40bb338", features = ["with-rocket", "mime", "mime_guess"] }
+askama_rocket = { git = "https://github.com/djc/askama.git", rev = "40bb338" }
 base64 = "0.13"
 bincode = "1.0"
 pwhash = "1.0"
@@ -27,11 +25,10 @@ serde_json = "1.0"
 serde_derive = "1.0"
 serde_urlencoded = "0.7"
 simple_logger = "4.0"
-diesel = { version = "2.0", features = ["postgres", "r2d2", "chrono"] }
-diesel-derive-enum = { version = "2.0", features = ["postgres"] }
-diesel_migrations = "2.0"
+diesel = { version = "2.1", features = ["postgres", "r2d2", "chrono"] }
+diesel-derive-enum = { version = "2.1", features = ["postgres"] }
+diesel_migrations = "2.1"
 tempfile = "3.1"
 parking_lot = { version = "0.12" }
 thiserror = "1.0"
-validator = "0.16"
-validator_derive = "0.16"
+validator = { version = "0.16", features = [ "derive" ] }
