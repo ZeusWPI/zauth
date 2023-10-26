@@ -32,6 +32,7 @@ fn get_param(param_name: &str, query: &String) -> Option<String> {
 async fn normal_flow() {
 	common::as_visitor(async move |http_client, db| {
 		let redirect_uri = "https://example.com/redirect/me/here";
+		let scope = None;
 		let client_id = "test";
 		let client_state = "anarchy (╯°□°)╯ ┻━┻";
 		let user_username = "batman";
@@ -219,10 +220,11 @@ async fn normal_flow() {
 
 		let authorization_code = token_store
 			.create_token(UserToken {
-				user_id:      user.id,
-				username:     user.username.clone(),
-				client_id:    client.id,
-				client_name:  client.name,
+				scope,
+				user_id: user.id,
+				username: user.username.clone(),
+				client_id: client.id,
+				client_name: client.name,
 				redirect_uri: String::from(redirect_uri),
 			})
 			.await;

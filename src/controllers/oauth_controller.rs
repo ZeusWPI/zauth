@@ -1,3 +1,4 @@
+use chrono::Utc;
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::{Redirect, Responder};
@@ -161,6 +162,7 @@ pub struct UserToken {
 	pub client_id:    i32,
 	pub client_name:  String,
 	pub redirect_uri: String,
+	pub scope:        Option<String>,
 }
 
 #[get("/oauth/grant")]
@@ -215,6 +217,7 @@ async fn authorization_granted(
 	let authorization_code = token_store
 		.create_token(UserToken {
 			user_id:      user.id,
+			scope:        state.scope.clone(),
 			username:     user.username.clone(),
 			client_id:    state.client_id.clone(),
 			client_name:  state.client_name.clone(),
@@ -237,9 +240,21 @@ fn authorization_denied(state: AuthState) -> Redirect {
 }
 
 #[derive(Serialize, Debug)]
+pub struct IDToken {
+	sub:      String,
+	iss:      String,
+	aud:      String,
+	exp:      i64,
+	iat:      i64,
+	nickname: String,
+	email:    String,
+}
+
+#[derive(Serialize, Debug)]
 pub struct TokenSuccess {
 	access_token: String,
 	token_type:   String,
+	id_token:     Option<String>,
 	expires_in:   i64,
 }
 
@@ -250,6 +265,15 @@ pub struct TokenFormData {
 	redirect_uri:  String,
 	client_id:     Option<String>,
 	client_secret: Option<String>,
+}
+
+fn create_jwt(id_token: IDToken) -> String {
+	let header = base64::encode("{\"alg\": \"none\"}");
+	let payload = base64::encode_config(
+		serde_json::to_string(&id_token).unwrap(),
+		base64::URL_SAFE_NO_PAD,
+	);
+	format!("{}.{}.", header, payload)
 }
 
 #[post("/oauth/token", data = "<form>")]
@@ -306,13 +330,39 @@ pub async fn token(
 		)))
 	} else {
 		let user = User::find(token.user_id, &db).await?;
-		let session =
-			Session::create_client_session(&user, &client, &config, &db)
-				.await?;
+		let id_token = token
+			.scope
+			.as_ref()
+			.map(|scope| -> Option<String> {
+				match scope.contains("openid") {
+					true => Some(create_jwt(IDToken {
+						sub:      user.id.to_string(),
+						iss:      config.base_url().to_string(),
+						aud:      client.name.clone(),
+						iat:      Utc::now().timestamp(),
+						exp:      Utc::now().timestamp()
+							+ config.client_session_seconds,
+						nickname: user.username.clone(),
+						email:    user.email.clone(),
+					})),
+					false => None,
+				}
+			})
+			.flatten();
+
+		let session = Session::create_client_session(
+			&user,
+			&client,
+			token.scope,
+			&config,
+			&db,
+		)
+		.await?;
 		Ok(Json(TokenSuccess {
 			access_token: session.key.unwrap().clone(),
-			token_type:   String::from("bearer"),
-			expires_in:   config.client_session_seconds,
+			token_type: String::from("bearer"),
+			id_token,
+			expires_in: config.client_session_seconds,
 		}))
 	}
 }
