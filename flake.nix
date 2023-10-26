@@ -1,5 +1,5 @@
 {
-  description = "Simple OAuth2 client for mail clients";
+  description = "Simple OAuth2 server for hackerspaces";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
