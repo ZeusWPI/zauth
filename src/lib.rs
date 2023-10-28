@@ -36,9 +36,11 @@ pub mod http_authentication;
 pub mod mailer;
 pub mod models;
 pub mod token_store;
+pub mod jwt;
 pub mod util;
 
 use diesel_migrations::MigrationHarness;
+use jwt::JWTBuilder;
 use lettre::message::Mailbox;
 use rocket::fairing::AdHoc;
 use rocket::figment::Figment;
@@ -90,6 +92,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 	);
 	let token_store = TokenStore::<oauth_controller::UserToken>::new(&config);
 	let mailer = Mailer::new(&config).unwrap();
+	let jwt_builder = JWTBuilder::new(&config).expect("config");
 
 	let rocket = rocket
 		.mount(
@@ -151,6 +154,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 		.manage(token_store)
 		.manage(mailer)
 		.manage(admin_email)
+		.manage(jwt_builder)
 		.attach(DbConn::fairing())
 		.attach(AdHoc::config::<Config>())
 		.attach(AdHoc::on_ignite("Database preparation", prepare_database));

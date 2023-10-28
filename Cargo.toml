@@ -32,3 +32,4 @@ tempfile = "3.1"
 parking_lot = { version = "0.12" }
 thiserror = "1.0"
 validator = { version = "0.16", features = [ "derive" ] }
+jsonwebtoken = "9.1"

@@ -17,6 +17,7 @@ maximum_pending_users = 25
 
 [debug]
 secret_key = "1vwCFFPSdQya895gNiO556SzmfShG6MokstgttLvwjw="
+ec_private_key = "keys/replace_me.pem"
 bcrypt_cost = 4
 seed_database = true
 
@@ -29,6 +30,7 @@ port = 8000
 # Values you want to fill in for production use
 # admin_email = # Email address to send admin notifications to (e.g. admin@zeus.gent)
 # secret_key =  # used to encrypt cookies (generate a new one!)
+# ec_private_key = # Path to ECDSA private key for signing jwt's (generate by running following command: openssl ecparam -genkey -noout -name prime256v1 | openssl pkcs8 -topk8 -nocrypt -out ec-private.pem)
 # base_url =    # URL where the application is hosten (e.g. https://auth.zeus.gent)
 # mail_from =   # From header to set when sending emails (e.g. zauth@zeus.gent)
 # mail_server = # domain of the SMTP server used to send mail (e.g. smtp.zeus.gent)

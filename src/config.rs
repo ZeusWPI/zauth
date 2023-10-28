@@ -14,6 +14,7 @@ pub struct Config {
 	pub secure_token_length: usize,
 	pub bcrypt_cost: u32,
 	pub base_url: String,
+	pub ec_private_key: String,
 	pub mail_queue_size: usize,
 	pub mail_queue_wait_seconds: u64,
 	pub mail_from: String,
@@ -43,6 +44,7 @@ impl Config {
 	pub fn base_url(&self) -> Absolute<'_> {
 		Absolute::parse(&self.base_url).expect("valid base_url")
 	}
+
 }
 
 pub struct AdminEmail(pub Mailbox);

@@ -44,6 +44,7 @@ pub fn config() -> Config {
 		email_confirmation_token_seconds: 300,
 		secure_token_length: 64,
 		bcrypt_cost: BCRYPT_COST,
+		ec_private_key: "keys/replace_me.pem".to_string(),
 		base_url: "example.com".to_string(),
 		mail_queue_size: 10,
 		mail_queue_wait_seconds: 0,

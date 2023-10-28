@@ -1,4 +1,3 @@
-use chrono::Utc;
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::{Redirect, Responder};
@@ -11,6 +10,7 @@ use crate::ephemeral::session::UserSession;
 use crate::errors::Either::{Left, Right};
 use crate::errors::*;
 use crate::http_authentication::BasicAuthentication;
+use crate::jwt::JWTBuilder;
 use crate::models::client::*;
 use crate::models::session::*;
 use crate::models::user::*;
@@ -240,17 +240,6 @@ fn authorization_denied(state: AuthState) -> Redirect {
 }
 
 #[derive(Serialize, Debug)]
-pub struct IDToken {
-	sub:      String,
-	iss:      String,
-	aud:      String,
-	exp:      i64,
-	iat:      i64,
-	nickname: String,
-	email:    String,
-}
-
-#[derive(Serialize, Debug)]
 pub struct TokenSuccess {
 	access_token: String,
 	token_type:   String,
@@ -267,21 +256,13 @@ pub struct TokenFormData {
 	client_secret: Option<String>,
 }
 
-fn create_jwt(id_token: IDToken) -> String {
-	let header = base64::encode("{\"alg\": \"none\"}");
-	let payload = base64::encode_config(
-		serde_json::to_string(&id_token).unwrap(),
-		base64::URL_SAFE_NO_PAD,
-	);
-	format!("{}.{}.", header, payload)
-}
-
 #[post("/oauth/token", data = "<form>")]
 pub async fn token(
 	auth: Option<BasicAuthentication>,
 	form: Form<TokenFormData>,
 	config: &State<Config>,
 	token_state: &State<TokenStore<UserToken>>,
+	jwt_builder: &State<JWTBuilder>,
 	db: DbConn,
 ) -> Result<Json<TokenSuccess>> {
 	let data = form.into_inner();
@@ -335,16 +316,9 @@ pub async fn token(
 			.as_ref()
 			.map(|scope| -> Option<String> {
 				match scope.contains("openid") {
-					true => Some(create_jwt(IDToken {
-						sub:      user.id.to_string(),
-						iss:      config.base_url().to_string(),
-						aud:      client.name.clone(),
-						iat:      Utc::now().timestamp(),
-						exp:      Utc::now().timestamp()
-							+ config.client_session_seconds,
-						nickname: user.username.clone(),
-						email:    user.email.clone(),
-					})),
+					true => {
+						jwt_builder.encode_id_token(&client, &user, config).ok()
+					},
 					false => None,
 				}
 			})
