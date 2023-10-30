@@ -1,3 +1,4 @@
+use jsonwebtoken::jwk::JwkSet;
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::{Redirect, Responder};
@@ -243,6 +244,7 @@ fn authorization_denied(state: AuthState) -> Redirect {
 pub struct TokenSuccess {
 	access_token: String,
 	token_type:   String,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	id_token:     Option<String>,
 	expires_in:   i64,
 }
@@ -339,4 +341,9 @@ pub async fn token(
 			expires_in: config.client_session_seconds,
 		}))
 	}
+}
+
+#[get("/oauth/jwks")]
+pub async fn jwks(jwt_builder: &State<JWTBuilder>) -> Json<JwkSet> {
+	Json(jwt_builder.jwks.clone())
 }

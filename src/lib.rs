@@ -33,10 +33,10 @@ pub mod db_seed;
 pub mod ephemeral;
 pub mod errors;
 pub mod http_authentication;
+pub mod jwt;
 pub mod mailer;
 pub mod models;
 pub mod token_store;
-pub mod jwt;
 pub mod util;
 
 use diesel_migrations::MigrationHarness;
@@ -111,6 +111,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				oauth_controller::grant_get,
 				oauth_controller::grant_post,
 				oauth_controller::token,
+				oauth_controller::jwks,
 				pages_controller::home_page,
 				sessions_controller::create_session,
 				sessions_controller::new_session,

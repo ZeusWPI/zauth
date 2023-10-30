@@ -3,7 +3,12 @@ use crate::errors::{InternalError, LaunchError, Result};
 use crate::models::client::Client;
 use crate::models::user::User;
 use chrono::Utc;
+use jsonwebtoken::jwk::{
+	CommonParameters, EllipticCurveKeyParameters, Jwk, JwkSet,
+};
 use jsonwebtoken::{encode, EncodingKey, Header};
+use openssl::bn::{BigNum, BigNumContext};
+use openssl::ec::EcKey;
 use serde::Serialize;
 use std::fs::File;
 use std::io::Read;
@@ -11,10 +16,11 @@ use std::io::Read;
 pub struct JWTBuilder {
 	pub key:    EncodingKey,
 	pub header: Header,
+	pub jwks:   JwkSet,
 }
 
 #[derive(Serialize, Debug)]
-pub struct IDToken {
+struct IDToken {
 	sub:                String,
 	iss:                String,
 	aud:                String,
@@ -34,9 +40,57 @@ impl JWTBuilder {
 
 		let key = EncodingKey::from_ec_pem(&buffer)
 			.map_err(|err| LaunchError::BadConfigValueType(err.to_string()))?;
-		let header = Header::new(jsonwebtoken::Algorithm::ES256);
+		let header = Header::new(jsonwebtoken::Algorithm::ES384);
 
-		Ok(JWTBuilder { key, header })
+		let private_key = EcKey::private_key_from_pem(&buffer)
+			.map_err(|err| LaunchError::BadConfigValueType(err.to_string()))?;
+
+		let mut ctx: BigNumContext = BigNumContext::new().unwrap();
+		let public_key = private_key.public_key();
+		let mut x = BigNum::new().unwrap();
+		let mut y = BigNum::new().unwrap();
+		public_key
+			.affine_coordinates(private_key.group(), &mut x, &mut y, &mut ctx)
+			.expect("x,y coordinates");
+
+		let jwk = Jwk {
+			common:    CommonParameters {
+				public_key_use:          Some(
+					jsonwebtoken::jwk::PublicKeyUse::Signature,
+				),
+				key_algorithm:           Some(
+					jsonwebtoken::jwk::KeyAlgorithm::ES384,
+				),
+				key_operations:          None,
+				key_id:                  None,
+				x509_url:                None,
+				x509_chain:              None,
+				x509_sha1_fingerprint:   None,
+				x509_sha256_fingerprint: None,
+			},
+			algorithm: jsonwebtoken::jwk::AlgorithmParameters::EllipticCurve(
+				EllipticCurveKeyParameters {
+					key_type: jsonwebtoken::jwk::EllipticCurveKeyType::EC,
+					curve:    jsonwebtoken::jwk::EllipticCurve::P384,
+					x:        base64::encode_config(
+						x.to_vec(),
+						base64::URL_SAFE_NO_PAD,
+					),
+					y:        base64::encode_config(
+						y.to_vec(),
+						base64::URL_SAFE_NO_PAD,
+					),
+				},
+			),
+		};
+
+		Ok(JWTBuilder {
+			key,
+			header,
+			jwks: JwkSet {
+				keys: Vec::from([jwk]),
+			},
+		})
 	}
 
 	pub fn encode<T: Serialize>(&self, claims: &T) -> Result<String> {
@@ -51,13 +105,14 @@ impl JWTBuilder {
 		config: &Config,
 	) -> Result<String> {
 		let id_token = IDToken {
-			sub:      user.id.to_string(),
-			iss:      config.base_url().to_string(),
-			aud:      client.name.clone(),
-			iat:      Utc::now().timestamp(),
-			exp:      Utc::now().timestamp() + config.client_session_seconds,
-			nickname: user.username.clone(),
-			email:    user.email.clone(),
+			sub:                user.id.to_string(),
+			iss:                config.base_url().to_string(),
+			aud:                client.name.clone(),
+			iat:                Utc::now().timestamp(),
+			exp:                Utc::now().timestamp()
+				+ config.client_session_seconds,
+			preferred_username: user.username.clone(),
+			email:              user.email.clone(),
 		};
 		self.encode(&id_token)
 	}

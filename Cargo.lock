@@ -2851,6 +2851,7 @@ dependencies = [
  "lazy_static",
  "lettre",
  "log",
+ "openssl",
  "parking_lot",
  "pwhash",
  "rand",

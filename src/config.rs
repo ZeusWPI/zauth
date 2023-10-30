@@ -44,7 +44,6 @@ impl Config {
 	pub fn base_url(&self) -> Absolute<'_> {
 		Absolute::parse(&self.base_url).expect("valid base_url")
 	}
-
 }
 
 pub struct AdminEmail(pub Mailbox);

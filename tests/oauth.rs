@@ -207,6 +207,7 @@ async fn normal_flow() {
 		dbg!(&data);
 		assert!(data["access_token"].is_string());
 		assert!(data["token_type"].is_string());
+		assert_eq!(data.get("id_token"), None);
 		assert_eq!(data["token_type"], "bearer");
 
 		// 7b. Client requests access code while sending its credentials
@@ -255,6 +256,7 @@ async fn normal_flow() {
 			serde_json::from_str(&response_body).expect("response json values");
 
 		assert!(data["access_token"].is_string());
+		assert_eq!(data["id_token"], Value::Null);
 		assert_eq!(data["token_type"], "bearer");
 		let token = data["access_token"].as_str().expect("access token");
 
