@@ -34,3 +34,6 @@ thiserror = "1.0"
 validator = { version = "0.16", features = [ "derive" ] }
 jsonwebtoken = "9.1"
 openssl = "0.10"
+
+[build-dependencies]
+openssl = "0.10"

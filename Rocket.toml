@@ -17,7 +17,7 @@ maximum_pending_users = 25
 
 [debug]
 secret_key = "1vwCFFPSdQya895gNiO556SzmfShG6MokstgttLvwjw="
-ec_private_key = "keys/replace_me.pem"
+ec_private_key = "keys/jwt_key.pem"
 bcrypt_cost = 4
 seed_database = true
 
