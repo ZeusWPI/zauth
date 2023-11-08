@@ -48,6 +48,7 @@ pub struct NewSession {
 	pub client_id:  Option<i32>,
 	pub created_at: NaiveDateTime,
 	pub expires_at: NaiveDateTime,
+	pub scope:      Option<String>,
 }
 
 impl Session {
@@ -64,6 +65,7 @@ impl Session {
 			key: None,
 			created_at,
 			expires_at,
+			scope: None,
 		};
 		db.run(move |conn| {
 			conn.transaction(|conn| {
@@ -82,6 +84,7 @@ impl Session {
 	pub async fn create_client_session(
 		user: &User,
 		client: &Client,
+		scope: Option<String>,
 		conf: &Config,
 		db: &DbConn,
 	) -> Result<Session> {
@@ -94,6 +97,7 @@ impl Session {
 			key: Some(key),
 			created_at,
 			expires_at,
+			scope,
 		};
 		db.run(move |conn| {
 			conn.transaction(|conn| {

@@ -4,3 +4,4 @@ db/*
 .envrc
 static/dist/
 node_modules/
+keys/*.pem

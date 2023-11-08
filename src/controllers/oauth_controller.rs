@@ -1,3 +1,4 @@
+use jsonwebtoken::jwk::JwkSet;
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::{Redirect, Responder};
@@ -10,6 +11,7 @@ use crate::ephemeral::session::UserSession;
 use crate::errors::Either::{Left, Right};
 use crate::errors::*;
 use crate::http_authentication::BasicAuthentication;
+use crate::jwt::JWTBuilder;
 use crate::models::client::*;
 use crate::models::session::*;
 use crate::models::user::*;
@@ -161,6 +163,7 @@ pub struct UserToken {
 	pub client_id:    i32,
 	pub client_name:  String,
 	pub redirect_uri: String,
+	pub scope:        Option<String>,
 }
 
 #[get("/oauth/grant")]
@@ -215,6 +218,7 @@ async fn authorization_granted(
 	let authorization_code = token_store
 		.create_token(UserToken {
 			user_id:      user.id,
+			scope:        state.scope.clone(),
 			username:     user.username.clone(),
 			client_id:    state.client_id.clone(),
 			client_name:  state.client_name.clone(),
@@ -240,6 +244,8 @@ fn authorization_denied(state: AuthState) -> Redirect {
 pub struct TokenSuccess {
 	access_token: String,
 	token_type:   String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	id_token:     Option<String>,
 	expires_in:   i64,
 }
 
@@ -258,6 +264,7 @@ pub async fn token(
 	form: Form<TokenFormData>,
 	config: &State<Config>,
 	token_state: &State<TokenStore<UserToken>>,
+	jwt_builder: &State<JWTBuilder>,
 	db: DbConn,
 ) -> Result<Json<TokenSuccess>> {
 	let data = form.into_inner();
@@ -306,13 +313,37 @@ pub async fn token(
 		)))
 	} else {
 		let user = User::find(token.user_id, &db).await?;
-		let session =
-			Session::create_client_session(&user, &client, &config, &db)
-				.await?;
+		let id_token = token
+			.scope
+			.as_ref()
+			.map(|scope| -> Option<String> {
+				match scope.contains("openid") {
+					true => {
+						jwt_builder.encode_id_token(&client, &user, config).ok()
+					},
+					false => None,
+				}
+			})
+			.flatten();
+
+		let session = Session::create_client_session(
+			&user,
+			&client,
+			token.scope,
+			&config,
+			&db,
+		)
+		.await?;
 		Ok(Json(TokenSuccess {
 			access_token: session.key.unwrap().clone(),
-			token_type:   String::from("bearer"),
-			expires_in:   config.client_session_seconds,
+			token_type: String::from("bearer"),
+			id_token,
+			expires_in: config.client_session_seconds,
 		}))
 	}
+}
+
+#[get("/oauth/jwks")]
+pub async fn jwks(jwt_builder: &State<JWTBuilder>) -> Json<JwkSet> {
+	Json(jwt_builder.jwks.clone())
 }

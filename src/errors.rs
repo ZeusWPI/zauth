@@ -214,6 +214,8 @@ pub enum InternalError {
 	BincodeError(#[from] Box<bincode::ErrorKind>),
 	#[error("B64 decode error")]
 	Base64DecodeError(#[from] base64::DecodeError),
+	#[error("JWT error")]
+	JWTError(#[from] jsonwebtoken::errors::Error),
 }
 pub type InternalResult<T> = std::result::Result<T, InternalError>;
 
