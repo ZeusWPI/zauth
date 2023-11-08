@@ -122,10 +122,15 @@ async fn delete_client_with_session() {
 			.await
 			.unwrap();
 
-		let session =
-			Session::create_client_session(&user, &client,None, &config(), &db)
-				.await
-				.unwrap();
+		let session = Session::create_client_session(
+			&user,
+			&client,
+			None,
+			&config(),
+			&db,
+		)
+		.await
+		.unwrap();
 
 		let delete = http_client
 			.delete(format!("/clients/{}", &client.id))
