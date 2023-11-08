@@ -9,8 +9,9 @@ use rocket::http::Status;
 
 mod common;
 
-use crate::common::url;
+use crate::common::{config, url};
 use zauth::models::client::{Client, NewClient};
+use zauth::models::session::Session;
 
 #[rocket::async_test]
 async fn create_and_update_client() {
@@ -97,6 +98,45 @@ async fn change_client_secret() {
 
 		let client = client.reload(&db).await.expect("reload client");
 		assert_ne!(secret_pre, client.secret);
+	})
+	.await;
+}
+
+#[rocket::async_test]
+async fn delete_client_with_session() {
+	common::as_admin(async move |http_client, db, user| {
+		let client_name = "test";
+
+		let client_form = format!("name={}", url(&client_name),);
+
+		let create = http_client
+			.post("/clients")
+			.body(client_form)
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.dispatch()
+			.await;
+
+		assert_eq!(create.status(), Status::Created);
+		let client = Client::find_by_name(client_name.to_owned(), &db)
+			.await
+			.unwrap();
+
+		let session =
+			Session::create_client_session(&user, &client, &config(), &db)
+				.await
+				.unwrap();
+
+		let delete = http_client
+			.delete(format!("/clients/{}", &client.id))
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.dispatch()
+			.await;
+
+		assert_eq!(delete.status(), Status::NoContent);
+		assert!(Client::find(client.id, &db).await.is_err());
+		assert!(Session::find_by_id(session.id, &db).await.is_err());
 	})
 	.await;
 }
