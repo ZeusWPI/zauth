@@ -4,7 +4,7 @@ WORKDIR /usr/src/zauth
 
 RUN cargo install diesel_cli
 COPY . .
-RUN cargo install --path .
+RUN cargo install --locked --path .
 
 FROM node:14 AS staticbuilder
 
