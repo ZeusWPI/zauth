@@ -7,7 +7,7 @@ authors = ["Rien Maertens <rien.maertens@posteo.be>"]
 [dependencies]
 askama = { git = "https://github.com/djc/askama.git", rev = "40bb338", features = ["with-rocket", "mime", "mime_guess"] }
 askama_rocket = { git = "https://github.com/djc/askama.git", rev = "40bb338" }
-base64 = "0.13"
+base64 = "0.21"
 bincode = "1.0"
 pwhash = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
