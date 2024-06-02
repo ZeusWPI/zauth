@@ -168,6 +168,20 @@ async fn update_self() {
 			.put(format!("/users/{}", user.username))
 			.header(ContentType::Form)
 			.header(Accept::JSON)
+			.body("ssh_key=ssh-fake%20supersecretkey")
+			.dispatch()
+			.await;
+
+		assert_eq!(
+			response.status(),
+			Status::UnprocessableEntity,
+			"user should not be able to update invalid public ssh key"
+		);
+
+		let response = http_client
+			.put(format!("/users/{}", user.username))
+			.header(ContentType::Form)
+			.header(Accept::JSON)
 			.body("ssh_key=ssh-rsa%20supersecretkey")
 			.dispatch()
 			.await;

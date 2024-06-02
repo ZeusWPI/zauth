@@ -436,6 +436,7 @@ impl User {
 			self.ssh_key = Some(ssh_key);
 		}
 		self.subscribed_to_mailing_list = change.subscribed_to_mailing_list;
+		self.validate()?;
 		Ok(())
 	}
 
