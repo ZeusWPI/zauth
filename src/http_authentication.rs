@@ -42,12 +42,12 @@ impl<'r> FromRequest<'r> for BasicAuthentication {
 	) -> request::Outcome<Self, Self::Error> {
 		let headers: Vec<_> = request.headers().get("Authorization").collect();
 		if headers.is_empty() {
-			return Outcome::Failure((
+			return Outcome::Error((
 				Status::BadRequest,
 				String::from("Authorization header missing"),
 			));
 		} else if headers.len() > 1 {
-			return Outcome::Failure((
+			return Outcome::Error((
 				Status::BadRequest,
 				String::from("More than one authorization header"),
 			));
@@ -56,14 +56,14 @@ impl<'r> FromRequest<'r> for BasicAuthentication {
 		let auth_header = headers[0];
 		let prefix = "Basic ";
 		if !auth_header.starts_with(prefix) {
-			return Outcome::Failure((
+			return Outcome::Error((
 				Status::BadRequest,
 				String::from("We only support Basic Authentication"),
 			));
 		}
 		match BasicAuthentication::from_str(&auth_header[prefix.len()..]) {
 			Ok(credentials) => Outcome::Success(credentials),
-			Err(error_msg) => Outcome::Failure((Status::BadRequest, error_msg)),
+			Err(error_msg) => Outcome::Error((Status::BadRequest, error_msg)),
 		}
 	}
 }

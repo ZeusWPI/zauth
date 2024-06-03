@@ -3,6 +3,7 @@
 extern crate diesel;
 extern crate rocket;
 
+use common::HttpClient;
 use rocket::http::{Accept, ContentType, Status};
 use rocket::local::asynchronous::LocalResponse;
 
@@ -41,19 +42,19 @@ async fn post_registration<'a>(
 
 #[rocket::async_test]
 async fn get_all_users() {
-	common::as_visitor(async move |http_client, _db| {
+	common::as_visitor(async move |http_client: HttpClient, _db| {
 		let response = http_client.get("/users").dispatch().await;
 		assert_eq!(response.status(), Status::Unauthorized);
 	})
 	.await;
 
-	common::as_user(async move |http_client, _db, _user| {
+	common::as_user(async move |http_client: HttpClient, _db, _user| {
 		let response = http_client.get("/users").dispatch().await;
 		assert_eq!(response.status(), Status::Forbidden);
 	})
 	.await;
 
-	common::as_admin(async move |http_client, _db, _admin| {
+	common::as_admin(async move |http_client: HttpClient, _db, _admin| {
 		let response = http_client.get("/users").dispatch().await;
 
 		assert_eq!(response.status(), Status::Ok);
@@ -63,7 +64,7 @@ async fn get_all_users() {
 
 #[rocket::async_test]
 async fn show_user_as_visitor() {
-	common::as_visitor(async move |http_client, _db| {
+	common::as_visitor(async move |http_client: HttpClient, _db| {
 		let response = http_client.get("/users/1").dispatch().await;
 		assert_eq!(
 			response.status(),
@@ -76,7 +77,7 @@ async fn show_user_as_visitor() {
 
 #[rocket::async_test]
 async fn show_user_as_user() {
-	common::as_user(async move |http_client, db, user| {
+	common::as_user(async move |http_client: HttpClient, db, user: User| {
 		let other = User::create(
 			NewUser {
 				username:    String::from("somebody"),
@@ -119,7 +120,7 @@ async fn show_user_as_user() {
 
 #[rocket::async_test]
 async fn show_user_as_admin() {
-	common::as_admin(async move |http_client, db, admin| {
+	common::as_admin(async move |http_client: HttpClient, db, admin: User| {
 		let other = User::create(
 			NewUser {
 				username:    String::from("somebody"),
@@ -162,7 +163,7 @@ async fn show_user_as_admin() {
 
 #[rocket::async_test]
 async fn update_self() {
-	common::as_user(async move |http_client, db, user| {
+	common::as_user(async move |http_client: HttpClient, db, user: User| {
 		let response = http_client
 			.put(format!("/users/{}", user.username))
 			.header(ContentType::Form)
@@ -218,7 +219,7 @@ async fn update_self() {
 
 #[rocket::async_test]
 async fn make_admin() {
-	common::as_admin(async move |http_client, db, _admin| {
+	common::as_admin(async move |http_client: HttpClient, db, _admin| {
 		let other = User::create(
 			NewUser {
 				username:    String::from("somebody"),
@@ -258,7 +259,7 @@ async fn make_admin() {
 
 #[rocket::async_test]
 async fn try_make_admin() {
-	common::as_user(async move |http_client, db, _user| {
+	common::as_user(async move |http_client: HttpClient, db, _user: User| {
 		let other = User::create(
 			NewUser {
 				username:    String::from("somebody"),
@@ -293,7 +294,7 @@ async fn try_make_admin() {
 
 #[rocket::async_test]
 async fn create_user_form() {
-	common::as_admin(async move |http_client, db, _admin| {
+	common::as_admin(async move |http_client: HttpClient, db, _admin| {
 		let user_count = User::all(&db).await.unwrap().len();
 
 		let response = http_client
@@ -320,7 +321,7 @@ async fn create_user_form() {
 
 #[rocket::async_test]
 async fn create_user_json() {
-	common::as_admin(async move |http_client, db, _admin| {
+	common::as_admin(async move |http_client: HttpClient, db, _admin| {
 		let user_count = User::all(&db).await.unwrap().len();
 
 		let response = http_client
@@ -347,7 +348,7 @@ async fn create_user_json() {
 
 #[rocket::async_test]
 async fn forgot_password() {
-	common::as_visitor(async move |http_client, db| {
+	common::as_visitor(async move |http_client: HttpClient, db| {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
@@ -472,7 +473,7 @@ async fn forgot_password() {
 
 #[rocket::async_test]
 async fn forgot_password_non_existing_email() {
-	common::as_visitor(async move |http_client, db| {
+	common::as_visitor(async move |http_client: HttpClient, db| {
 		let email = String::from("test@example.com");
 		let _user = User::create(
 			NewUser {
@@ -511,7 +512,7 @@ async fn forgot_password_non_existing_email() {
 
 #[rocket::async_test]
 async fn reset_password_invalid_token() {
-	common::as_visitor(async move |http_client, db| {
+	common::as_visitor(async move |http_client: HttpClient, db| {
 		let email = String::from("test@example.com");
 		let user = User::create(
 			NewUser {
@@ -700,7 +701,7 @@ async fn limit_pending_users() {
 
 #[rocket::async_test]
 async fn user_approval_flow() {
-	common::as_admin(async move |http_client, db, _admin| {
+	common::as_admin(async move |http_client: HttpClient, db, _admin| {
 		let email = String::from("test@example.com");
 		let user = User::create_pending(
 			NewUser {
@@ -775,7 +776,7 @@ async fn user_approval_flow() {
 
 #[rocket::async_test]
 async fn refuse_robots() {
-	common::as_visitor(async move |http_client, db| {
+	common::as_visitor(async move |http_client: HttpClient, db| {
 		let username = "somebody";
 
 		let response = post_registration(
@@ -799,7 +800,7 @@ async fn refuse_robots() {
 
 #[rocket::async_test]
 async fn validate_on_registration() {
-	common::as_visitor(async move |http_client, db| {
+	common::as_visitor(async move |http_client: HttpClient, db| {
 		let user_count = User::all(&db).await.unwrap().len();
 
 		let response = post_registration(
@@ -824,7 +825,7 @@ async fn validate_on_registration() {
 
 #[rocket::async_test]
 async fn validate_on_admin_create() {
-	common::as_visitor(async move |http_client, db| {
+	common::as_visitor(async move |http_client: HttpClient, db| {
 		let user_count = User::all(&db).await.unwrap().len();
 
 		let response = post_registration(
@@ -849,7 +850,7 @@ async fn validate_on_admin_create() {
 
 #[rocket::async_test]
 async fn disable_user() {
-	common::as_admin(async move |http_client, db, _admin| {
+	common::as_admin(async move |http_client: HttpClient, db, _admin| {
 		let user = User::create(
 			NewUser {
 				username:    String::from("somebody"),
@@ -950,7 +951,7 @@ async fn validate_unique_email() {
 
 #[rocket::async_test]
 async fn validate_unique_username() {
-	common::as_visitor(async move |http_client, db| {
+	common::as_visitor(async move |http_client: HttpClient, db| {
 		let user_count = User::all(&db).await.unwrap().len();
 
 		let username = "somebody";
