@@ -63,8 +63,8 @@ pub async fn show_user<'r>(
 pub async fn show_ssh_key<'r>(
 	db: DbConn,
 	username: String,
-) -> Json<Vec<String>> {
-	let user = User::find_by_username(username, &db).await.unwrap();
+) -> Result<Json<Vec<String>>> {
+	let user = User::find_by_username(username, &db).await?;
 	let mut keys = vec![];
 	if let Some(ssh_keys) = user.ssh_key {
 		for line in ssh_keys.lines() {
@@ -74,7 +74,7 @@ pub async fn show_ssh_key<'r>(
 			}
 		}
 	}
-	Json(keys)
+	Ok(Json(keys))
 }
 
 #[get("/users")]
