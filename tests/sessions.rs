@@ -5,6 +5,7 @@ extern crate diesel;
 extern crate rocket;
 
 use chrono::{Duration, Utc};
+use common::HttpClient;
 use rocket::http::Status;
 use zauth::models::session::*;
 
@@ -12,7 +13,7 @@ mod common;
 
 #[rocket::async_test]
 async fn valid_user_session() {
-	common::as_user(async move |http_client, _db, _user| {
+	common::as_user(async move |http_client: HttpClient, _db, _user| {
 		let response = http_client.get("/current_user").dispatch().await;
 		assert_eq!(response.status(), Status::Ok);
 	})
@@ -21,7 +22,7 @@ async fn valid_user_session() {
 
 #[rocket::async_test]
 async fn invalid_user_session() {
-	common::as_user(async move |http_client, db, _user| {
+	common::as_user(async move |http_client: HttpClient, db, _user| {
 		let mut session = Session::last(&db).await.expect("last session");
 		assert!(session.valid);
 
@@ -36,7 +37,7 @@ async fn invalid_user_session() {
 
 #[rocket::async_test]
 async fn expired_user_session() {
-	common::as_user(async move |http_client, db, _user| {
+	common::as_user(async move |http_client: HttpClient, db, _user| {
 		let mut session = Session::last(&db).await.expect("last session");
 		assert!(session.valid);
 

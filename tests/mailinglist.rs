@@ -3,6 +3,7 @@
 extern crate diesel;
 extern crate rocket;
 
+use common::HttpClient;
 use rocket::http::{Accept, ContentType, Status};
 
 use zauth::models::mail::NewMail;
@@ -60,7 +61,7 @@ async fn setup_test_users(db: &DbConn) {
 /// new, subscribed user
 #[rocket::async_test]
 async fn mailinglist_workflow() {
-	common::as_admin(async move |http_client, db, admin| {
+	common::as_admin(async move |http_client: HttpClient, db, admin: User| {
 		setup_test_users(&db).await;
 
 		let subscribed_users = User::find_subscribed(&db).await.unwrap();
@@ -110,7 +111,7 @@ async fn mailinglist_workflow() {
 /// Ensure that anyone can unsubscribe
 #[rocket::async_test]
 async fn visitor_can_unsubscribe() {
-	common::as_visitor(async move |http_client, db| {
+	common::as_visitor(async move |http_client: HttpClient, db| {
 		setup_test_users(&db).await;
 		let test_user = &User::find_subscribed(&db).await.unwrap()[0];
 		let test_token = &test_user.unsubscribe_token;
@@ -157,7 +158,7 @@ async fn visitor_can_unsubscribe() {
 /// Ensure visitors cannot see mails pages
 #[rocket::async_test]
 async fn visitor_cannot_use_mailinglist() {
-	common::as_visitor(async move |http_client, _db| {
+	common::as_visitor(async move |http_client: HttpClient, _db| {
 		let mails_response = http_client.get("/mails").dispatch().await;
 		let new_mail_response = http_client.get("/mails/new").dispatch().await;
 		let specific_mail_response =
@@ -197,7 +198,7 @@ async fn visitor_cannot_use_mailinglist() {
 /// Ensure users can see the mailinglist, but cannot create any mails
 #[rocket::async_test]
 async fn user_can_see_mailinglist() {
-	common::as_user(async move |http_client, db, user| {
+	common::as_user(async move |http_client: HttpClient, db, user: User| {
 		let test_mail = NewMail {
 			author:  user.username,
 			subject: "foo".to_string(),
@@ -246,7 +247,7 @@ async fn user_can_see_mailinglist() {
 /// Ensure admins can see mails pages and create new mails
 #[rocket::async_test]
 async fn admin_can_use_mailinglist() {
-	common::as_admin(async move |http_client, db, user| {
+	common::as_admin(async move |http_client: HttpClient, db, user: User| {
 		let test_mail = NewMail {
 			author:  user.username,
 			subject: "foo".to_string(),

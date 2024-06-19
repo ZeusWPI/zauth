@@ -18,10 +18,10 @@ impl<'r> FromRequest<'r> for AuthorizationToken {
 		let headers: Vec<_> = request.headers().get("Authorization").collect();
 		if headers.is_empty() {
 			let msg = String::from("Authorization header missing");
-			return Outcome::Failure((Status::BadRequest, msg));
+			return Outcome::Error((Status::BadRequest, msg));
 		} else if headers.len() > 1 {
 			let msg = String::from("More than one authorization header");
-			return Outcome::Failure((Status::BadRequest, msg));
+			return Outcome::Error((Status::BadRequest, msg));
 		}
 
 		let auth_header = headers[0];
@@ -35,7 +35,7 @@ impl<'r> FromRequest<'r> for AuthorizationToken {
 			Outcome::Success(AuthorizationToken { username: token })
 		} else {
 			let msg = "Unable to parse tokenn".to_string();
-			Outcome::Failure((Status::BadRequest, msg))
+			Outcome::Error((Status::BadRequest, msg))
 		}
 	}
 }

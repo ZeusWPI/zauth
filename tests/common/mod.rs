@@ -102,7 +102,7 @@ where
 	F: FnOnce(HttpClient, DbConn, User) -> R,
 	R: Future<Output = ()>,
 {
-	as_visitor(async move |client, db| {
+	as_visitor(async move |client: HttpClient, db| {
 		let user = User::create(
 			NewUser {
 				username:    String::from("username"),
@@ -140,7 +140,7 @@ where
 	F: FnOnce(HttpClient, DbConn, User) -> R,
 	R: Future<Output = ()>,
 {
-	as_visitor(async move |client, db| {
+	as_visitor(async move |client: HttpClient, db| {
 		let mut user = User::create(
 			NewUser {
 				username:    String::from("admin"),

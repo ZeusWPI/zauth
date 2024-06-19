@@ -79,7 +79,7 @@ impl<'r> FromRequest<'r> for SessionCookie {
 			.map(|cookie| SessionCookie::from_str(cookie.value()));
 		match session {
 			Some(Ok(session)) => Outcome::Success(session),
-			_ => Outcome::Failure((Status::Unauthorized, "invalid session")),
+			_ => Outcome::Error((Status::Unauthorized, "invalid session")),
 		}
 	}
 }
@@ -96,7 +96,7 @@ impl UserSession {
 		cookies: &CookieJar<'_>,
 		db: &DbConn,
 	) -> Result<()> {
-		cookies.remove_private(Cookie::named(SESSION_COOKIE));
+		cookies.remove_private(Cookie::from(SESSION_COOKIE));
 		self.session.invalidate(db).await?;
 		Ok(())
 	}
@@ -111,19 +111,19 @@ impl<'r> FromRequest<'r> for UserSession {
 	) -> Outcome<Self, Self::Error> {
 		let cookie = try_outcome!(request.guard::<SessionCookie>().await);
 		let db =
-			try_outcome!(request.guard::<DbConn>().await.map_failure(|_| {
+			try_outcome!(request.guard::<DbConn>().await.map_error(|_| {
 				(Status::InternalServerError, "could not connect to database")
 			}));
 
 		match Session::find_by_id(cookie.session_id, &db).await {
 			Ok(session) => match session.user(&db).await {
 				Ok(user) => Outcome::Success(UserSession { user, session }),
-				_ => Outcome::Failure((
+				_ => Outcome::Error((
 					Status::Unauthorized,
 					"user not found for database session",
 				)),
 			},
-			_ => Outcome::Failure((
+			_ => Outcome::Error((
 				Status::Unauthorized,
 				"session not found for valid cookie",
 			)),
@@ -148,7 +148,7 @@ impl<'r> FromRequest<'r> for AdminSession {
 		if user.admin {
 			Outcome::Success(AdminSession { admin: user })
 		} else {
-			Outcome::Failure((Status::Forbidden, "user is not an admin"))
+			Outcome::Error((Status::Forbidden, "user is not an admin"))
 		}
 	}
 }
@@ -168,12 +168,12 @@ impl<'r> FromRequest<'r> for ClientSession {
 	) -> Outcome<Self, Self::Error> {
 		let headers: Vec<_> = request.headers().get("Authorization").collect();
 		if headers.is_empty() {
-			return Outcome::Failure((
+			return Outcome::Error((
 				Status::BadRequest,
 				"no authorization header found",
 			));
 		} else if headers.len() > 1 {
-			return Outcome::Failure((
+			return Outcome::Error((
 				Status::BadRequest,
 				"found more than one authorization header",
 			));
@@ -182,7 +182,7 @@ impl<'r> FromRequest<'r> for ClientSession {
 		let auth_header = headers[0];
 		let prefix = "Bearer ";
 		if !auth_header.starts_with(prefix) {
-			return Outcome::Failure((
+			return Outcome::Error((
 				Status::BadRequest,
 				"only support Bearer tokens are supported",
 			));
@@ -190,7 +190,7 @@ impl<'r> FromRequest<'r> for ClientSession {
 		let key = &auth_header[prefix.len()..];
 
 		let db =
-			try_outcome!(request.guard::<DbConn>().await.map_failure(|_| {
+			try_outcome!(request.guard::<DbConn>().await.map_error(|_| {
 				(Status::InternalServerError, "could not connect to database")
 			}));
 
@@ -200,17 +200,17 @@ impl<'r> FromRequest<'r> for ClientSession {
 					Ok(Some(client)) => {
 						Outcome::Success(ClientSession { user, client })
 					},
-					_ => Outcome::Failure((
+					_ => Outcome::Error((
 						Status::Unauthorized,
 						"there is no client associated to this client session",
 					)),
 				},
-				_ => Outcome::Failure((
+				_ => Outcome::Error((
 					Status::Unauthorized,
 					"user not found for database session",
 				)),
 			},
-			_ => Outcome::Failure((
+			_ => Outcome::Error((
 				Status::Unauthorized,
 				"session not found for valid cookie",
 			)),
@@ -245,7 +245,7 @@ impl<'r> FromRequest<'r> for ClientOrUserSession {
 						client: Some(session.client),
 					})
 				},
-				_ => Outcome::Failure((
+				_ => Outcome::Error((
 					Status::Unauthorized,
 					"found neither a user session or client session",
 				)),

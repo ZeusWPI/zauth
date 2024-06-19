@@ -3,9 +3,11 @@
 extern crate diesel;
 extern crate rocket;
 
+use common::HttpClient;
 use rocket::http::Accept;
 use rocket::http::ContentType;
 use rocket::http::Status;
+use zauth::models::user::User;
 
 mod common;
 
@@ -15,7 +17,7 @@ use zauth::models::session::Session;
 
 #[rocket::async_test]
 async fn create_and_update_client() {
-	common::as_admin(async move |http_client, db, _user| {
+	common::as_admin(async move |http_client: HttpClient, db, _user| {
 		let client_name = "test";
 
 		let client_form = format!("name={}", url(&client_name),);
@@ -75,7 +77,7 @@ async fn create_and_update_client() {
 
 #[rocket::async_test]
 async fn change_client_secret() {
-	common::as_admin(async move |http_client, db, _user| {
+	common::as_admin(async move |http_client: HttpClient, db, _user: User| {
 		let client = Client::create(
 			NewClient {
 				name: "test".to_string(),
@@ -104,7 +106,7 @@ async fn change_client_secret() {
 
 #[rocket::async_test]
 async fn delete_client_with_session() {
-	common::as_admin(async move |http_client, db, user| {
+	common::as_admin(async move |http_client: HttpClient, db, user: User| {
 		let client_name = "test";
 
 		let client_form = format!("name={}", url(&client_name),);

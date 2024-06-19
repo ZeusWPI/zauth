@@ -49,16 +49,16 @@ where
 				.map(|v| Api {
 					inner: v.into_inner(),
 				})
-				.map_failure(|(s, e)| (s, ApiError::FormError(e)))
+				.map_error(|(s, e)| (s, ApiError::FormError(e)))
 		} else if request.content_type() == Some(&ContentType::JSON) {
 			Json::from_data(request, data)
 				.await
 				.map(|v| Api {
 					inner: v.into_inner(),
 				})
-				.map_failure(|(s, e)| (s, ApiError::JsonError(e)))
+				.map_error(|(s, e)| (s, ApiError::JsonError(e)))
 		} else {
-			Outcome::Failure((Status::NotAcceptable, ApiError::WasNeither))
+			Outcome::Error((Status::NotAcceptable, ApiError::WasNeither))
 		}
 	}
 }
@@ -114,7 +114,7 @@ where
 					form_phantom: PhantomData,
 					json_phantom: PhantomData,
 				})
-				.map_failure(|(s, e)| (s, SplitApiError::FormError(e)))
+				.map_error(|(s, e)| (s, SplitApiError::FormError(e)))
 		} else if request.content_type() == Some(&ContentType::JSON) {
 			Json::from_data(request, data)
 				.await
@@ -123,9 +123,9 @@ where
 					form_phantom: PhantomData,
 					json_phantom: PhantomData,
 				})
-				.map_failure(|(s, e)| (s, SplitApiError::JsonError(e)))
+				.map_error(|(s, e)| (s, SplitApiError::JsonError(e)))
 		} else {
-			Outcome::Failure((Status::NotAcceptable, SplitApiError::WasNeither))
+			Outcome::Error((Status::NotAcceptable, SplitApiError::WasNeither))
 		}
 	}
 }
