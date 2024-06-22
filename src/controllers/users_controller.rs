@@ -59,7 +59,7 @@ pub async fn show_user<'r>(
 	}
 }
 
-#[get("/users/keys/<username>")]
+#[get("/users/<username>/keys", rank = 1)]
 pub async fn show_ssh_key<'r>(
 	db: DbConn,
 	username: String,
