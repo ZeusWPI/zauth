@@ -1014,3 +1014,43 @@ async fn validate_unique_username() {
 	})
 	.await;
 }
+
+#[rocket::async_test]
+async fn get_keys() {
+	common::as_visitor(async move |http_client: HttpClient, db| {
+		let mut user = User::create(
+			NewUser {
+				username:    String::from("user"),
+				password:    String::from("password"),
+				full_name:   String::from("name"),
+				email:       String::from("test@test.test"),
+				ssh_key:     None,
+				not_a_robot: true,
+			},
+			common::BCRYPT_COST,
+			&db,
+		)
+		.await
+		.unwrap();
+
+		// User::create throws away ssh_key in NewUser.
+		user.ssh_key = Some(String::from("ssh-rsa rsa \n ssh-ed25519 ed25519"));
+		let user = user.update(&db).await.unwrap();
+
+		let response = http_client
+			.get(format!("/users/{}/keys", user.username))
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::Ok);
+
+		let keys = response
+			.into_json::<Vec<String>>()
+			.await
+			.expect("response json");
+		assert_eq!(keys.len(), 2);
+		assert_eq!(keys[0], "ssh-rsa rsa");
+		assert_eq!(keys[1], "ssh-ed25519 ed25519");
+	})
+	.await;
+}
