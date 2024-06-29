@@ -25,6 +25,15 @@
 
 			<div class="title">Update profile information</div>
 
+			<!-- Error messages -->
+			{% match errors %}
+			{% when Some with (errors) %}
+			  <div class="notification is-danger is-light">
+				{{ errors }}
+			  </div>
+			{% when None %}
+			{% endmatch %}
+
 			<form class="profile-edit-form" action="/users/{{ user.username }}" method="POST">
 				<input type="hidden" name="_method" value="put"/>
 
