@@ -1039,6 +1039,7 @@ async fn get_keys() {
 
 		let response = http_client
 			.get(format!("/users/{}/keys", user.username))
+			.header(Accept::JSON)
 			.dispatch()
 			.await;
 
