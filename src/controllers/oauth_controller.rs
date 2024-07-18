@@ -113,11 +113,12 @@ pub async fn authorize<'r>(
 			let client_description = client.description.clone();
 			let state = AuthState::from_req(client, req);
 			cookies.add_private(state.into_cookie()?);
-			Ok(template! {
-				"oauth/authorize.html";
-				authorize_post_url: String = uri!(do_authorize).to_string(),
-				client_description: String = client_description,
-			})
+			Ok(ensure_logged_in_and_redirect(cookies, uri!(grant_get)))
+			// Ok(template! {
+			// 	"oauth/authorize.html";
+			// 	authorize_post_url: String = uri!(do_authorize).to_string(),
+			// 	client_description: String = client_description,
+			// })
 		} else {
 			Err(AuthenticationError::Unauthorized(format!(
 				"client with id {} is not authorized to use redirect_uri '{}'",
