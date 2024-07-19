@@ -19,7 +19,7 @@ pub fn ensure_logged_in_and_redirect(
 	cookies: &CookieJar,
 	uri: Origin,
 ) -> Redirect {
-	cookies.add_private(Cookie::new(REDIRECT_COOKIE, uri.to_string()));
+	cookies.add_private(Cookie::build((REDIRECT_COOKIE, uri.to_string())).same_site(rocket::http::SameSite::Lax));
 	Redirect::to(uri!(new_session))
 }
 
@@ -45,11 +45,11 @@ impl SessionCookie {
 		SessionCookie {
 			session_id: session.id,
 		}
-	}
+	}	
 
 	pub fn login(self, cookies: &CookieJar) {
 		let session_str = serde_urlencoded::to_string(self).unwrap();
-		let session_cookie = Cookie::new(SESSION_COOKIE, session_str);
+		let session_cookie = Cookie::build((SESSION_COOKIE, session_str)).same_site(rocket::http::SameSite::Lax);
 		cookies.add_private(session_cookie);
 	}
 

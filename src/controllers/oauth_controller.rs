@@ -49,7 +49,7 @@ impl AuthState {
 	}
 
 	pub fn into_cookie(self) -> Result<Cookie<'static>> {
-		Ok(Cookie::new(OAUTH_COOKIE, self.encode_b64()?))
+		Ok(Cookie::build((OAUTH_COOKIE, self.encode_b64()?)).same_site(rocket::http::SameSite::Lax).build())
 	}
 
 	pub fn from_req(
