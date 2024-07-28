@@ -47,6 +47,7 @@ pub async fn show_user<'r>(
 			html: template!("users/show.html";
 							user: User = user.clone(),
 							current_user: User = session.user,
+							errors: Option<ValidationErrors> = None
 			),
 			json: Json(user),
 		})
@@ -56,6 +57,27 @@ pub async fn show_user<'r>(
 			username
 		)))
 	}
+}
+
+#[get("/users/<username>/keys", rank = 1)]
+pub async fn show_ssh_key<'r>(
+	db: DbConn,
+	username: String,
+) -> Result<impl Responder<'r, 'static>> {
+	let user = User::find_by_username(username, &db).await?;
+	let mut keys = vec![];
+	if let Some(ssh_keys) = user.ssh_key {
+		for line in ssh_keys.lines() {
+			let line = line.trim();
+			if !line.is_empty() {
+				keys.push(line.to_string())
+			}
+		}
+	}
+	Ok(Accepter {
+		html: template!("users/keys.html"; keys: String = keys.join("\n")),
+		json: Json(keys),
+	})
 }
 
 #[get("/users")]
@@ -184,27 +206,35 @@ pub async fn register<'r>(
 }
 
 #[put("/users/<username>", data = "<change>")]
-pub async fn update_user<'r>(
+pub async fn update_user<'r, 'o: 'r>(
 	username: String,
 	change: Api<UserChange>,
 	session: UserSession,
 	db: DbConn,
-) -> Result<
-	Either<
-		impl Responder<'r, 'static>,
-		Custom<impl Debug + Responder<'r, 'static>>,
-	>,
-> {
+) -> Result<impl Responder<'r, 'o>> {
 	let mut user = User::find_by_username(username, &db).await?;
 	if session.user.id == user.id || session.user.admin {
-		user.change_with(change.into_inner())?;
-		let user = user.update(&db).await?;
-		Ok(Left(Accepter {
-			html: Redirect::to(uri!(show_user(user.username))),
-			json: Custom(Status::NoContent, ()),
-		}))
+		match user.change_with(change.into_inner()) {
+			Ok(()) => {
+				let user = user.update(&db).await?;
+				Ok(OneOf::One(Accepter {
+					html: Redirect::to(uri!(show_user(user.username))),
+					json: Custom(Status::NoContent, ()),
+				}))
+			},
+			Err(ZauthError::ValidationError(errors)) => Ok(OneOf::Two(Custom(
+				Status::UnprocessableEntity,
+				template! {
+					"users/show.html";
+					user: User = user,
+					current_user: User = session.user,
+					errors: Option<ValidationErrors> = Some(errors.clone()),
+				},
+			))),
+			Err(other) => Err(other),
+		}
 	} else {
-		Ok(Right(Custom(Status::Forbidden, ())))
+		Ok(OneOf::Three(Custom(Status::Forbidden, ())))
 	}
 }
 

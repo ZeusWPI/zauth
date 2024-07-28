@@ -123,6 +123,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				users_controller::register,
 				users_controller::current_user,
 				users_controller::show_user,
+				users_controller::show_ssh_key,
 				users_controller::list_users,
 				users_controller::update_user,
 				users_controller::change_state,

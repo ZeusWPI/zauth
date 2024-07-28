@@ -436,6 +436,7 @@ impl User {
 			self.ssh_key = Some(ssh_key);
 		}
 		self.subscribed_to_mailing_list = change.subscribed_to_mailing_list;
+		self.validate()?;
 		Ok(())
 	}
 
@@ -576,7 +577,16 @@ fn validate_ssh_key_list(
 ) -> std::result::Result<(), ValidationError> {
 	lazy_static! {
 		static ref SSH_KEY_REGEX: Regex = Regex::new(
-			r"ssh-(rsa|dsa|ecdsa|ed25519) [a-zA-Z0-9+/]{1,750}={0,3}( [^ ]+)?"
+			r"(?x)^
+				(
+					ssh-(rsa|dss|ecdsa|ed25519)|
+					ecdsa-sha2-nistp(256|384|521)|
+					sk-(
+						ecdsa-sha2-nistp256@openssh.com|
+						ssh-ed25519@openssh.com
+					)
+				)
+				\s[a-zA-Z0-9+/]{1,750}={0,3}( \S+)?"
 		)
 		.unwrap();
 	}
