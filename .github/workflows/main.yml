@@ -1,4 +1,4 @@
-name: Release Package
+name: Docker main build
 
 on:
   push:
