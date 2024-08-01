@@ -1,0 +1,24 @@
+name: Release Package
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build the new image
+        run: docker build . -t ghcr.io/zeuswpi/zauth:${{ github.sha }}
+      - name: Login to the container registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+      - name: Tag the new image with latest
+        run: docker tag ghcr.io/zeuswpi/zauth:${{ github.sha }} ghcr.io/zeuswpi/zauth:latest
+      - name: Push the new image
+        run: docker push --all-tags ghcr.io/zeuswpi/zauth
