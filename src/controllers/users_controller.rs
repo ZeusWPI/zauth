@@ -303,6 +303,44 @@ pub async fn set_approved<'r>(
 	})
 }
 
+#[post("/users/<username>/reject")]
+pub async fn reject<'r>(
+	username: String,
+	_session: AdminSession,
+	mailer: &'r State<Mailer>,
+	conf: &'r State<Config>,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let user = User::find_by_username(username, &db).await?;
+
+	if user.state != UserState::PendingApproval {
+		return Err(ZauthError::Unprocessable(String::from(
+			"user is not in the pending approval state",
+		)));
+	}
+
+	mailer
+		.create(
+			&user,
+			String::from("[Zauth] Your account has been rejected"),
+			template!(
+			"mails/user_rejected.txt";
+			name: String = user.full_name.to_string(),
+			admin_email: String = conf.admin_email.clone()
+			)
+			.render()
+			.map_err(InternalError::from)?,
+		)
+		.await?;
+
+	user.delete(&db).await?;
+
+	Ok(Accepter {
+		html: Redirect::to(uri!(list_users())),
+		json: Custom(Status::NoContent, ()),
+	})
+}
+
 #[get("/users/forgot_password")]
 pub fn forgot_password_get<'r>() -> impl Responder<'r, 'static> {
 	template! { "users/forgot_password.html" }

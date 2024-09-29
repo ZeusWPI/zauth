@@ -129,6 +129,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				users_controller::change_state,
 				users_controller::set_admin,
 				users_controller::set_approved,
+				users_controller::reject,
 				users_controller::forgot_password_get,
 				users_controller::forgot_password_post,
 				users_controller::reset_password_get,

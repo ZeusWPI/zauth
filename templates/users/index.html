@@ -33,6 +33,7 @@
 					<th>Email</th>
 					<th>Created at</th>
 					<th>Approve</th>
+					<th>Reject</th>
 				</tr>
 			</thead>
 
@@ -57,6 +58,13 @@
 						<td>
 							<form action="/users/{{ user.username }}/approve" method="post">
 								<button class="button is-success is-small" type="submit">Approve</button>
+							</form>
+						</td>
+
+						<!-- Reject -->
+						<td>
+							<form action="/users/{{ user.username }}/reject" method="post">
+								<button class="button is-danger is-small" type="submit">Reject</button>
 							</form>
 						</td>
 					</tr>
