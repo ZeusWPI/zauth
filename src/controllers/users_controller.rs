@@ -70,7 +70,12 @@ pub async fn show_ssh_key<'r>(
 		for line in ssh_keys.lines() {
 			let line = line.trim();
 			if !line.is_empty() {
-				keys.push(line.to_string())
+				keys.push(
+					line.split_ascii_whitespace()
+						.take(2)
+						.collect::<Vec<&str>>()
+						.join(" "),
+				)
 			}
 		}
 	}
