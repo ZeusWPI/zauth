@@ -308,6 +308,28 @@ pub async fn set_approved<'r>(
 	})
 }
 
+#[post("/users/<username>/reject")]
+pub async fn reject<'r>(
+	username: String,
+	_session: AdminSession,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let user = User::find_by_username(username, &db).await?;
+
+	if user.state != UserState::PendingApproval {
+		return Err(ZauthError::Unprocessable(String::from(
+			"user is not in the pending approval state",
+		)));
+	}
+
+	user.delete(&db).await?;
+
+	Ok(Accepter {
+		html: Redirect::to(uri!(list_users())),
+		json: Custom(Status::NoContent, ()),
+	})
+}
+
 #[get("/users/forgot_password")]
 pub fn forgot_password_get<'r>() -> impl Responder<'r, 'static> {
 	template! { "users/forgot_password.html" }

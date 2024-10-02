@@ -789,6 +789,76 @@ async fn user_approval_flow() {
 }
 
 #[rocket::async_test]
+async fn user_rejectal_flow() {
+	common::as_admin(async move |http_client: HttpClient, db, _admin| {
+		let email = String::from("test@example.com");
+		let user = User::create_pending(
+			NewUser {
+				username:    String::from("user"),
+				password:    String::from("password"),
+				full_name:   String::from("name"),
+				email:       email.clone(),
+				ssh_key:     None,
+				not_a_robot: true,
+			},
+			&common::config(),
+			&db,
+		)
+		.await
+		.unwrap();
+
+		let token = user
+			.pending_email_token
+			.as_ref()
+			.expect("email token")
+			.clone();
+
+		let response = http_client
+			.get(format!("/users/confirm/{}", token))
+			.header(Accept::HTML)
+			.header(ContentType::Form)
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::Ok);
+
+		let response =
+			common::expect_mail_to(vec!["admin@localhost"], async || {
+				http_client
+					.post("/users/confirm")
+					.header(Accept::HTML)
+					.header(ContentType::Form)
+					.body(format!("token={}", token))
+					.dispatch()
+					.await
+			})
+			.await;
+
+		assert_eq!(response.status(), Status::Ok);
+
+		let user = user.reload(&db).await.expect("reload user");
+
+		assert_eq!(
+			user.state,
+			UserState::PendingApproval,
+			"after email is confirmed, user should be pending for approval"
+		);
+
+		let response = http_client
+			.post(format!("/users/{}/reject/", user.username))
+			.header(Accept::HTML)
+			.header(ContentType::Form)
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::SeeOther);
+
+		user.reload(&db).await.expect_err("user should be removed");
+	})
+	.await;
+}
+
+#[rocket::async_test]
 async fn refuse_robots() {
 	common::as_visitor(async move |http_client: HttpClient, db| {
 		let username = "somebody";
