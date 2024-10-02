@@ -307,8 +307,6 @@ pub async fn set_approved<'r>(
 pub async fn reject<'r>(
 	username: String,
 	_session: AdminSession,
-	mailer: &'r State<Mailer>,
-	conf: &'r State<Config>,
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let user = User::find_by_username(username, &db).await?;
@@ -318,20 +316,6 @@ pub async fn reject<'r>(
 			"user is not in the pending approval state",
 		)));
 	}
-
-	mailer
-		.create(
-			&user,
-			String::from("[Zauth] Your account has been rejected"),
-			template!(
-			"mails/user_rejected.txt";
-			name: String = user.full_name.to_string(),
-			admin_email: String = conf.admin_email.clone()
-			)
-			.render()
-			.map_err(InternalError::from)?,
-		)
-		.await?;
 
 	user.delete(&db).await?;
 

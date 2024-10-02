@@ -1,7 +1,0 @@
-Hi {{name}}
-
-Your registration request for a Zeus account has been rejected.
-If you think this is a mistake you can contact us at {{admin_email}}.
-
-Kind regards
-The Zeus Authentication Server

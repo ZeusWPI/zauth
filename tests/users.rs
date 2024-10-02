@@ -844,17 +844,14 @@ async fn user_rejectal_flow() {
 			"after email is confirmed, user should be pending for approval"
 		);
 
-		common::expect_mail_to(vec![&email], async || {
-			let response = http_client
-				.post(format!("/users/{}/reject/", user.username))
-				.header(Accept::HTML)
-				.header(ContentType::Form)
-				.dispatch()
-				.await;
+		let response = http_client
+			.post(format!("/users/{}/reject/", user.username))
+			.header(Accept::HTML)
+			.header(ContentType::Form)
+			.dispatch()
+			.await;
 
-			assert_eq!(response.status(), Status::SeeOther);
-		})
-		.await;
+		assert_eq!(response.status(), Status::SeeOther);
 
 		user.reload(&db).await.expect_err("user should be removed");
 	})
