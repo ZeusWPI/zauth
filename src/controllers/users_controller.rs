@@ -484,6 +484,7 @@ pub async fn confirm_email_post<'r>(
 	form: Form<EmailConfirmation>,
 	mailer: &State<Mailer>,
 	admin_email: &State<AdminEmail>,
+	conf: &'r State<Config>,
 	db: DbConn,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
 	if let Some(user) =
@@ -491,7 +492,7 @@ pub async fn confirm_email_post<'r>(
 	{
 		let user = user.confirm_email(&db).await?;
 
-		let user_list_url = uri!(list_users);
+		let user_list_url = uri!(conf.base_url(), list_users);
 		mailer.try_create(
 			admin_email.0.clone(),
 			String::from("[Zauth] New user registration"),
