@@ -1,0 +1,36 @@
+{% extends "base_logged_in.html" %}
+
+<!-- Content -->
+{% block content %}
+	<div class="card card-content mt-5">
+
+		<div class="title">
+			Register a new passkey
+		</div>
+
+		<!-- Error messages -->
+		{% match errors %}
+		{% when Some with (errors) %}
+		  <div class="notification is-danger is-light">
+			{{ errors }}
+		  </div>
+		{% when None %}
+		{% endmatch %}
+
+		<div class="field">
+			<label class="label">Name</label>
+			<input class="input" id="passkey-name" name="name" type="text" placeholder="Name" required />
+		</div>
+
+		<div class="field">
+			<label for="passkey-resident" class="label">Resident key</label>
+			<p class="help">
+				A resident key allows for a discoverable credential, so giving a username is not required to log in. </br>
+				It however takes up extra storage, and physical security keys have therefore often a limit on the number of resident keys they can store.
+			</p>
+			<input class="checkbox" id="passkey-resident" name="resident" type="checkbox" checked />
+		</div>
+
+		<button class="button is-primary" onclick="register_passkey()">Register</button>
+	</div>
+{% endblock content %}

@@ -77,9 +77,11 @@
 	</div>
 
 	<div class="column is-5">
-		<!-- Change password -->
 		<div class="card card-content mb-4">
+			<!-- Change password -->
 			<a class="button is-primary" href="/users/forgot_password">Change password</a>
+			<!-- Passkeys list -->
+			<a class="button is-primary" href="/passkeys">Passkeys</a>
 		</div>
 
 		{% if current_user.admin %}

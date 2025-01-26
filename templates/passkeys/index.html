@@ -1,0 +1,58 @@
+{% extends "base_logged_in.html" %}
+
+<!-- Content -->
+{% block content %}
+
+	<!-- Passkeys -->
+	<div class="card card-content">
+
+
+		<!-- Title -->
+		<div class="columns is-multiline is-justify-content-space-between">
+			<div class="column is-narrow">
+				<div class="title">Passkeys ({{ passkeys.len() }})</div>
+			</div>
+
+			<div class="column is-narrow">
+				<a class="button is-primary" href="/passkeys/new">New passkey</a>
+			</div>
+		</div>
+
+		<!-- Table -->
+		<table class="table table--responsive table--responsive--labels is-fullwidth">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Last Used</th>
+					<th>Created at</th>
+					<th>Delete</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for passkey in passkeys %}
+					<tr>
+
+						<!-- Name -->
+						<td data-label="Name">{{ passkey.name }}</td>
+
+						<!-- Last Used -->
+						<td data-label="Last Used" title="{{ passkey.last_used }}">{{ passkey.last_used.format("%d/%m/%y").to_string() }}</td>
+
+						<!-- Created at -->
+						<td data-label="Created at" title="{{ passkey.created_at }}">{{ passkey.created_at.format("%d/%m/%y").to_string() }}</td>
+
+						<!-- Delete -->
+						<td>
+							<form action="/passkeys/{{ passkey.id }}" method="POST">
+								<input type="hidden" name="_method" value="delete"/>
+								<button class="button is-danger is-small" type="submit">x</button>
+							</form>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock content %}
+
