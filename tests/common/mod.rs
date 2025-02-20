@@ -83,6 +83,7 @@ where
 		.merge(("databases.postgresql_database.url", db_url));
 
 	let _lock = DB_LOCK.lock();
+
 	let client = HttpClient::tracked(zauth::prepare_custom(config))
 		.await
 		.expect("rocket client");

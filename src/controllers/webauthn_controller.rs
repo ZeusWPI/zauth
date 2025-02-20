@@ -190,6 +190,7 @@ async fn authenticate(
 					.iter()
 					.map(DiscoverableKey::from)
 					.collect();
+
 			webauthn_store
 				.webauthn
 				.finish_discoverable_authentication(
