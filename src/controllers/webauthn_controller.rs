@@ -164,7 +164,6 @@ pub async fn start_authentication(
 #[derive(Deserialize, Debug)]
 pub struct PassKeyAuthentication {
 	id:         DateTime<Local>,
-	username:   Option<String>,
 	credential: Option<PublicKeyCredential>,
 }
 
@@ -210,13 +209,7 @@ async fn authenticate(
 			let credential = auth
 				.credential
 				.ok_or(ZauthError::LoginError(LoginError::PasskeyError))?;
-			let username = auth.username.clone().ok_or(
-				ZauthError::Unprocessable("username is missing".to_string()),
-			)?;
-			let user = User::find_by_username(username, db).await?;
-			if userid != user.id {
-				return Err(ZauthError::LoginError(LoginError::PasskeyError));
-			}
+			let user = User::find(userid, db).await?;
 			webauthn_store
 				.webauthn
 				.finish_passkey_authentication(&credential, &state)

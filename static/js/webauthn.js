@@ -85,7 +85,6 @@ function login_passkey() {
             },
             body: JSON.stringify({
                 id: this.id,
-                username: ((username.length > 0) ? username : null),
                 credential: credential,
             }),
         })
