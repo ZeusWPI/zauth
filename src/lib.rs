@@ -38,6 +38,7 @@ pub mod mailer;
 pub mod models;
 pub mod token_store;
 pub mod util;
+pub mod webauthn;
 
 use diesel_migrations::MigrationHarness;
 use jwt::JWTBuilder;
@@ -49,6 +50,7 @@ use rocket::{Build, Rocket};
 use rocket_sync_db_pools::database;
 use rocket_sync_db_pools::diesel::PgConnection;
 use simple_logger::SimpleLogger;
+use webauthn::WebAuthnStore;
 
 use crate::config::{AdminEmail, Config};
 use crate::controllers::*;
@@ -93,6 +95,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 	let token_store = TokenStore::<oauth_controller::UserToken>::new(&config);
 	let mailer = Mailer::new(&config).unwrap();
 	let jwt_builder = JWTBuilder::new(&config).expect("config");
+	let webauthn = WebAuthnStore::new(&config);
 
 	let rocket = rocket
 		.mount(
@@ -106,6 +109,13 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				clients_controller::delete_client,
 				clients_controller::get_generate_secret,
 				clients_controller::post_generate_secret,
+				webauthn_controller::start_register,
+				webauthn_controller::finish_register,
+				webauthn_controller::start_authentication,
+				webauthn_controller::finish_authentication,
+				webauthn_controller::list_passkeys,
+				webauthn_controller::new_passkey,
+				webauthn_controller::delete_passkey,
 				oauth_controller::authorize,
 				oauth_controller::do_authorize,
 				oauth_controller::grant_get,
@@ -158,6 +168,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 		.manage(mailer)
 		.manage(admin_email)
 		.manage(jwt_builder)
+		.manage(webauthn)
 		.attach(DbConn::fairing())
 		.attach(AdHoc::config::<Config>())
 		.attach(AdHoc::on_ignite("Database preparation", prepare_database));

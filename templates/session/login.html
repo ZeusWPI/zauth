@@ -29,7 +29,7 @@
       <form class="form mb-2" action="/login" method="post">
         <div class="field ">
           <label class="label">Username</label>
-          <input class="input is-medium" name="username" type="text" placeholder="Username" required />
+          <input class="input is-medium" id="login-username" name="username" type="text" placeholder="Username" required />
         </div>
 
         <div class="field">
@@ -42,6 +42,9 @@
 
        <button class="button is-primary" type="submit">Login</button>
       </form>
+
+	  <button class="button is-light" onclick="login_passkey()">With passkey</button>
+
 
       <!-- Register -->
      <div class="has-text-grey-light">

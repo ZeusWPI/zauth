@@ -58,7 +58,7 @@ pub fn config() -> Config {
 
 async fn reset_db(db: &DbConn) {
 	db.run(|conn| {
-		sql_query("TRUNCATE TABLE mails, sessions, users, clients")
+		sql_query("TRUNCATE TABLE mails, sessions, users, clients, passkeys")
 			.execute(conn)
 			.expect("drop all tables");
 	})
@@ -83,6 +83,7 @@ where
 		.merge(("databases.postgresql_database.url", db_url));
 
 	let _lock = DB_LOCK.lock();
+
 	let client = HttpClient::tracked(zauth::prepare_custom(config))
 		.await
 		.expect("rocket client");

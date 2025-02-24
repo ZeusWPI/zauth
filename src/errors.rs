@@ -10,6 +10,7 @@ use rocket::serde::json::Json;
 use rocket::tokio::sync::mpsc::error::{SendError, TrySendError};
 use std::convert::Infallible;
 use validator::ValidationErrors;
+use webauthn_rs::prelude::WebauthnError;
 
 use crate::views::accepter::Accepter;
 
@@ -31,6 +32,8 @@ pub enum ZauthError {
 	AuthError(#[from] AuthenticationError),
 	#[error("Login error {0:?}")]
 	LoginError(#[from] LoginError),
+	#[error("Webauthn error: {0:?}")]
+	WebauthnError(#[from] WebauthnError),
 	#[error("Infallible")]
 	Infallible(#[from] Infallible),
 }
@@ -216,7 +219,10 @@ pub enum InternalError {
 	Base64DecodeError(#[from] base64::DecodeError),
 	#[error("JWT error")]
 	JWTError(#[from] jsonwebtoken::errors::Error),
+	#[error("Serde error")]
+	SerdeError(#[from] serde_json::Error),
 }
+
 pub type InternalResult<T> = std::result::Result<T, InternalError>;
 
 #[derive(Error, Debug)]
@@ -229,6 +235,13 @@ pub enum LoginError {
 	AccountPendingMailConfirmationError,
 	#[error("Account disabled")]
 	AccountDisabledError,
+	#[error("Passkey authentication failed")]
+	PasskeyError,
+	#[error(
+		"Passkey authentication failed, if registered key is non-resident \
+		 make sure to supply a username"
+	)]
+	PasskeyDiscoverableError,
 }
 
 #[derive(Error, Debug)]
