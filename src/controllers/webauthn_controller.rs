@@ -137,7 +137,10 @@ pub async fn start_authentication(
 			{
 				Ok((rcr, auth_state)) => {
 					webauthn_store
-						.add_authentication(now, Either::Right(auth_state))
+						.add_authentication(
+							now,
+							Either::Right((auth_state, user.id)),
+						)
 						.await;
 					Ok(Json((now, rcr)))
 				},
@@ -203,7 +206,7 @@ async fn authenticate(
 				})
 				.map(|result| (result, user))
 		},
-		Some(Either::Right(state)) => {
+		Some(Either::Right((state, userid))) => {
 			let credential = auth
 				.credential
 				.ok_or(ZauthError::LoginError(LoginError::PasskeyError))?;
@@ -211,6 +214,9 @@ async fn authenticate(
 				ZauthError::Unprocessable("username is missing".to_string()),
 			)?;
 			let user = User::find_by_username(username, db).await?;
+			if userid != user.id {
+				return Err(ZauthError::LoginError(LoginError::PasskeyError));
+			}
 			webauthn_store
 				.webauthn
 				.finish_passkey_authentication(&credential, &state)

@@ -12,7 +12,8 @@ use webauthn_rs::{
 
 use crate::{config::Config, errors::Either};
 
-type Authentication = Either<DiscoverableAuthentication, PasskeyAuthentication>;
+type Authentication =
+	Either<DiscoverableAuthentication, (PasskeyAuthentication, i32)>;
 
 pub struct WebAuthnStore {
 	registrations:   Mutex<HashMap<i32, PasskeyRegistration>>,
@@ -76,7 +77,7 @@ impl WebAuthnStore {
 	pub async fn fetch_authentication(
 		&self,
 		user_id: DateTime<Local>,
-	) -> Option<Either<DiscoverableAuthentication, PasskeyAuthentication>> {
+	) -> Option<Authentication> {
 		let mut auths = self.authentications.lock().await;
 		Self::remove_expired_auths(&mut auths);
 		auths.remove(&user_id)
