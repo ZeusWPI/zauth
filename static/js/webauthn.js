@@ -94,8 +94,8 @@ function login_passkey() {
 
 function finish(response) {
     const contentType = response.headers.get('Content-Type');
-    if (response.ok && response.redirected){
-        window.location.href = response.url;
+    if (response.redirected){
+        window.location.replace(response.url);
     } else if (contentType && contentType.includes('text/html')){
         response.text().then((html) => document.documentElement.innerHTML = html);
     } 
