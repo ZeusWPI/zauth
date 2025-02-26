@@ -92,35 +92,39 @@ async fn passkey_login() {
 
 		let state: &State<WebAuthnStore> = State::get(http_client.rocket()).expect("managed `Webauthn`");
 		let id = Local::now();
+		let id_json = json!(id);
 		let auth_json = json!({"ast":{"credentials":[],"policy":"required","challenge":"0b82YlQK81wCveDefnunqVoTz3PERzTOUTFXfqOBKL0","allow_backup_eligible_upgrade":false}});
 		let auth_state: DiscoverableAuthentication = serde_json::from_value(auth_json).expect("valid auth_state");
 
-		state.add_authentication(id, Either::Left(auth_state)).await;
+		state.add_authentication(id, Either::Left(auth_state.clone())).await;
 
 		// Test valid credential
 		let signature = "MEYCIQCfvrbmI2Kn2O27qQCdjkoqYSShu9x1ngKg73svLH88wgIhAMbbOI19BnY4ij79Llb0U2RL0cS2MLjkPohdpm7_nlkr";
-		let credential_json = json!({
-		    "id":id,
-		    "credential":{"id":"6syH3sLIgnj_C7vIkxHP-2QeOWaSPGZ8ybkKytd5c4WpR7ufzzgrTDmsP5rKxmHT",
+		let credential_json = json!(
+		    {"id":"6syH3sLIgnj_C7vIkxHP-2QeOWaSPGZ8ybkKytd5c4WpR7ufzzgrTDmsP5rKxmHT",
 		    "rawId":"6syH3sLIgnj_C7vIkxHP-2QeOWaSPGZ8ybkKytd5c4WpR7ufzzgrTDmsP5rKxmHT",
 		    "response":{"authenticatorData":"SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAVg",
 		    "clientDataJSON":"eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiMGI4MllsUUs4MXdDdmVEZWZudW5xVm9UejNQRVJ6VE9VVEZYZnFPQktMMCIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCJ9",
-		    "signature": signature,"userHandle": user_handle},"extensions":{"appid":null,"hmac_get_secret":null},"type":"public-key"}});
+		    "signature": signature,"userHandle": user_handle},"extensions":{"appid":null,"hmac_get_secret":null},"type":"public-key"}
+		);
 
-		let response = http_client.post("/webauthn/finish_auth").header(ContentType::JSON).body(credential_json.to_string()).dispatch().await;
+
+		let response = http_client.post("/webauthn/finish_auth").header(ContentType::Form).body(format!("id={}&credential={}", urlencoding::encode(&id_json.to_string()), urlencoding::encode(&credential_json.to_string()))).dispatch().await;
 
 		assert_eq!(response.status(), Status::SeeOther);
 
+		state.add_authentication(id, Either::Left(auth_state)).await;
+
 		// Test invalid credential
 		let invalid_signature = "MEYCIQCfvrbmI2Kn2O27qQCdjkoqYSShu9x1ngKg73svLH89wgIhAMbbOI19BnY4ij79Llb0U2RL0cS2MLjkPohdpm7_nlkr";
-		let credential_json = json!({
-		    "id":id,
-		    "credential":{"id":"6syH3sLIgnj_C7vIkxHP-2QeOWaSPGZ8ybkKytd5c4WpR7ufzzgrTDmsP5rKxmHT",
+		let credential_json = json!(
+		    {"id":"6syH3sLIgnj_C7vIkxHP-2QeOWaSPGZ8ybkKytd5c4WpR7ufzzgrTDmsP5rKxmHT",
 		    "rawId":"6syH3sLIgnj_C7vIkxHP-2QeOWaSPGZ8ybkKytd5c4WpR7ufzzgrTDmsP5rKxmHT",
 		    "response":{"authenticatorData":"SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAVg",
 		    "clientDataJSON":"eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiMGI4MllsUUs4MXdDdmVEZWZudW5xVm9UejNQRVJ6VE9VVEZYZnFPQktMMCIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCJ9",
-		    "signature": invalid_signature,"userHandle": user_handle},"extensions":{"appid":null,"hmac_get_secret":null},"type":"public-key"}});
-		let response = http_client.post("/webauthn/finish_auth").header(ContentType::JSON).body(credential_json.to_string()).dispatch().await;
+		    "signature": invalid_signature,"userHandle": user_handle},"extensions":{"appid":null,"hmac_get_secret":null},"type":"public-key"}
+		);
+		let response = http_client.post("/webauthn/finish_auth").header(ContentType::Form).body(format!("id={}&credential={}", urlencoding::encode(&id_json.to_string()), urlencoding::encode(&credential_json.to_string()))).dispatch().await;
 
 		assert_eq!(response.status(), Status::Ok);
 		assert!(response.into_string().await.contains("Passkey authentication failed"))

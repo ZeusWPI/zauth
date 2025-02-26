@@ -78,17 +78,9 @@ function login_passkey() {
     }
     , (error) => null)
     .then((credential) => {
-        fetch('/webauthn/finish_auth', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                id: this.id,
-                credential: credential,
-            }),
-        })
-        .then(finish);
+        document.getElementById("webauthn-credential").value = JSON.stringify(credential);
+        document.getElementById("webauthn-id").value = JSON.stringify(this.id);
+        document.getElementById("webauthn").requestSubmit();
     })
 }
 
