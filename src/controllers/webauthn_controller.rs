@@ -1,4 +1,5 @@
 use chrono::{DateTime, Local};
+use rocket::form::Form;
 use rocket::http::{CookieJar, Status};
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
@@ -161,23 +162,21 @@ pub async fn start_authentication(
 	}
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, FromForm)]
 pub struct PassKeyAuthentication {
-	id:         DateTime<Local>,
-	credential: Option<PublicKeyCredential>,
+	id:         String,
+	credential: Option<String>,
 }
 
 async fn authenticate(
 	webauthn_store: &WebAuthnStore,
-	auth: PassKeyAuthentication,
+	id: DateTime<Local>,
+	credential: Option<PublicKeyCredential>,
 	db: &DbConn,
 ) -> Result<User> {
-	let (result, user) = match webauthn_store
-		.fetch_authentication(auth.id)
-		.await
-	{
+	let (result, user) = match webauthn_store.fetch_authentication(id).await {
 		Some(Either::Left(discoverable_state)) => {
-			let credential = auth.credential.ok_or(ZauthError::LoginError(
+			let credential = credential.ok_or(ZauthError::LoginError(
 				LoginError::PasskeyDiscoverableError,
 			))?;
 			let (uuid, _) = webauthn_store
@@ -206,8 +205,7 @@ async fn authenticate(
 				.map(|result| (result, user))
 		},
 		Some(Either::Right((state, userid))) => {
-			let credential = auth
-				.credential
+			let credential = credential
 				.ok_or(ZauthError::LoginError(LoginError::PasskeyError))?;
 			let user = User::find(userid, db).await?;
 			webauthn_store
@@ -236,15 +234,21 @@ async fn authenticate(
 	Ok(user)
 }
 
-#[post("/webauthn/finish_auth", format = "json", data = "<auth>")]
+#[post("/webauthn/finish_auth", data = "<auth>")]
 pub async fn finish_authentication<'r>(
 	webauthn_store: &State<WebAuthnStore>,
-	auth: Json<PassKeyAuthentication>,
+	auth: Form<PassKeyAuthentication>,
 	cookies: &'r CookieJar<'_>,
 	config: &'r State<Config>,
 	db: DbConn,
 ) -> Result<Either<Redirect, impl Responder<'r, 'static>>> {
-	match authenticate(webauthn_store, auth.into_inner(), &db).await {
+	let id = serde_json::from_str(&auth.id)
+		.map_err(|e| ZauthError::Unprocessable(e.to_string()))?;
+	let credential = auth
+		.credential
+		.as_ref()
+		.and_then(|cred| serde_json::from_str(cred).ok());
+	match authenticate(webauthn_store, id, credential, &db).await {
 		Ok(user) => {
 			let session =
 				Session::create(&user, config.user_session_duration(), &db)

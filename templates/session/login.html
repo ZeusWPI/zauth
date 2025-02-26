@@ -43,6 +43,11 @@
        <button class="button is-primary" type="submit">Login</button>
       </form>
 
+	  <form id="webauthn" action="/webauthn/finish_auth", method="post">
+		<input name="credential" id="webauthn-credential" type="text" hidden />
+		<input name="id" id="webauthn-id" type="text" hidden />
+	  </form>
+
 	  <button class="button is-light" onclick="login_passkey()">With passkey</button>
 
 
