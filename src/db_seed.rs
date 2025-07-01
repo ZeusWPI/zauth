@@ -2,7 +2,7 @@ use crate::DbConn;
 use crate::errors::{Result, ZauthError};
 use crate::models::client::schema::clients;
 use crate::models::client::{Client, NewClient};
-use crate::models::user::schema::users;
+use crate::models::schema::users;
 use crate::models::user::{NewUser, User};
 use crate::util::random_token;
 use diesel::RunQueryDsl;

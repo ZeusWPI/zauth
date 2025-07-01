@@ -1,6 +1,6 @@
-use self::schema::users;
 use crate::DbConn;
 use crate::errors::{self, InternalError, LoginError, ZauthError};
+use crate::models::schema::{roles, users};
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
@@ -16,6 +16,8 @@ use regex::Regex;
 use rocket::{FromFormField, serde::Serialize};
 use std::convert::TryFrom;
 use validator::{Validate, ValidationError, ValidationErrors};
+
+use super::role::{Role, UserRole};
 
 #[derive(
 	DbEnum, Debug, Deserialize, FromFormField, Serialize, Clone, PartialEq,
@@ -42,34 +44,17 @@ impl fmt::Display for UserState {
 	}
 }
 
-pub mod schema {
-	table! {
-		use diesel::sql_types::*;
-		use crate::models::user::UserStateMapping;
-
-		users {
-			id -> Integer,
-			username -> Varchar,
-			hashed_password -> Varchar,
-			admin -> Bool,
-			password_reset_token -> Nullable<Varchar>,
-			password_reset_expiry -> Nullable<Timestamp>,
-			full_name -> Varchar,
-			email -> Varchar,
-			pending_email -> Nullable<Varchar>,
-			pending_email_token -> Nullable<Varchar>,
-			pending_email_expiry -> Nullable<Timestamp>,
-			ssh_key -> Nullable<Text>,
-			state -> UserStateMapping,
-			last_login -> Timestamp,
-			created_at -> Timestamp,
-			subscribed_to_mailing_list -> Bool,
-			unsubscribe_token -> Varchar,
-		}
-	}
-}
-
-#[derive(Validate, Serialize, AsChangeset, Queryable, Debug, Clone)]
+#[derive(
+	Validate,
+	Serialize,
+	AsChangeset,
+	Selectable,
+	Queryable,
+	Debug,
+	Clone,
+	PartialEq,
+	Identifiable,
+)]
 #[diesel(table_name = users)]
 #[diesel(treat_none_as_null = true)]
 #[serde(crate = "rocket::serde")]
@@ -540,6 +525,37 @@ impl User {
 			},
 			Err(e) => Err(ZauthError::from(e)),
 		}
+	}
+
+	pub async fn roles(self, db: &DbConn) -> Result<Vec<Role>, ZauthError> {
+		db.run(move |conn| {
+			UserRole::belonging_to(&self)
+				.inner_join(roles::table)
+				.select(Role::as_select())
+				.load(conn)
+		})
+		.await
+		.map_err(ZauthError::from)
+	}
+
+	pub async fn client_roles(
+		self,
+		client_id: i32,
+		db: &DbConn,
+	) -> Result<Vec<Role>, ZauthError> {
+		db.run(move |conn| {
+			UserRole::belonging_to(&self)
+				.inner_join(roles::table)
+				.filter(
+					roles::client_id
+						.eq(client_id)
+						.or(roles::client_id.is_null()),
+				)
+				.select(Role::as_select())
+				.load(conn)
+		})
+		.await
+		.map_err(ZauthError::from)
 	}
 }
 

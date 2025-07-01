@@ -86,7 +86,7 @@
 
 		{% if current_user.admin %}
 		<!-- Change status -->
-		<div class="card card-content">
+		<div class="card card-content mb-4">
 			<form class="profile-edit-form" action="/users/{{ user.username }}/change_state" autocomplete="off" method="POST">
 				<div class="field">
 					<div class="select">
@@ -101,6 +101,27 @@
 			</form>
 		</div>
 		{% endif %}
+
+		<div class="card card-content mb-4">
+			<div class="field">
+				<label class="label"> Roles </label>
+				<ul>
+					{% for role in roles %}
+						<li> 
+							{% if current_user.admin %}
+								<a href="/roles/{{role.id}}/show">{{ role.name }}</a> 
+							{% else -%}
+								{{ role.name }}
+							{% endif %}
+						</li>
+					{% endfor %}
+				</ul>
+			</div>
+
+			{% if current_user.admin %}
+				<a class="button is-primary" href="/roles/add?username={{ user.username }}">Give Role</a>
+			{% endif %}
+		</div>
 	</div>
 </div>
 {% endblock content %}

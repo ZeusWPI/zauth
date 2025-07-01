@@ -1,6 +1,8 @@
 use core::iter;
 use rand::{Rng, distr::Alphanumeric, rng};
 
+use crate::{DbConn, errors::ZauthError, models::user::User};
+
 pub fn random_token(token_length: usize) -> String {
 	let mut rng = rng();
 	iter::repeat(())
@@ -8,6 +10,32 @@ pub fn random_token(token_length: usize) -> String {
 		.map(char::from)
 		.take(token_length)
 		.collect()
+}
+
+pub fn scopes(scope: &Option<String>) -> Vec<String> {
+	scope
+		.as_ref()
+		.map_or(vec![], |scope| scope.split(" ").map(String::from).collect())
+}
+
+pub async fn roles_optional(
+	scopes: &[String],
+	user: &User,
+	client_id: i32,
+	db: &DbConn,
+) -> Result<Option<Vec<String>>, ZauthError> {
+	Ok(if scopes.contains(&"roles".into()) {
+		Some(
+			user.clone()
+				.client_roles(client_id, db)
+				.await?
+				.iter()
+				.map(|r| r.clone().name)
+				.collect(),
+		)
+	} else {
+		None
+	})
 }
 
 // pub use dev::seed_database;

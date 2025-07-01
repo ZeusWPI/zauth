@@ -14,7 +14,10 @@ use crate::ephemeral::session::{
 use crate::errors::Either::{self, Left, Right};
 use crate::errors::{InternalError, OneOf, Result, ZauthError};
 use crate::mailer::Mailer;
+use crate::models::client::Client;
+use crate::models::role::Role;
 use crate::models::user::*;
+use crate::util::{roles_optional, scopes};
 use crate::views::accepter::Accepter;
 use crate::{DbConn, util};
 use askama::Template;
@@ -23,14 +26,67 @@ use rocket::State;
 use rocket::form::Form;
 use rocket::serde::json::Json;
 
-#[get("/current_user")]
-pub fn current_user(session: ClientOrUserSession) -> Json<User> {
-	Json(session.user)
+#[derive(Serialize)]
+pub struct UserInfo {
+	id: i32,
+	username: String,
+	admin: bool,
+	full_name: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	roles: Option<Vec<String>>,
+}
+
+impl UserInfo {
+	async fn new(
+		user: User,
+		client: Option<Client>,
+		scope: Option<String>,
+		db: &DbConn,
+	) -> Result<Self> {
+		let scopes = scopes(&scope);
+
+		let roles = if let Some(client) = client {
+			roles_optional(&scopes, &user, client.id, db).await?
+		} else {
+			Some(
+				user.clone()
+					.roles(db)
+					.await?
+					.iter()
+					.map(|r| r.clone().name)
+					.collect(),
+			)
+		};
+
+		Ok(UserInfo {
+			id: user.id,
+			username: user.username,
+			admin: user.admin,
+			full_name: user.full_name,
+			roles,
+		})
+	}
 }
 
 #[get("/current_user")]
-pub fn current_user_as_client(session: ClientSession) -> Json<User> {
-	Json(session.user)
+pub async fn current_user(
+	session: ClientOrUserSession,
+	db: DbConn,
+) -> Result<Json<UserInfo>> {
+	Ok(Json(
+		UserInfo::new(session.user, session.client, session.scope, &db).await?,
+	))
+}
+
+#[get("/current_user")]
+pub async fn current_user_as_client(
+	session: ClientSession,
+	db: DbConn,
+) -> Result<Json<UserInfo>> {
+	Ok(Json(
+		UserInfo::new(session.user, Some(session.client), session.scope, &db)
+			.await?,
+	))
 }
 
 #[get("/users/<username>")]
@@ -41,12 +97,14 @@ pub async fn show_user<'r>(
 ) -> Result<impl Responder<'r, 'static>> {
 	// Cloning the username is necessary because it's used later
 	let user = User::find_by_username(username.clone(), &db).await?;
+	let roles = user.clone().roles(&db).await?;
 	// Check whether the current session is allowed to view this user
 	if session.user.admin || session.user.username == username {
 		Ok(Accepter {
 			html: template!("users/show.html";
 							user: User = user.clone(),
 							current_user: User = session.user,
+							roles: Vec<Role> = roles,
 							errors: Option<ValidationErrors> = None
 			),
 			json: Json(user),
@@ -123,9 +181,7 @@ pub async fn create_user<'r>(
 	db: DbConn,
 	config: &State<Config>,
 ) -> Result<impl Responder<'r, 'static> + use<'r>> {
-	let user = User::create(user.into_inner(), config.bcrypt_cost, &db)
-		.await
-		.map_err(ZauthError::from)?;
+	let user = User::create(user.into_inner(), config.bcrypt_cost, &db).await?;
 	// Cloning the username is necessary because it's used later
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user(user.username.clone()))),
@@ -195,15 +251,12 @@ pub async fn register<'r>(
 			}))
 		},
 		Err(ZauthError::ValidationError(errors)) => Ok(Right(Accepter {
-			html: Custom(
-				Status::UnprocessableEntity,
-				template! {
-					"users/registration_form.html";
-					registrations_full: bool = full,
-					user: NewUser = new_user,
-					errors: Option<ValidationErrors> = Some(errors.clone()),
-				},
-			),
+			html: Custom(Status::UnprocessableEntity, template! {
+				"users/registration_form.html";
+				registrations_full: bool = full,
+				user: NewUser = new_user,
+				errors: Option<ValidationErrors> = Some(errors.clone()),
+			}),
 			json: Custom(Status::UnprocessableEntity, Json(errors)),
 		})),
 		Err(other) => Err(other),
@@ -227,15 +280,16 @@ pub async fn update_user<'r, 'o: 'r>(
 					json: Custom(Status::NoContent, ()),
 				}))
 			},
-			Err(ZauthError::ValidationError(errors)) => Ok(OneOf::Two(Custom(
-				Status::UnprocessableEntity,
-				template! {
+			Err(ZauthError::ValidationError(errors)) => {
+				let roles = user.clone().roles(&db).await?;
+				Ok(OneOf::Two(Custom(Status::UnprocessableEntity, template! {
 					"users/show.html";
 					user: User = user,
 					current_user: User = session.user,
+					roles: Vec<Role> =  roles,
 					errors: Option<ValidationErrors> = Some(errors.clone()),
-				},
-			))),
+				})))
+			},
 			Err(other) => Err(other),
 		}
 	} else {
@@ -472,14 +526,13 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 				))
 			},
 
-			Err(ZauthError::ValidationError(errors)) => Ok(OneOf::Two(Custom(
-				Status::UnprocessableEntity,
-				template! {
+			Err(ZauthError::ValidationError(errors)) => {
+				Ok(OneOf::Two(Custom(Status::UnprocessableEntity, template! {
 					"users/reset_password_form.html";
 					token: String = form.token,
 					errors: Option<ValidationErrors> = Some(errors.clone()),
-				},
-			))),
+				})))
+			},
 			Err(other) => Err(other),
 		}
 	} else {

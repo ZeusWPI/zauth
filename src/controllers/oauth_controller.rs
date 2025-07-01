@@ -3,6 +3,7 @@ use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use jsonwebtoken::jwk::JwkSet;
 use rocket::State;
 use rocket::form::Form;
+use rocket::http::ext::IntoCollection;
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::{Redirect, Responder};
 use rocket::serde::json::Json;
@@ -18,6 +19,7 @@ use crate::jwt::JWTBuilder;
 use crate::models::client::*;
 use crate::models::session::*;
 use crate::models::user::*;
+use crate::util::{roles_optional, scopes};
 
 use crate::ephemeral::session::ensure_logged_in_and_redirect;
 use crate::errors::OAuthError::InvalidCookie;
@@ -327,24 +329,22 @@ pub async fn token(
 		)))
 	} else {
 		let user = User::find(token.user_id, &db).await?;
-		let id_token = token
-			.scope
-			.as_ref()
-			.map(|scope| -> Option<String> {
-				match scope.contains("openid") {
-					true => {
-						jwt_builder.encode_id_token(&client, &user, config).ok()
-					},
-					false => None,
-				}
-			})
-			.flatten();
+		let scopes = scopes(&token.scope);
+		let id_token = if scopes.contains(&"openid".into()) {
+			let roles = roles_optional(&scopes, &user, client.id, &db).await?;
+			jwt_builder
+				.encode_id_token(&client, &user, config, roles)
+				.await
+				.ok()
+		} else {
+			None
+		};
 
 		let session = Session::create_client_session(
 			&user,
 			&client,
 			token.scope,
-			&config,
+			config,
 			&db,
 		)
 		.await?;

@@ -3,11 +3,13 @@ use diesel::{self, prelude::*};
 use crate::DbConn;
 use crate::errors::{AuthenticationError, Result, ZauthError};
 
-use self::schema::clients;
+use crate::models::schema::{clients, roles};
 
 use crate::util::random_token;
 use chrono::NaiveDateTime;
 use validator::Validate;
+
+use super::role::Role;
 
 const SECRET_LENGTH: usize = 64;
 
@@ -175,5 +177,17 @@ impl Client {
 	pub async fn generate_secret(mut self, db: &DbConn) -> Result<Self> {
 		self.secret = Self::generate_random_secret();
 		self.update(db).await
+	}
+
+	pub async fn roles(&self, db: &DbConn) -> Result<Vec<Role>> {
+		let id = self.id;
+		db.run(move |conn| {
+			roles::table
+				.filter(roles::client_id.eq(id))
+				.select(Role::as_select())
+				.get_results(conn)
+		})
+		.await
+		.map_err(ZauthError::from)
 	}
 }
