@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct BasicAuthentication {
-	pub user:     String,
+	pub user: String,
 	pub password: String,
 }
 
@@ -23,7 +23,7 @@ impl FromStr for BasicAuthentication {
 				let parts: Vec<&str> = utf8.split(':').collect();
 				if parts.len() == 2 {
 					Ok(BasicAuthentication {
-						user:     String::from(parts[0]),
+						user: String::from(parts[0]),
 						password: String::from(parts[1]),
 					})
 				} else {

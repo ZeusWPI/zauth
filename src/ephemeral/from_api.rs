@@ -65,7 +65,7 @@ where
 
 #[derive(Debug)]
 pub struct SplitApi<FT, JT, RT> {
-	inner:        RT,
+	inner: RT,
 	form_phantom: PhantomData<FT>,
 	json_phantom: PhantomData<JT>,
 }
@@ -110,7 +110,7 @@ where
 			Form::from_data(request, data)
 				.await
 				.map(|v| SplitApi {
-					inner:        v.into_inner().into(),
+					inner: v.into_inner().into(),
 					form_phantom: PhantomData,
 					json_phantom: PhantomData,
 				})
@@ -119,7 +119,7 @@ where
 			Json::from_data(request, data)
 				.await
 				.map(|v| SplitApi {
-					inner:        v.into_inner().into(),
+					inner: v.into_inner().into(),
 					form_phantom: PhantomData,
 					json_phantom: PhantomData,
 				})

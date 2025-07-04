@@ -27,14 +27,14 @@ async fn setup_test_users(db: &DbConn) {
 	for test_user in TEST_USERS {
 		let mut created_user = User::create(
 			NewUser {
-				username:    test_user.0.to_string(),
-				password:    format!(
+				username: test_user.0.to_string(),
+				password: format!(
 					"{}verylongandsecurepassword",
 					test_user.0.to_string()
 				),
-				full_name:   test_user.0.to_string(),
-				email:       format!("{}@example.com", test_user.0.to_string()),
-				ssh_key:     None,
+				full_name: test_user.0.to_string(),
+				email: format!("{}@example.com", test_user.0.to_string()),
+				ssh_key: None,
 				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
@@ -198,9 +198,9 @@ async fn visitor_cannot_use_mailinglist() {
 async fn user_can_see_mailinglist() {
 	common::as_user(async move |http_client: HttpClient, db, user: User| {
 		let test_mail = NewMail {
-			author:  user.username,
+			author: user.username,
 			subject: "foo".to_string(),
-			body:    "bar".to_string(),
+			body: "bar".to_string(),
 		};
 		let test_mail = test_mail.save(&db).await.unwrap();
 
@@ -247,9 +247,9 @@ async fn user_can_see_mailinglist() {
 async fn admin_can_use_mailinglist() {
 	common::as_admin(async move |http_client: HttpClient, db, user: User| {
 		let test_mail = NewMail {
-			author:  user.username,
+			author: user.username,
 			subject: "foo".to_string(),
-			body:    "bar".to_string(),
+			body: "bar".to_string(),
 		};
 		let test_mail = test_mail.save(&db).await.unwrap();
 

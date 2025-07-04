@@ -27,21 +27,21 @@ pub mod schema {
 #[derive(Clone, Debug, Queryable, Serialize)]
 #[serde(crate = "rocket::serde")]
 pub struct Mail {
-	pub id:      i32,
+	pub id: i32,
 	pub sent_on: NaiveDateTime,
 	pub subject: String,
-	pub body:    String,
-	pub author:  String,
+	pub body: String,
+	pub author: String,
 }
 
 #[derive(Clone, Debug, Deserialize, FromForm, Insertable, Validate)]
 #[diesel(table_name = mails)]
 pub struct NewMail {
-	pub author:  String,
+	pub author: String,
 	#[validate(length(min = 3, max = 255))]
 	pub subject: String,
 	#[validate(length(min = 3, max = 10_000))]
-	pub body:    String,
+	pub body: String,
 }
 
 impl NewMail {

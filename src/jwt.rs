@@ -14,20 +14,20 @@ use std::fs::File;
 use std::io::Read;
 
 pub struct JWTBuilder {
-	pub key:    EncodingKey,
+	pub key: EncodingKey,
 	pub header: Header,
-	pub jwks:   JwkSet,
+	pub jwks: JwkSet,
 }
 
 #[derive(Serialize, Debug)]
 struct IDToken {
-	sub:                String,
-	iss:                String,
-	aud:                String,
-	exp:                i64,
-	iat:                i64,
+	sub: String,
+	iss: String,
+	aud: String,
+	exp: i64,
+	iat: i64,
 	preferred_username: String,
-	email:              String,
+	email: String,
 }
 
 impl JWTBuilder {
@@ -54,29 +54,27 @@ impl JWTBuilder {
 			.expect("x,y coordinates");
 
 		let jwk = Jwk {
-			common:    CommonParameters {
-				public_key_use:          Some(
+			common: CommonParameters {
+				public_key_use: Some(
 					jsonwebtoken::jwk::PublicKeyUse::Signature,
 				),
-				key_algorithm:           Some(
-					jsonwebtoken::jwk::KeyAlgorithm::ES384,
-				),
-				key_operations:          None,
-				key_id:                  None,
-				x509_url:                None,
-				x509_chain:              None,
-				x509_sha1_fingerprint:   None,
+				key_algorithm: Some(jsonwebtoken::jwk::KeyAlgorithm::ES384),
+				key_operations: None,
+				key_id: None,
+				x509_url: None,
+				x509_chain: None,
+				x509_sha1_fingerprint: None,
 				x509_sha256_fingerprint: None,
 			},
 			algorithm: jsonwebtoken::jwk::AlgorithmParameters::EllipticCurve(
 				EllipticCurveKeyParameters {
 					key_type: jsonwebtoken::jwk::EllipticCurveKeyType::EC,
-					curve:    jsonwebtoken::jwk::EllipticCurve::P384,
-					x:        base64::encode_config(
+					curve: jsonwebtoken::jwk::EllipticCurve::P384,
+					x: base64::encode_config(
 						x.to_vec(),
 						base64::URL_SAFE_NO_PAD,
 					),
-					y:        base64::encode_config(
+					y: base64::encode_config(
 						y.to_vec(),
 						base64::URL_SAFE_NO_PAD,
 					),
@@ -105,14 +103,13 @@ impl JWTBuilder {
 		config: &Config,
 	) -> Result<String> {
 		let id_token = IDToken {
-			sub:                user.id.to_string(),
-			iss:                config.base_url().to_string(),
-			aud:                client.name.clone(),
-			iat:                Utc::now().timestamp(),
-			exp:                Utc::now().timestamp()
-				+ config.client_session_seconds,
+			sub: user.id.to_string(),
+			iss: config.base_url().to_string(),
+			aud: client.name.clone(),
+			iat: Utc::now().timestamp(),
+			exp: Utc::now().timestamp() + config.client_session_seconds,
 			preferred_username: user.username.clone(),
-			email:              user.email.clone(),
+			email: user.email.clone(),
 		};
 		self.encode(&id_token)
 	}

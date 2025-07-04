@@ -25,10 +25,10 @@ const OAUTH_COOKIE: &str = "ZAUTH_OAUTH";
 
 #[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
 pub struct AuthState {
-	pub client_id:    i32,
-	pub client_name:  String,
+	pub client_id: i32,
+	pub client_name: String,
 	pub redirect_uri: String,
-	pub scope:        Option<String>,
+	pub scope: Option<String>,
 	pub client_state: Option<String>,
 }
 
@@ -57,10 +57,10 @@ impl AuthState {
 		auth_req: AuthorizationRequest,
 	) -> AuthState {
 		AuthState {
-			client_id:    client.id,
-			client_name:  client.name,
+			client_id: client.id,
+			client_name: client.name,
 			redirect_uri: auth_req.redirect_uri,
-			scope:        auth_req.scope,
+			scope: auth_req.scope,
 			client_state: auth_req.state,
 		}
 	}
@@ -88,10 +88,10 @@ impl AuthState {
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 pub struct AuthorizationRequest {
 	pub response_type: String,
-	pub client_id:     String,
-	pub redirect_uri:  String,
-	pub scope:         Option<String>,
-	pub state:         Option<String>,
+	pub client_id: String,
+	pub redirect_uri: String,
+	pub scope: Option<String>,
+	pub state: Option<String>,
 }
 
 #[get("/oauth/authorize?<req..>")]
@@ -158,12 +158,12 @@ pub struct GrantFormData {
 }
 
 pub struct UserToken {
-	pub user_id:      i32,
-	pub username:     String,
-	pub client_id:    i32,
-	pub client_name:  String,
+	pub user_id: i32,
+	pub username: String,
+	pub client_id: i32,
+	pub client_name: String,
 	pub redirect_uri: String,
-	pub scope:        Option<String>,
+	pub scope: Option<String>,
 }
 
 #[get("/oauth/grant")]
@@ -217,11 +217,11 @@ async fn authorization_granted(
 ) -> Redirect {
 	let authorization_code = token_store
 		.create_token(UserToken {
-			user_id:      user.id,
-			scope:        state.scope.clone(),
-			username:     user.username.clone(),
-			client_id:    state.client_id.clone(),
-			client_name:  state.client_name.clone(),
+			user_id: user.id,
+			scope: state.scope.clone(),
+			username: user.username.clone(),
+			client_id: state.client_id.clone(),
+			client_name: state.client_name.clone(),
 			redirect_uri: state.redirect_uri.clone(),
 		})
 		.await;
@@ -243,18 +243,18 @@ fn authorization_denied(state: AuthState) -> Redirect {
 #[derive(Serialize, Debug)]
 pub struct TokenSuccess {
 	access_token: String,
-	token_type:   String,
+	token_type: String,
 	#[serde(skip_serializing_if = "Option::is_none")]
-	id_token:     Option<String>,
-	expires_in:   i64,
+	id_token: Option<String>,
+	expires_in: i64,
 }
 
 #[derive(FromForm, Debug)]
 pub struct TokenFormData {
-	grant_type:    String,
-	code:          String,
-	redirect_uri:  String,
-	client_id:     Option<String>,
+	grant_type: String,
+	code: String,
+	redirect_uri: String,
+	client_id: Option<String>,
 	client_secret: Option<String>,
 }
 
