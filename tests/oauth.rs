@@ -1,5 +1,3 @@
-#![feature(async_closure)]
-
 extern crate diesel;
 extern crate regex;
 extern crate rocket;
