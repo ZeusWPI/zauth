@@ -1,6 +1,8 @@
 extern crate diesel;
 extern crate rocket;
 
+use base64::Engine;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Local;
 use common::HttpClient;
 use rocket::State;
@@ -86,7 +88,7 @@ async fn passkey_login() {
 
 		let uuid = Uuid::from_u128(user.id as u128);
 
-		let user_handle = base64::encode_config(uuid.as_bytes(), base64::URL_SAFE_NO_PAD);
+		let user_handle = URL_SAFE_NO_PAD.encode(uuid.as_bytes());
 
 		let state: &State<WebAuthnStore> = State::get(http_client.rocket()).expect("managed `Webauthn`");
 		let id = Local::now();

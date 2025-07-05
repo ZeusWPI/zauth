@@ -6,6 +6,8 @@ extern crate urlencoding;
 extern crate zauth;
 
 use self::serde_json::Value;
+use base64::Engine;
+use base64::prelude::BASE64_STANDARD;
 use common::HttpClient;
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::Validation;
@@ -180,7 +182,7 @@ async fn get_token(
 	);
 
 	let credentials =
-		base64::encode(&format!("{}:{}", CLIENT_ID, client.secret));
+		BASE64_STANDARD.encode(&format!("{}:{}", CLIENT_ID, client.secret));
 
 	let req = http_client
 		.post(token_url)

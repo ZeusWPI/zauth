@@ -1,3 +1,5 @@
+use base64::Engine;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use jsonwebtoken::jwk::JwkSet;
 use rocket::State;
 use rocket::form::Form;
@@ -70,18 +72,21 @@ impl AuthState {
 	}
 
 	pub fn encode_b64(&self) -> Result<String> {
-		Ok(base64::encode_config(
-			&bincode::serialize(self).map_err(InternalError::from)?,
-			base64::URL_SAFE_NO_PAD,
+		Ok(URL_SAFE_NO_PAD.encode(
+			&bincode::serde::encode_to_vec(self, bincode::config::legacy())
+				.map_err(InternalError::from)?,
 		))
 	}
 
 	pub fn decode_b64(state_str: &str) -> Result<AuthState> {
-		Ok(bincode::deserialize(
-			&base64::decode_config(state_str, base64::URL_SAFE_NO_PAD)
+		Ok(bincode::serde::decode_from_slice(
+			&URL_SAFE_NO_PAD
+				.decode(state_str)
 				.map_err(InternalError::from)?,
+			bincode::config::legacy(),
 		)
-		.map_err(InternalError::from)?)
+		.map_err(InternalError::from)?
+		.0)
 	}
 }
 
