@@ -115,18 +115,18 @@ lazy_static! {
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
 	#[validate(regex = "NEW_USER_REGEX")]
-	pub username:    String,
+	pub username: String,
 	#[validate(length(
 		min = 8,
 		message = "Password too short, must be at least 8 characters"
 	))]
-	pub password:    String,
+	pub password: String,
 	#[validate(length(min = 3, max = 254))]
-	pub full_name:   String,
+	pub full_name: String,
 	#[validate(email)]
-	pub email:       String,
+	pub email: String,
 	#[validate(custom = "validate_ssh_key_list")]
-	pub ssh_key:     Option<String>,
+	pub ssh_key: Option<String>,
 	#[validate(custom(function = "validate_not_a_robot"))]
 	#[serde(default = "const_false")]
 	pub not_a_robot: bool,
@@ -135,26 +135,26 @@ pub struct NewUser {
 #[derive(Serialize, Insertable, Debug, Clone)]
 #[diesel(table_name = users)]
 struct PendingUserHashed {
-	username:             String,
-	hashed_password:      String,
-	full_name:            String,
-	state:                UserState,
-	last_login:           NaiveDateTime,
-	email:                String,
-	pending_email:        String,
-	pending_email_token:  String,
+	username: String,
+	hashed_password: String,
+	full_name: String,
+	state: UserState,
+	last_login: NaiveDateTime,
+	email: String,
+	pending_email: String,
+	pending_email_token: String,
 	pending_email_expiry: NaiveDateTime,
 }
 
 #[derive(Serialize, Insertable, Debug, Clone)]
 #[diesel(table_name = users)]
 struct NewUserHashed {
-	username:        String,
+	username: String,
 	hashed_password: String,
-	full_name:       String,
-	state:           UserState,
-	last_login:      NaiveDateTime,
-	email:           String,
+	full_name: String,
+	state: UserState,
+	last_login: NaiveDateTime,
+	email: String,
 }
 
 #[derive(FromForm, Deserialize, Debug, Clone)]
@@ -335,12 +335,12 @@ impl User {
 	) -> errors::Result<User> {
 		user.validate()?;
 		let user = NewUserHashed {
-			username:        user.username,
+			username: user.username,
 			hashed_password: hash(&user.password, bcrypt_cost)?,
-			full_name:       user.full_name,
-			email:           user.email,
-			state:           UserState::Active,
-			last_login:      Utc::now().naive_utc(),
+			full_name: user.full_name,
+			email: user.email,
+			state: UserState::Active,
+			last_login: Utc::now().naive_utc(),
 		};
 		db.run(move |conn| {
 			conn.transaction(|conn| {
@@ -376,16 +376,16 @@ impl User {
 			return Err(ZauthError::from(err));
 		};
 		let user = PendingUserHashed {
-			username:             user.username,
-			hashed_password:      hash(&user.password, conf.bcrypt_cost)?,
-			full_name:            user.full_name,
-			email:                user.email.clone(),
-			pending_email:        user.email,
-			pending_email_token:  random_token(conf.secure_token_length),
+			username: user.username,
+			hashed_password: hash(&user.password, conf.bcrypt_cost)?,
+			full_name: user.full_name,
+			email: user.email.clone(),
+			pending_email: user.email,
+			pending_email_token: random_token(conf.secure_token_length),
 			pending_email_expiry: Utc::now().naive_utc()
 				+ conf.email_confirmation_token_duration(),
-			state:                UserState::PendingMailConfirmation,
-			last_login:           Utc::now().naive_utc(),
+			state: UserState::PendingMailConfirmation,
+			last_login: Utc::now().naive_utc(),
 		};
 		db.run(move |conn| {
 			conn.transaction(|conn| {
@@ -549,9 +549,9 @@ fn hash(
 	bcrypt_cost: u32,
 ) -> crate::errors::InternalResult<String> {
 	let b: BcryptSetup = BcryptSetup {
-		salt:    None,
+		salt: None,
 		variant: None,
-		cost:    Some(bcrypt_cost),
+		cost: Some(bcrypt_cost),
 	};
 	let hashed = bcrypt::hash_with(b, password)?;
 	Ok(hashed)

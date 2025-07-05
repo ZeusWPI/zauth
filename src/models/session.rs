@@ -30,25 +30,25 @@ pub mod schema {
 #[diesel(belongs_to(Client))]
 #[diesel(table_name = sessions)]
 pub struct Session {
-	pub id:         i32,
-	pub key:        Option<String>,
-	pub user_id:    i32,
-	pub client_id:  Option<i32>,
+	pub id: i32,
+	pub key: Option<String>,
+	pub user_id: i32,
+	pub client_id: Option<i32>,
 	pub created_at: NaiveDateTime,
 	pub expires_at: NaiveDateTime,
-	pub valid:      bool,
-	pub scope:      Option<String>,
+	pub valid: bool,
+	pub scope: Option<String>,
 }
 
 #[derive(Insertable, Debug, Clone)]
 #[diesel(table_name = sessions)]
 pub struct NewSession {
-	pub key:        Option<String>,
-	pub user_id:    i32,
-	pub client_id:  Option<i32>,
+	pub key: Option<String>,
+	pub user_id: i32,
+	pub client_id: Option<i32>,
 	pub created_at: NaiveDateTime,
 	pub expires_at: NaiveDateTime,
-	pub scope:      Option<String>,
+	pub scope: Option<String>,
 }
 
 impl Session {

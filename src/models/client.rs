@@ -27,13 +27,13 @@ pub mod schema {
 
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
 pub struct Client {
-	pub id:                i32,
-	pub name:              String,
-	pub description:       String,
-	pub secret:            String,
-	pub needs_grant:       bool,
+	pub id: i32,
+	pub name: String,
+	pub description: String,
+	pub secret: String,
+	pub needs_grant: bool,
 	pub redirect_uri_list: String,
-	pub created_at:        NaiveDateTime,
+	pub created_at: NaiveDateTime,
 }
 
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
@@ -45,15 +45,15 @@ pub struct NewClient {
 #[derive(Insertable, Debug, Clone)]
 #[diesel(table_name = clients)]
 pub struct NewClientWithSecret {
-	pub name:   String,
+	pub name: String,
 	pub secret: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct ClientChange {
-	pub name:              Option<String>,
-	pub needs_grant:       Option<bool>,
-	pub description:       Option<String>,
+	pub name: Option<String>,
+	pub needs_grant: Option<bool>,
+	pub description: Option<String>,
 	pub redirect_uri_list: Option<String>,
 }
 
@@ -72,7 +72,7 @@ impl Client {
 	pub async fn create(client: NewClient, db: &DbConn) -> Result<Client> {
 		client.validate()?;
 		let client = NewClientWithSecret {
-			name:   client.name,
+			name: client.name,
 			secret: Self::generate_random_secret(),
 		};
 		db.run(move |conn| {

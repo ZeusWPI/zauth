@@ -7,23 +7,23 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct Token<T> {
 	pub token_str: String,
-	pub item:      T,
-	pub expiry:    DateTime<Local>,
+	pub item: T,
+	pub expiry: DateTime<Local>,
 }
 
 #[derive(Debug)]
 pub struct TokenStore<T> {
-	tokens:         Mutex<HashMap<String, Token<T>>>,
+	tokens: Mutex<HashMap<String, Token<T>>>,
 	token_validity: Duration,
-	token_length:   usize,
+	token_length: usize,
 }
 
 impl<T> TokenStore<T> {
 	pub fn new(config: &Config) -> TokenStore<T> {
 		TokenStore {
-			tokens:         Mutex::new(HashMap::new()),
+			tokens: Mutex::new(HashMap::new()),
 			token_validity: config.authorization_token_duration(),
-			token_length:   config.secure_token_length,
+			token_length: config.secure_token_length,
 		}
 	}
 

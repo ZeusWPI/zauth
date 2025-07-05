@@ -1,5 +1,3 @@
-#![feature(async_closure)]
-
 extern crate diesel;
 extern crate regex;
 extern crate rocket;
@@ -43,11 +41,11 @@ fn get_param(param_name: &str, query: &String) -> Option<String> {
 async fn create_user(db: &DbConn) -> User {
 	User::create(
 		NewUser {
-			username:    String::from(USER_USERNAME),
-			password:    String::from(USER_PASSWORD),
-			full_name:   String::from("abc"),
-			email:       String::from(USER_EMAIL),
-			ssh_key:     Some(String::from("ssh-rsa pqrstuvwxyz")),
+			username: String::from(USER_USERNAME),
+			password: String::from(USER_PASSWORD),
+			full_name: String::from("abc"),
+			email: String::from(USER_EMAIL),
+			ssh_key: Some(String::from("ssh-rsa pqrstuvwxyz")),
 			not_a_robot: true,
 		},
 		common::BCRYPT_COST,
@@ -242,11 +240,11 @@ async fn normal_flow() {
 
 		let authorization_code = token_store
 			.create_token(UserToken {
-				scope:        None,
-				user_id:      user.id,
-				username:     user.username.clone(),
-				client_id:    client.id,
-				client_name:  client.name,
+				scope: None,
+				user_id: user.id,
+				username: user.username.clone(),
+				client_id: client.id,
+				client_name: client.name,
 				redirect_uri: String::from(REDIRECT_URI),
 			})
 			.await;

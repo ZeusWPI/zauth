@@ -1,4 +1,4 @@
-FROM rustlang/rust:nightly-bookworm AS builder
+FROM rust:bookworm AS builder
 
 WORKDIR /usr/src/zauth
 

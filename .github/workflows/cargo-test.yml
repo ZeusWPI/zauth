@@ -17,11 +17,7 @@ jobs:
           - 5432:5432
     steps:
     - uses: actions/checkout@v4
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly
-        override: true
+    - uses: dtolnay/rust-toolchain@stable
     - name: Install system dependencies
       run: sudo apt install libsqlite3-dev libmysqlclient-dev
     - name: Cache compiled dependencies
@@ -42,11 +38,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
+    - uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: nightly
-        override: true
         components: rustfmt
     - name: Check formatting
       run: cargo fmt -- --check

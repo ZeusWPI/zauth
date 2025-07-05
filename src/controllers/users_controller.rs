@@ -433,7 +433,7 @@ pub fn reset_password_get<'r>(token: String) -> impl Responder<'r, 'static> {
 
 #[derive(Debug, FromForm)]
 pub struct PasswordReset {
-	token:        String,
+	token: String,
 	new_password: String,
 }
 

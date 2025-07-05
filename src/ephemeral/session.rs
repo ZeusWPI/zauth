@@ -87,7 +87,7 @@ impl<'r> FromRequest<'r> for SessionCookie {
 #[derive(Debug)]
 pub struct UserSession {
 	pub user: User,
-	session:  Session,
+	session: Session,
 }
 
 impl UserSession {
@@ -155,7 +155,7 @@ impl<'r> FromRequest<'r> for AdminSession {
 
 #[derive(Debug)]
 pub struct ClientSession {
-	pub user:   User,
+	pub user: User,
 	pub client: Client,
 }
 
@@ -220,7 +220,7 @@ impl<'r> FromRequest<'r> for ClientSession {
 
 #[derive(Debug)]
 pub struct ClientOrUserSession {
-	pub user:   User,
+	pub user: User,
 	pub client: Option<Client>,
 }
 
@@ -234,14 +234,14 @@ impl<'r> FromRequest<'r> for ClientOrUserSession {
 		match request.guard::<UserSession>().await {
 			Outcome::Success(session) => {
 				Outcome::Success(ClientOrUserSession {
-					user:   session.user,
+					user: session.user,
 					client: None,
 				})
 			},
 			_ => match request.guard::<ClientSession>().await {
 				Outcome::Success(session) => {
 					Outcome::Success(ClientOrUserSession {
-						user:   session.user,
+						user: session.user,
 						client: Some(session.client),
 					})
 				},

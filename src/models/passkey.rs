@@ -32,14 +32,14 @@ pub mod schema {
 )]
 #[diesel(table_name = passkeys)]
 pub struct PassKey {
-	pub id:         i32,
-	pub user_id:    i32,
-	pub name:       String,
+	pub id: i32,
+	pub user_id: i32,
+	pub name: String,
 	#[serde(skip)]
-	cred:           String,
+	cred: String,
 	#[serde(skip)]
-	cred_id:        String,
-	pub last_used:  NaiveDateTime,
+	cred_id: String,
+	pub last_used: NaiveDateTime,
 	pub created_at: NaiveDateTime,
 }
 
@@ -47,17 +47,17 @@ pub struct PassKey {
 pub struct NewPassKey {
 	pub user_id: i32,
 	#[validate(length(min = 1, max = 254))]
-	pub name:    String,
-	pub cred:    Passkey,
+	pub name: String,
+	pub cred: Passkey,
 }
 
 #[derive(Clone, Insertable)]
 #[diesel(table_name = passkeys)]
 struct NewPassKeySerialized {
-	user_id:   i32,
-	name:      String,
-	cred:      String,
-	cred_id:   String,
+	user_id: i32,
+	name: String,
+	cred: String,
+	cred_id: String,
 	last_used: NaiveDateTime,
 }
 
@@ -68,11 +68,11 @@ impl PassKey {
 	) -> errors::Result<PassKey> {
 		passkey.validate()?;
 		let serialized = NewPassKeySerialized {
-			user_id:   passkey.user_id,
-			name:      passkey.name,
-			cred:      serde_json::to_string(&passkey.cred)
+			user_id: passkey.user_id,
+			name: passkey.name,
+			cred: serde_json::to_string(&passkey.cred)
 				.map_err(InternalError::from)?,
-			cred_id:   serde_json::to_string(&passkey.cred.cred_id())
+			cred_id: serde_json::to_string(&passkey.cred.cred_id())
 				.map_err(InternalError::from)?,
 			last_used: Utc::now().naive_utc(),
 		};

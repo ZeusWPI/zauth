@@ -22,26 +22,26 @@ use crate::DbConn;
 
 #[derive(Deserialize, Debug)]
 pub struct JsonClientChange {
-	pub name:              Option<String>,
-	pub needs_grant:       Option<bool>,
-	pub description:       Option<String>,
+	pub name: Option<String>,
+	pub needs_grant: Option<bool>,
+	pub description: Option<String>,
 	pub redirect_uri_list: Option<String>,
 }
 
 #[derive(FromForm, Debug)]
 pub struct FormClientChange {
-	pub name:              Option<String>,
-	pub needs_grant:       Vec<bool>,
-	pub description:       Option<String>,
+	pub name: Option<String>,
+	pub needs_grant: Vec<bool>,
+	pub description: Option<String>,
 	pub redirect_uri_list: Option<String>,
 }
 
 impl std::convert::From<JsonClientChange> for ClientChange {
 	fn from(val: JsonClientChange) -> Self {
 		ClientChange {
-			name:              val.name,
-			needs_grant:       val.needs_grant,
-			description:       val.description,
+			name: val.name,
+			needs_grant: val.needs_grant,
+			description: val.description,
 			redirect_uri_list: val.redirect_uri_list,
 		}
 	}
@@ -50,9 +50,9 @@ impl std::convert::From<JsonClientChange> for ClientChange {
 impl std::convert::From<FormClientChange> for ClientChange {
 	fn from(val: FormClientChange) -> Self {
 		ClientChange {
-			name:              val.name,
-			needs_grant:       val.needs_grant.last().cloned(),
-			description:       val.description,
+			name: val.name,
+			needs_grant: val.needs_grant.last().cloned(),
+			description: val.description,
 			redirect_uri_list: val.redirect_uri_list,
 		}
 	}

@@ -34,13 +34,13 @@ pub async fn start_register(
 ) -> Result<Json<CreationChallengeResponse>> {
 	let authenticator_criteria = AuthenticatorSelectionCriteria {
 		authenticator_attachment: None,
-		resident_key:             if *residential {
+		resident_key: if *residential {
 			Some(ResidentKeyRequirement::Required)
 		} else {
 			Some(ResidentKeyRequirement::Discouraged)
 		},
-		require_resident_key:     *residential,
-		user_verification:        UserVerificationPolicy::Required,
+		require_resident_key: *residential,
+		user_verification: UserVerificationPolicy::Required,
 	};
 
 	let exclude = PassKey::find_credentials(session.user.id, &db)
@@ -71,7 +71,7 @@ pub async fn start_register(
 #[derive(Deserialize)]
 pub struct PassKeyRegistration {
 	credential: RegisterPublicKeyCredential,
-	name:       String,
+	name: String,
 }
 
 #[post("/webauthn/finish_register", format = "json", data = "<reg>")]
@@ -98,8 +98,8 @@ pub async fn finish_register<'r>(
 		Ok(pk) => {
 			let passkey = NewPassKey {
 				user_id: session.user.id,
-				name:    reg.name.clone(),
-				cred:    pk,
+				name: reg.name.clone(),
+				cred: pk,
 			};
 
 			PassKey::create(passkey, &db).await?;
@@ -164,7 +164,7 @@ pub async fn start_authentication(
 
 #[derive(Deserialize, FromForm)]
 pub struct PassKeyAuthentication {
-	id:         String,
+	id: String,
 	credential: Option<String>,
 }
 

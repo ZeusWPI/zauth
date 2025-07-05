@@ -12,8 +12,8 @@ use std::time::Duration;
 
 #[derive(Clone)]
 pub struct Mailer {
-	from:              Address,
-	queue:             mpsc::Sender<Message>,
+	from: Address,
+	queue: mpsc::Sender<Message>,
 	mailinglist_queue: mpsc::UnboundedSender<Message>,
 }
 
@@ -110,12 +110,12 @@ impl Mailer {
 		}
 
 		Ok(Mailer {
-			from:              config
+			from: config
 				.mail_from
 				.clone()
 				.parse()
 				.map_err(LaunchError::from)?,
-			queue:             sender,
+			queue: sender,
 			mailinglist_queue: list_sender,
 		})
 	}

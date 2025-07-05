@@ -16,9 +16,9 @@ type Authentication =
 	Either<DiscoverableAuthentication, (PasskeyAuthentication, i32)>;
 
 pub struct WebAuthnStore {
-	registrations:   Mutex<HashMap<i32, PasskeyRegistration>>,
+	registrations: Mutex<HashMap<i32, PasskeyRegistration>>,
 	authentications: Mutex<HashMap<DateTime<Local>, Authentication>>,
-	pub webauthn:    Webauthn,
+	pub webauthn: Webauthn,
 }
 
 impl WebAuthnStore {

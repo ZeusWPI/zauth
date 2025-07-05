@@ -49,8 +49,8 @@ impl ZauthError {
 
 #[derive(Serialize)]
 struct JsonError {
-	error:   &'static str,
-	status:  u16,
+	error: &'static str,
+	status: u16,
 	message: Option<String>,
 }
 
@@ -111,8 +111,8 @@ pub fn unauthorized<'r>() -> impl Responder<'r, 'static> {
 	Accepter {
 		html: template!("errors/401.html"),
 		json: Json(JsonError {
-			error:   "unauthorized",
-			status:  401,
+			error: "unauthorized",
+			status: 401,
 			message: None,
 		}),
 	}
@@ -123,8 +123,8 @@ pub fn not_found<'r>() -> impl Responder<'r, 'static> {
 	Accepter {
 		html: template!("errors/404.html"),
 		json: Json(JsonError {
-			error:   "not found",
-			status:  404,
+			error: "not found",
+			status: 404,
 			message: None,
 		}),
 	}
@@ -161,8 +161,8 @@ fn internal_server_error_with_message<'r>(
 	Accepter {
 		html: template!("errors/500.html"; error: String = message.clone()),
 		json: Json(JsonError {
-			error:   "internal server error",
-			status:  500,
+			error: "internal server error",
+			status: 500,
 			message: Some(message),
 		}),
 	}
@@ -179,8 +179,8 @@ fn not_implemented_with_message<'r>(
 	Accepter {
 		html: template!("errors/501.html"; error: String = message.clone()),
 		json: Json(JsonError {
-			error:   "not implemented",
-			status:  501,
+			error: "not implemented",
+			status: 501,
 			message: Some(message),
 		}),
 	}
