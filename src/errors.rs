@@ -1,6 +1,6 @@
+use rocket::Request;
 use rocket::http::Status;
 use rocket::response::{self, Responder, Response};
-use rocket::Request;
 use thiserror::Error;
 
 use diesel::result::Error::NotFound;

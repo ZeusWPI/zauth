@@ -1,5 +1,5 @@
-use rocket::http::uri::Absolute;
 use rocket::http::Status;
+use rocket::http::uri::Absolute;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;
@@ -16,12 +16,12 @@ use crate::errors::{InternalError, OneOf, Result, ZauthError};
 use crate::mailer::Mailer;
 use crate::models::user::*;
 use crate::views::accepter::Accepter;
-use crate::{util, DbConn};
+use crate::{DbConn, util};
 use askama::Template;
 use chrono::{Duration, Utc};
+use rocket::State;
 use rocket::form::Form;
 use rocket::serde::json::Json;
-use rocket::State;
 
 #[get("/current_user")]
 pub fn current_user(session: ClientOrUserSession) -> Json<User> {
@@ -122,7 +122,7 @@ pub async fn create_user<'r>(
 	user: Api<NewUser>,
 	db: DbConn,
 	config: &State<Config>,
-) -> Result<impl Responder<'r, 'static>> {
+) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	let user = User::create(user.into_inner(), config.bcrypt_cost, &db)
 		.await
 		.map_err(ZauthError::from)?;
@@ -346,7 +346,7 @@ pub async fn forgot_password_post<'r>(
 	conf: &State<Config>,
 	db: DbConn,
 	mailer: &State<Mailer>,
-) -> Result<impl Responder<'r, 'static>> {
+) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	let for_email = value.into_inner().for_email;
 
 	let user = match User::find_by_email(for_email.to_owned(), &db).await {
@@ -508,7 +508,12 @@ pub async fn confirm_email_post<'r>(
 	admin_email: &State<AdminEmail>,
 	conf: &'r State<Config>,
 	db: DbConn,
-) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
+) -> Result<
+	Either<
+		impl Responder<'r, 'static> + use<'r>,
+		impl Responder<'r, 'static> + use<'r>,
+	>,
+> {
 	if let Some(user) =
 		User::find_by_email_token(form.token.clone(), &db).await?
 	{

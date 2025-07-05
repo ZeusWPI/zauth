@@ -4,9 +4,9 @@ extern crate rocket;
 use common::HttpClient;
 use rocket::http::{Accept, ContentType, Status};
 
+use zauth::DbConn;
 use zauth::models::mail::NewMail;
 use zauth::models::user::*;
-use zauth::DbConn;
 
 mod common;
 

@@ -1,7 +1,7 @@
 use diesel::{self, prelude::*};
 
-use crate::errors::{AuthenticationError, Result, ZauthError};
 use crate::DbConn;
+use crate::errors::{AuthenticationError, Result, ZauthError};
 
 use self::schema::clients;
 

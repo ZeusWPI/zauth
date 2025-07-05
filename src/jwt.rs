@@ -6,7 +6,7 @@ use chrono::Utc;
 use jsonwebtoken::jwk::{
 	CommonParameters, EllipticCurveKeyParameters, Jwk, JwkSet,
 };
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{EncodingKey, Header, encode};
 use openssl::bn::{BigNum, BigNumContext};
 use openssl::ec::EcKey;
 use serde::Serialize;

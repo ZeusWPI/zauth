@@ -1,9 +1,9 @@
+use rocket::Request;
 use rocket::data::{Data, FromData, Outcome};
 use rocket::form::Form;
 use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::serde::json::Json;
-use rocket::Request;
 
 use std::marker::PhantomData;
 

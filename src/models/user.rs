@@ -1,18 +1,18 @@
 use self::schema::users;
-use crate::errors::{self, InternalError, LoginError, ZauthError};
 use crate::DbConn;
+use crate::errors::{self, InternalError, LoginError, ZauthError};
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
 
-use crate::util::random_token;
 use crate::Config;
+use crate::util::random_token;
 use chrono::{NaiveDateTime, Utc};
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
-use rocket::{serde::Serialize, FromFormField};
+use rocket::{FromFormField, serde::Serialize};
 use std::convert::TryFrom;
 use validator::{Validate, ValidationError, ValidationErrors};
 

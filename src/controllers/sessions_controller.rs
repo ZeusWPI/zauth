@@ -1,23 +1,23 @@
+use rocket::State;
 use rocket::form::Form;
 use rocket::response::{Redirect, Responder};
-use rocket::State;
 
+use crate::Config;
+use crate::DbConn;
 use crate::controllers::pages_controller::rocket_uri_macro_home_page;
 use crate::ephemeral::session::{
-	stored_redirect_or, SessionCookie, UserSession,
+	SessionCookie, UserSession, stored_redirect_or,
 };
 use crate::errors::{Either, Result, ZauthError};
 use crate::models::session::Session;
 use crate::models::user::User;
-use crate::Config;
-use crate::DbConn;
 use rocket::http::CookieJar;
 
 #[get("/login")]
 pub fn new_session<'r>(
 	session: Option<UserSession>,
 	cookies: &CookieJar,
-) -> Either<Redirect, impl Responder<'r, 'static>> {
+) -> Either<Redirect, impl Responder<'r, 'static> + use<'r>> {
 	match session {
 		None => Either::Right(template! {
 			"session/login.html";
@@ -47,7 +47,7 @@ pub async fn create_session<'r>(
 	cookies: &'r CookieJar<'_>,
 	config: &'r State<Config>,
 	db: DbConn,
-) -> Result<Either<Redirect, impl Responder<'r, 'static>>> {
+) -> Result<Either<Redirect, impl Responder<'r, 'static> + use<'r>>> {
 	let form = form.into_inner();
 	match User::find_and_authenticate(form.username, form.password, &db).await {
 		Err(ZauthError::LoginError(login_error)) => {

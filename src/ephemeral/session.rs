@@ -3,12 +3,12 @@ use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome, Request};
 use std::str::FromStr;
 
+use crate::DbConn;
 use crate::controllers::sessions_controller::rocket_uri_macro_new_session;
 use crate::errors::Result;
 use crate::models::client::Client;
 use crate::models::session::Session;
 use crate::models::user::User;
-use crate::DbConn;
 use rocket::http::uri::Origin;
 use rocket::response::Redirect;
 

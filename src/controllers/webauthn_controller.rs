@@ -3,17 +3,18 @@ use rocket::form::Form;
 use rocket::http::{CookieJar, Status};
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
-use rocket::{serde::json::Json, State};
+use rocket::{State, serde::json::Json};
 use webauthn_rs::prelude::*;
 use webauthn_rs_proto::{
 	AuthenticatorSelectionCriteria, ResidentKeyRequirement,
 	UserVerificationPolicy,
 };
 
+use crate::DbConn;
 use crate::config::Config;
 use crate::controllers::pages_controller::rocket_uri_macro_home_page;
 use crate::ephemeral::session::{
-	stored_redirect_or, SessionCookie, UserSession,
+	SessionCookie, UserSession, stored_redirect_or,
 };
 use crate::errors::{
 	AuthenticationError, Either, LoginError, Result, ZauthError,
@@ -23,7 +24,6 @@ use crate::models::session::Session;
 use crate::models::user::User;
 use crate::views::accepter::Accepter;
 use crate::webauthn::WebAuthnStore;
-use crate::DbConn;
 
 #[post("/webauthn/start_register", format = "json", data = "<residential>")]
 pub async fn start_register(
@@ -80,14 +80,14 @@ pub async fn finish_register<'r>(
 	webauthn_store: &State<WebAuthnStore>,
 	reg: Json<PassKeyRegistration>,
 	db: DbConn,
-) -> Result<Either<Redirect, impl Responder<'r, 'static>>> {
+) -> Result<Either<Redirect, impl Responder<'r, 'static> + use<'r>>> {
 	let reg_state =
 		match webauthn_store.fetch_registration(session.user.id).await {
 			Some(registration) => registration,
 			None => {
 				return Err(ZauthError::WebauthnError(
 					WebauthnError::ChallengeNotFound,
-				))
+				));
 			},
 		};
 
@@ -241,7 +241,7 @@ pub async fn finish_authentication<'r>(
 	cookies: &'r CookieJar<'_>,
 	config: &'r State<Config>,
 	db: DbConn,
-) -> Result<Either<Redirect, impl Responder<'r, 'static>>> {
+) -> Result<Either<Redirect, impl Responder<'r, 'static> + use<'r>>> {
 	let id = serde_json::from_str(&auth.id)
 		.map_err(|e| ZauthError::Unprocessable(e.to_string()))?;
 	let credential = auth

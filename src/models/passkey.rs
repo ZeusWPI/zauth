@@ -1,11 +1,11 @@
 use chrono::{NaiveDateTime, Utc};
-use diesel::{query_dsl::methods::FilterDsl, ExpressionMethods, RunQueryDsl};
+use diesel::{ExpressionMethods, RunQueryDsl, query_dsl::methods::FilterDsl};
 use validator::Validate;
 use webauthn_rs::prelude::{CredentialID, Passkey};
 
 use crate::{
-	errors::{self, InternalError, Result, ZauthError},
 	DbConn,
+	errors::{self, InternalError, Result, ZauthError},
 };
 
 use self::schema::passkeys;

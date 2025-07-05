@@ -3,10 +3,10 @@ extern crate rocket;
 
 use chrono::Local;
 use common::HttpClient;
+use rocket::State;
 use rocket::form::validate::Contains;
 use rocket::http::ContentType;
 use rocket::http::Status;
-use rocket::State;
 use serde_json::json;
 use webauthn_rs::prelude::DiscoverableAuthentication;
 use webauthn_rs::prelude::Uuid;

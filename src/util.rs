@@ -1,6 +1,6 @@
 use core::iter;
 use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand::{Rng, thread_rng};
 
 pub fn random_token(token_length: usize) -> String {
 	let mut rng = thread_rng();

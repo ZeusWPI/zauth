@@ -7,19 +7,19 @@ extern crate zauth;
 
 use self::serde_json::Value;
 use common::HttpClient;
-use jsonwebtoken::jwk::JwkSet;
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::Validation;
+use jsonwebtoken::jwk::JwkSet;
 use regex::Regex;
 use rocket::http::Header;
 use rocket::http::Status;
 use rocket::http::{Accept, ContentType};
 
+use zauth::DbConn;
 use zauth::controllers::oauth_controller::UserToken;
 use zauth::models::client::{Client, NewClient};
 use zauth::models::user::{NewUser, User};
 use zauth::token_store::TokenStore;
-use zauth::DbConn;
 
 mod common;
 use crate::common::url;
