@@ -5,6 +5,7 @@ use rocket::response::{Redirect, Responder};
 use rocket::serde::json::Json;
 use std::fmt::Debug;
 
+use crate::DbConn;
 use crate::ephemeral::from_api::Api;
 use crate::ephemeral::from_api::SplitApi;
 use crate::ephemeral::session::AdminSession;
@@ -12,7 +13,6 @@ use crate::errors::Result;
 use crate::models::client::*;
 use crate::models::user::User;
 use crate::views::accepter::Accepter;
-use crate::DbConn;
 
 // These structs need to be defined separately. Because we use a hidden field in
 // the HTML to make sure we always get some value for `needs_grant`, we need

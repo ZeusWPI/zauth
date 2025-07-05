@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::errors::{InternalError, LaunchError, Result, ZauthError};
 
-use lettre::message::{header::ContentType, Mailbox};
+use lettre::message::{Mailbox, header::ContentType};
 use lettre::{Address, Message, SmtpTransport, Transport};
 use parking_lot::{Condvar, Mutex};
 use rocket::tokio::sync::mpsc::Receiver;
@@ -169,7 +169,9 @@ impl Mailer {
 		wait: Duration,
 		mut receiver: Receiver<Message>,
 		server: &str,
-	) -> Result<impl std::future::Future<Output = impl Send + 'static>> {
+	) -> Result<
+		impl std::future::Future<Output = impl Send + 'static + use<>> + use<>,
+	> {
 		let transport = SmtpTransport::builder_dangerous(server).build();
 		Ok(async move {
 			while let Some(mail) = receiver.recv().await {
@@ -189,7 +191,9 @@ impl Mailer {
 		wait: Duration,
 		mut receiver: UnboundedReceiver<Message>,
 		server: &str,
-	) -> Result<impl std::future::Future<Output = impl Send + 'static>> {
+	) -> Result<
+		impl std::future::Future<Output = impl Send + 'static + use<>> + use<>,
+	> {
 		let transport = SmtpTransport::builder_dangerous(server).build();
 		Ok(async move {
 			while let Some(mail) = receiver.recv().await {

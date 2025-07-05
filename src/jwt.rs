@@ -2,11 +2,13 @@ use crate::config::Config;
 use crate::errors::{InternalError, LaunchError, Result};
 use crate::models::client::Client;
 use crate::models::user::User;
+use base64::engine::Engine;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;
 use jsonwebtoken::jwk::{
 	CommonParameters, EllipticCurveKeyParameters, Jwk, JwkSet,
 };
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{EncodingKey, Header, encode};
 use openssl::bn::{BigNum, BigNumContext};
 use openssl::ec::EcKey;
 use serde::Serialize;
@@ -70,14 +72,8 @@ impl JWTBuilder {
 				EllipticCurveKeyParameters {
 					key_type: jsonwebtoken::jwk::EllipticCurveKeyType::EC,
 					curve: jsonwebtoken::jwk::EllipticCurve::P384,
-					x: base64::encode_config(
-						x.to_vec(),
-						base64::URL_SAFE_NO_PAD,
-					),
-					y: base64::encode_config(
-						y.to_vec(),
-						base64::URL_SAFE_NO_PAD,
-					),
+					x: URL_SAFE_NO_PAD.encode(x.to_vec()),
+					y: URL_SAFE_NO_PAD.encode(y.to_vec()),
 				},
 			),
 		};

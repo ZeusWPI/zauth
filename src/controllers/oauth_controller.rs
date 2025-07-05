@@ -1,11 +1,14 @@
+use base64::Engine;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use jsonwebtoken::jwk::JwkSet;
+use rocket::State;
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::{Redirect, Responder};
 use rocket::serde::json::Json;
-use rocket::State;
 use std::fmt::Debug;
 
+use crate::DbConn;
 use crate::config::Config;
 use crate::ephemeral::session::UserSession;
 use crate::errors::Either::{Left, Right};
@@ -15,7 +18,6 @@ use crate::jwt::JWTBuilder;
 use crate::models::client::*;
 use crate::models::session::*;
 use crate::models::user::*;
-use crate::DbConn;
 
 use crate::ephemeral::session::ensure_logged_in_and_redirect;
 use crate::errors::OAuthError::InvalidCookie;
@@ -70,18 +72,21 @@ impl AuthState {
 	}
 
 	pub fn encode_b64(&self) -> Result<String> {
-		Ok(base64::encode_config(
-			&bincode::serialize(self).map_err(InternalError::from)?,
-			base64::URL_SAFE_NO_PAD,
+		Ok(URL_SAFE_NO_PAD.encode(
+			&bincode::serde::encode_to_vec(self, bincode::config::legacy())
+				.map_err(InternalError::from)?,
 		))
 	}
 
 	pub fn decode_b64(state_str: &str) -> Result<AuthState> {
-		Ok(bincode::deserialize(
-			&base64::decode_config(state_str, base64::URL_SAFE_NO_PAD)
+		Ok(bincode::serde::decode_from_slice(
+			&URL_SAFE_NO_PAD
+				.decode(state_str)
 				.map_err(InternalError::from)?,
+			bincode::config::legacy(),
 		)
-		.map_err(InternalError::from)?)
+		.map_err(InternalError::from)?
+		.0)
 	}
 }
 
@@ -99,38 +104,37 @@ pub async fn authorize<'r>(
 	cookies: &CookieJar<'_>,
 	req: AuthorizationRequest,
 	db: DbConn,
-) -> Result<impl Responder<'r, 'static>> {
+) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	if !req.response_type.eq("code") {
 		// This was NotImplemented error, but it makes no sense for a authorise
 		// function not to return an AuthResult
 		return Err(ZauthError::from(OAuthError::ResponseTypeMismatch));
 	}
 
-	if let Ok(client) =
-		Client::find_by_name(req.client_id.to_owned(), &db).await
-	{
-		if client.redirect_uri_acceptable(&req.redirect_uri) {
-			let client_description = client.description.clone();
-			let state = AuthState::from_req(client, req);
-			cookies.add_private(state.into_cookie()?);
-			Ok(template! {
-				"oauth/authorize.html";
-				authorize_post_url: String = uri!(do_authorize).to_string(),
-				client_description: String = client_description,
-			})
-		} else {
-			Err(AuthenticationError::Unauthorized(format!(
-				"client with id {} is not authorized to use redirect_uri '{}'",
-				req.client_id, req.redirect_uri
-			))
-			.into())
-		}
-	} else {
-		Err(AuthenticationError::Unauthorized(format!(
+	match Client::find_by_name(req.client_id.to_owned(), &db).await {
+		Ok(client) => {
+			if client.redirect_uri_acceptable(&req.redirect_uri) {
+				let client_description = client.description.clone();
+				let state = AuthState::from_req(client, req);
+				cookies.add_private(state.into_cookie()?);
+				Ok(template! {
+					"oauth/authorize.html";
+					authorize_post_url: String = uri!(do_authorize).to_string(),
+					client_description: String = client_description,
+				})
+			} else {
+				Err(AuthenticationError::Unauthorized(format!(
+					"client with id {} is not authorized to use redirect_uri '{}'",
+					req.client_id, req.redirect_uri
+				))
+				.into())
+			}
+		},
+		_ => Err(AuthenticationError::Unauthorized(format!(
 			"client with id {} is not authorized on this server",
 			req.client_id
 		))
-		.into())
+		.into()),
 	}
 }
 
@@ -172,22 +176,32 @@ pub async fn grant_get<'r>(
 	cookies: &CookieJar<'_>,
 	token_store: &State<TokenStore<UserToken>>,
 	db: DbConn,
-) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
+) -> Result<
+	Either<
+		impl Responder<'r, 'static> + use<'r>,
+		impl Responder<'r, 'static> + use<'r>,
+	>,
+> {
 	let state = AuthState::from_cookies(cookies)?;
-	if let Ok(client) = Client::find(state.client_id, &db).await {
-		if client.needs_grant {
-			Ok(Left(template! {
-				"oauth/grant.html";
-				client_description: String = client.description.clone(),
-			}))
-		} else {
-			Ok(Right(
-				authorization_granted(state, session.user, token_store.inner())
+	match Client::find(state.client_id, &db).await {
+		Ok(client) => {
+			if client.needs_grant {
+				Ok(Left(template! {
+					"oauth/grant.html";
+					client_description: String = client.description.clone(),
+				}))
+			} else {
+				Ok(Right(
+					authorization_granted(
+						state,
+						session.user,
+						token_store.inner(),
+					)
 					.await,
-			))
-		}
-	} else {
-		Err(ZauthError::not_found("client not found"))
+				))
+			}
+		},
+		_ => Err(ZauthError::not_found("client not found")),
 	}
 }
 
@@ -197,7 +211,7 @@ pub async fn grant_post<'r>(
 	cookies: &CookieJar<'_>,
 	form: Form<GrantFormData>,
 	token_store: &State<TokenStore<UserToken>>,
-) -> Result<impl Responder<'r, 'static>> {
+) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	let data = form.into_inner();
 	let state = AuthState::from_cookies(cookies)?;
 	if data.grant {
@@ -290,7 +304,7 @@ pub async fn token(
 			Err(ZauthError::AuthError(_)) => {
 				return Err(ZauthError::AuthError(
 					AuthenticationError::Unauthorized(auth.0),
-				))
+				));
 			},
 			Err(e) => return Err(e),
 		};

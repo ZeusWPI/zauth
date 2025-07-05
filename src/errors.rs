@@ -1,6 +1,6 @@
+use rocket::Request;
 use rocket::http::Status;
 use rocket::response::{self, Responder, Response};
-use rocket::Request;
 use thiserror::Error;
 
 use diesel::result::Error::NotFound;
@@ -213,8 +213,10 @@ pub enum InternalError {
 	MailerStopped(#[from] SendError<Message>),
 	#[error("Mail queue full")]
 	MailQueueFull(#[from] TrySendError<Message>),
-	#[error("Bincode error")]
-	BincodeError(#[from] Box<bincode::ErrorKind>),
+	#[error("Bincode encoding error")]
+	BincodeEncodeError(#[from] bincode::error::EncodeError),
+	#[error("Bincode decoding error")]
+	BincodeDecodeError(#[from] bincode::error::DecodeError),
 	#[error("B64 decode error")]
 	Base64DecodeError(#[from] base64::DecodeError),
 	#[error("JWT error")]

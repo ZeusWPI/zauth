@@ -3,11 +3,11 @@ use std::collections::HashMap;
 use chrono::{DateTime, Local, TimeDelta};
 use rocket::tokio::sync::Mutex;
 use webauthn_rs::{
+	Webauthn, WebauthnBuilder,
 	prelude::{
 		DiscoverableAuthentication, PasskeyAuthentication, PasskeyRegistration,
 		Url,
 	},
-	Webauthn, WebauthnBuilder,
 };
 
 use crate::{config::Config, errors::Either};

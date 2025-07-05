@@ -69,8 +69,8 @@ mod test {
 	use super::*;
 	use rocket::http::{Accept, Header, Status};
 	use rocket::local::blocking::Client;
-	use rocket::response::content::RawHtml;
 	use rocket::response::Redirect;
+	use rocket::response::content::RawHtml;
 	use rocket::serde::json::Json;
 
 	#[get("/simple")]
@@ -107,10 +107,12 @@ mod test {
 			response.headers().get("content-type").next(),
 			Some("text/html; charset=utf-8")
 		);
-		assert!(response
-			.into_string()
-			.expect("html body")
-			.contains("Hello HTML"));
+		assert!(
+			response
+				.into_string()
+				.expect("html body")
+				.contains("Hello HTML")
+		);
 	}
 
 	#[test]
@@ -158,10 +160,12 @@ mod test {
 			response.headers().get("content-type").next(),
 			Some("text/html; charset=utf-8")
 		);
-		assert!(response
-			.into_string()
-			.expect("html body")
-			.contains("Hello HTML"));
+		assert!(
+			response
+				.into_string()
+				.expect("html body")
+				.contains("Hello HTML")
+		);
 	}
 
 	#[test]

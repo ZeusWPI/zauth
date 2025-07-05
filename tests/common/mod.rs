@@ -7,15 +7,15 @@ extern crate tempfile;
 extern crate urlencoding;
 extern crate zauth;
 
-use diesel::sql_query;
 use diesel::RunQueryDsl;
+use diesel::sql_query;
 use parking_lot::Mutex;
 use std::str::FromStr;
 
+use crate::common::zauth::DbConn;
 use crate::common::zauth::config::Config;
 use crate::common::zauth::models::client::*;
 use crate::common::zauth::models::user::*;
-use crate::common::zauth::DbConn;
 use lettre::Address;
 use rocket::http::{ContentType, Status};
 use rocket::tokio::time::sleep;

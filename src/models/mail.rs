@@ -1,8 +1,8 @@
 use std::cmp::Reverse;
 
 use self::schema::mails;
-use crate::errors::{self, ZauthError};
 use crate::DbConn;
+use crate::errors::{self, ZauthError};
 use chrono::NaiveDateTime;
 use diesel::{self, prelude::*};
 

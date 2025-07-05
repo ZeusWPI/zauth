@@ -1,18 +1,19 @@
 use self::schema::users;
-use crate::errors::{self, InternalError, LoginError, ZauthError};
 use crate::DbConn;
+use crate::errors::{self, InternalError, LoginError, ZauthError};
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;
+use std::sync::LazyLock;
 
-use crate::util::random_token;
 use crate::Config;
+use crate::util::random_token;
 use chrono::{NaiveDateTime, Utc};
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
-use rocket::{serde::Serialize, FromFormField};
+use rocket::{FromFormField, serde::Serialize};
 use std::convert::TryFrom;
 use validator::{Validate, ValidationError, ValidationErrors};
 
@@ -96,7 +97,7 @@ pub struct User {
 	pub pending_email_token: Option<String>,
 	#[serde(skip)]
 	pub pending_email_expiry: Option<NaiveDateTime>,
-	#[validate(custom = "validate_ssh_key_list")]
+	#[validate(custom(function = "validate_ssh_key_list"))]
 	pub ssh_key: Option<String>,
 	#[serde(skip)]
 	pub state: UserState,
@@ -107,14 +108,12 @@ pub struct User {
 	pub unsubscribe_token: String,
 }
 
-lazy_static! {
-	static ref NEW_USER_REGEX: Regex =
-		Regex::new(r"^[a-z][-a-z0-9_]{2,31}$").unwrap();
-}
+static NEW_USER_REGEX: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"^[a-z][-a-z0-9_]{2,31}$").unwrap());
 
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
-	#[validate(regex = "NEW_USER_REGEX")]
+	#[validate(regex(path = *NEW_USER_REGEX))]
 	pub username: String,
 	#[validate(length(
 		min = 8,
@@ -125,7 +124,7 @@ pub struct NewUser {
 	pub full_name: String,
 	#[validate(email)]
 	pub email: String,
-	#[validate(custom = "validate_ssh_key_list")]
+	#[validate(custom(function = "validate_ssh_key_list"))]
 	pub ssh_key: Option<String>,
 	#[validate(custom(function = "validate_not_a_robot"))]
 	#[serde(default = "const_false")]
@@ -572,9 +571,7 @@ impl TryFrom<&User> for Mailbox {
 	}
 }
 
-fn validate_ssh_key_list(
-	ssh_keys: &String,
-) -> std::result::Result<(), ValidationError> {
+fn validate_ssh_key_list(ssh_keys: &String) -> Result<(), ValidationError> {
 	lazy_static! {
 		static ref SSH_KEY_REGEX: Regex = Regex::new(
 			r"(?x)^

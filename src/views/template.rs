@@ -15,7 +15,7 @@ macro_rules! template {
 		}
 	};
 
-	($template_name:literal; $($name:ident: $type:ty = $value:expr),+$(,)?) => {
+	($template_name:literal; $($name:ident: $type:ty = $value:expr_2021),+$(,)?) => {
 		{
 			use askama::Template;
 			#[derive(Template, Debug)]

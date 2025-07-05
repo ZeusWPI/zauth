@@ -2,6 +2,7 @@ use lettre::message::Mailbox;
 use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;
 
+use crate::DbConn;
 use crate::config::Config;
 use crate::controllers::users_controller::rocket_uri_macro_show_confirm_unsubscribe;
 use crate::ephemeral::from_api::Api;
@@ -11,10 +12,9 @@ use crate::mailer::Mailer;
 use crate::models::mail::*;
 use crate::models::user::User;
 use crate::views::accepter::Accepter;
-use crate::DbConn;
 use askama::Template;
-use rocket::serde::json::Json;
 use rocket::State;
+use rocket::serde::json::Json;
 
 /// Show an overview of all mails, sorted by send date
 #[get("/mails")]
