@@ -13,20 +13,6 @@ use super::role::Role;
 
 const SECRET_LENGTH: usize = 64;
 
-pub mod schema {
-	table! {
-		clients {
-			id -> Integer,
-			name -> Text,
-			description -> Text,
-			secret -> Text,
-			needs_grant -> Bool,
-			redirect_uri_list -> Text,
-			created_at -> Timestamp,
-		}
-	}
-}
-
 #[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
 pub struct Client {
 	pub id: i32,

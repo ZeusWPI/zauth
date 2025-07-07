@@ -33,12 +33,12 @@ diesel::table! {
 
 diesel::table! {
 	passkeys (id) {
-		id -> Int4,
+		id -> Integer,
+		user_id -> Integer,
 		#[max_length = 255]
 		name -> Varchar,
 		cred -> Varchar,
 		cred_id -> Varchar,
-		user_id -> Int4,
 		last_used -> Timestamp,
 		created_at -> Timestamp,
 	}

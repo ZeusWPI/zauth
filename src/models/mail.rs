@@ -1,6 +1,5 @@
 use std::cmp::Reverse;
 
-use self::schema::mails;
 use crate::DbConn;
 use crate::errors::{self, ZauthError};
 use chrono::NaiveDateTime;
@@ -10,19 +9,7 @@ use diesel::result::Error as DieselError;
 use rocket::serde::Serialize;
 use validator::Validate;
 
-pub mod schema {
-	table! {
-		use diesel::sql_types::*;
-
-		mails {
-			id -> Integer,
-			sent_on -> Timestamp,
-			subject -> Text,
-			body -> Text,
-			author -> Varchar,
-		}
-	}
-}
+use super::schema::mails;
 
 #[derive(Clone, Debug, Queryable, Serialize)]
 #[serde(crate = "rocket::serde")]

@@ -1,6 +1,6 @@
+use super::schema::{roles, users};
 use crate::DbConn;
 use crate::errors::{self, InternalError, LoginError, ZauthError};
-use crate::models::schema::{roles, users};
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use std::fmt;

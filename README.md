@@ -67,6 +67,15 @@ There are tests trying out the OAuth2 flow which can be run with `cargo test`.
 You can also test the OAuth2 flow manually by running the flask application in
 `test_client/client.py`.
 
+### Creating a migration
+
+To make a change to the database scheme, we use diesel migrations
+
+1. To create a migration, run `diesel migration generate <migration name>`
+2. Fill in the generated `up.sql` and `down.sql`
+3. Re-generate `src/models/schema.rs` by running `diesel print-schema`
+   > Caution: at the moment, the `users` schema cannot be generated correctly automatically.
+
 ### Using Nix
 
 We have provided a [flake.nix](./flake.nix) for easy setup for Nix users. With [flakes enabled](https://nixos.wiki/wiki/Flakes), run `nix develop`.
