@@ -13,7 +13,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build the new image
         run: docker build . -t ghcr.io/zeuswpi/zauth:${{ github.sha }}
       - name: Login to the container registry

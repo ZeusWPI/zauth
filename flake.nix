@@ -22,7 +22,7 @@
   {
     devShell = mkShell {
       buildInputs = [
-        (rust-bin.nightly.latest.default.override { extensions = [ "rust-analyzer-preview" "rust-src" ]; })
+        (rust-bin.stable.latest.default.override { extensions = [ "rust-analyzer-preview" "rust-src" "clippy"]; })
         openssl.dev
         pkg-config
         docker-compose
