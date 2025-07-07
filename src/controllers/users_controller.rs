@@ -251,12 +251,15 @@ pub async fn register<'r>(
 			}))
 		},
 		Err(ZauthError::ValidationError(errors)) => Ok(Right(Accepter {
-			html: Custom(Status::UnprocessableEntity, template! {
-				"users/registration_form.html";
-				registrations_full: bool = full,
-				user: NewUser = new_user,
-				errors: Option<ValidationErrors> = Some(errors.clone()),
-			}),
+			html: Custom(
+				Status::UnprocessableEntity,
+				template! {
+					"users/registration_form.html";
+					registrations_full: bool = full,
+					user: NewUser = new_user,
+					errors: Option<ValidationErrors> = Some(errors.clone()),
+				},
+			),
 			json: Custom(Status::UnprocessableEntity, Json(errors)),
 		})),
 		Err(other) => Err(other),
@@ -282,13 +285,16 @@ pub async fn update_user<'r, 'o: 'r>(
 			},
 			Err(ZauthError::ValidationError(errors)) => {
 				let roles = user.clone().roles(&db).await?;
-				Ok(OneOf::Two(Custom(Status::UnprocessableEntity, template! {
-					"users/show.html";
-					user: User = user,
-					current_user: User = session.user,
-					roles: Vec<Role> =  roles,
-					errors: Option<ValidationErrors> = Some(errors.clone()),
-				})))
+				Ok(OneOf::Two(Custom(
+					Status::UnprocessableEntity,
+					template! {
+						"users/show.html";
+						user: User = user,
+						current_user: User = session.user,
+						roles: Vec<Role> =  roles,
+						errors: Option<ValidationErrors> = Some(errors.clone()),
+					},
+				)))
 			},
 			Err(other) => Err(other),
 		}
@@ -526,13 +532,14 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 				))
 			},
 
-			Err(ZauthError::ValidationError(errors)) => {
-				Ok(OneOf::Two(Custom(Status::UnprocessableEntity, template! {
+			Err(ZauthError::ValidationError(errors)) => Ok(OneOf::Two(Custom(
+				Status::UnprocessableEntity,
+				template! {
 					"users/reset_password_form.html";
 					token: String = form.token,
 					errors: Option<ValidationErrors> = Some(errors.clone()),
-				})))
-			},
+				},
+			))),
 			Err(other) => Err(other),
 		}
 	} else {
