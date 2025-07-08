@@ -3,7 +3,6 @@ use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use jsonwebtoken::jwk::JwkSet;
 use rocket::State;
 use rocket::form::Form;
-use rocket::http::ext::IntoCollection;
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::{Redirect, Responder};
 use rocket::serde::json::Json;

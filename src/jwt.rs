@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::errors::{InternalError, LaunchError, Result};
 use crate::models::client::Client;
-use crate::models::{role::Role, user::User};
+use crate::models::user::User;
 use base64::engine::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;

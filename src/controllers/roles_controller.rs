@@ -61,7 +61,7 @@ pub async fn create_role<'r, 'a>(
 			)))),
 			json: "role name already exists",
 		})),
-		_ => todo!(),
+		Err(err) => Err(err),
 	}
 }
 
