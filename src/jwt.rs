@@ -30,6 +30,8 @@ struct IDToken {
 	iat: i64,
 	preferred_username: String,
 	email: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	roles: Option<Vec<String>>,
 }
 
 impl JWTBuilder {
@@ -92,11 +94,12 @@ impl JWTBuilder {
 			.map_err(InternalError::from)?)
 	}
 
-	pub fn encode_id_token(
+	pub async fn encode_id_token(
 		&self,
 		client: &Client,
 		user: &User,
 		config: &Config,
+		roles: Option<Vec<String>>,
 	) -> Result<String> {
 		let id_token = IDToken {
 			sub: user.id.to_string(),
@@ -106,6 +109,7 @@ impl JWTBuilder {
 			exp: Utc::now().timestamp() + config.client_session_seconds,
 			preferred_username: user.username.clone(),
 			email: user.email.clone(),
+			roles,
 		};
 		self.encode(&id_token)
 	}

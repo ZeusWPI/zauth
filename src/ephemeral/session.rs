@@ -157,6 +157,7 @@ impl<'r> FromRequest<'r> for AdminSession {
 pub struct ClientSession {
 	pub user: User,
 	pub client: Client,
+	pub scope: Option<String>,
 }
 
 #[rocket::async_trait]
@@ -197,9 +198,11 @@ impl<'r> FromRequest<'r> for ClientSession {
 		match Session::find_by_key(key.to_string(), &db).await {
 			Ok(session) => match session.user(&db).await {
 				Ok(user) => match session.client(&db).await {
-					Ok(Some(client)) => {
-						Outcome::Success(ClientSession { user, client })
-					},
+					Ok(Some(client)) => Outcome::Success(ClientSession {
+						user,
+						client,
+						scope: session.scope,
+					}),
 					_ => Outcome::Error((
 						Status::Unauthorized,
 						"there is no client associated to this client session",
@@ -222,6 +225,7 @@ impl<'r> FromRequest<'r> for ClientSession {
 pub struct ClientOrUserSession {
 	pub user: User,
 	pub client: Option<Client>,
+	pub scope: Option<String>,
 }
 
 #[rocket::async_trait]
@@ -236,6 +240,7 @@ impl<'r> FromRequest<'r> for ClientOrUserSession {
 				Outcome::Success(ClientOrUserSession {
 					user: session.user,
 					client: None,
+					scope: None,
 				})
 			},
 			_ => match request.guard::<ClientSession>().await {
@@ -243,6 +248,7 @@ impl<'r> FromRequest<'r> for ClientOrUserSession {
 					Outcome::Success(ClientOrUserSession {
 						user: session.user,
 						client: Some(session.client),
+						scope: session.scope,
 					})
 				},
 				_ => Outcome::Error((

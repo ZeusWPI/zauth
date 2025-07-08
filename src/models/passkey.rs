@@ -8,24 +8,7 @@ use crate::{
 	errors::{self, InternalError, Result, ZauthError},
 };
 
-use self::schema::passkeys;
-
-pub mod schema {
-	table! {
-		use diesel::sql_types::*;
-
-		passkeys {
-			id -> Integer,
-			user_id -> Integer,
-			name -> VarChar,
-			cred -> VarChar,
-			cred_id -> VarChar,
-			last_used -> Timestamp,
-			created_at -> Timestamp,
-		}
-
-	}
-}
+use super::schema::passkeys;
 
 #[derive(
 	Queryable, Selectable, PartialEq, Debug, Clone, Serialize, AsChangeset,
@@ -36,9 +19,9 @@ pub struct PassKey {
 	pub user_id: i32,
 	pub name: String,
 	#[serde(skip)]
-	cred: String,
+	pub cred: String,
 	#[serde(skip)]
-	cred_id: String,
+	pub cred_id: String,
 	pub last_used: NaiveDateTime,
 	pub created_at: NaiveDateTime,
 }
