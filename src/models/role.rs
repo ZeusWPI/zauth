@@ -9,7 +9,14 @@ use crate::models::schema::{roles, users, users_roles};
 use crate::models::user::User;
 
 #[derive(
-	Serialize, Queryable, Debug, Clone, Identifiable, PartialEq, Selectable,
+	Deserialize,
+	Serialize,
+	Queryable,
+	Debug,
+	Clone,
+	Identifiable,
+	PartialEq,
+	Selectable,
 )]
 pub struct Role {
 	pub id: i32,
@@ -21,7 +28,7 @@ pub struct Role {
 #[derive(Validate, FromForm, Debug, Insertable, Deserialize)]
 #[diesel(table_name = roles)]
 pub struct NewRole {
-	#[validate(length(min = 1, max = 10))]
+	#[validate(length(min = 1, max = 30))]
 	pub name: String,
 	#[validate(length(min = 1, max = 100))]
 	pub description: String,

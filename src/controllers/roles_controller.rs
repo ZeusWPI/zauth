@@ -80,7 +80,7 @@ pub async fn add_user_page<'r>(
 	})
 }
 
-#[get("/roles/<id>/show?<error>&<info>")]
+#[get("/roles/<id>?<error>&<info>")]
 pub async fn show_role_page<'r>(
 	id: i32,
 	error: Option<String>,
@@ -137,7 +137,7 @@ pub async fn add_user<'r>(
 					None::<String>,
 					Some("user added")
 				))),
-				json: Custom(Status::NoContent, ()),
+				json: Custom(Status::Ok, ()),
 			}
 		},
 		Err(ZauthError::NotFound(_)) => Accepter {

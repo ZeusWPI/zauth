@@ -20,6 +20,8 @@ use rocket::http::{Accept, ContentType};
 use zauth::DbConn;
 use zauth::controllers::oauth_controller::UserToken;
 use zauth::models::client::{Client, NewClient};
+use zauth::models::role::NewRole;
+use zauth::models::role::Role;
 use zauth::models::user::{NewUser, User};
 use zauth::token_store::TokenStore;
 
@@ -57,19 +59,27 @@ async fn create_user(db: &DbConn) -> User {
 	.expect("user")
 }
 
-async fn create_client(db: &DbConn) -> Client {
-	let mut client = Client::create(
-		NewClient {
-			name: String::from(CLIENT_ID),
-		},
-		&db,
-	)
-	.await
-	.expect("client created");
+async fn create_client(db: &DbConn, name: &str) -> Client {
+	let mut client = Client::create(NewClient { name: name.into() }, &db)
+		.await
+		.expect("client created");
 
 	client.needs_grant = true;
 	client.redirect_uri_list = String::from(REDIRECT_URI);
 	client.update(db).await.expect("client updated")
+}
+
+async fn create_role(db: &DbConn, name: &str, client_id: Option<i32>) -> Role {
+	Role::create(
+		NewRole {
+			name: name.into(),
+			description: "test".into(),
+			client_id,
+		},
+		db,
+	)
+	.await
+	.expect("role created")
 }
 
 // Test all the usual oauth requests until `access_token/id_token` is retrieved.
@@ -209,7 +219,7 @@ async fn get_token(
 async fn normal_flow() {
 	common::as_visitor(async move |http_client, db| {
 		let user = create_user(&db).await;
-		let client = create_client(&db).await;
+		let client = create_client(&db, CLIENT_ID).await;
 
 		// 1. User is redirected to OAuth server with request params given by
 		// the client
@@ -300,6 +310,7 @@ async fn normal_flow() {
 
 		assert!(data["id"].is_number());
 		assert_eq!(data["username"], USER_USERNAME);
+		assert_eq!(data["roles"], Value::Null);
 	})
 	.await;
 }
@@ -308,7 +319,7 @@ async fn normal_flow() {
 async fn openid_flow() {
 	common::as_visitor(async move |http_client, db| {
 		let user = create_user(&db).await;
-		let client = create_client(&db).await;
+		let client = create_client(&db, CLIENT_ID).await;
 
 		let authorize_url = format!(
 			"/oauth/authorize?response_type=code&redirect_uri={}&client_id={}&\
@@ -347,6 +358,102 @@ async fn openid_flow() {
 		.claims;
 		assert_eq!(id_token["preferred_username"], USER_USERNAME);
 		assert_eq!(id_token["email"], USER_EMAIL);
+		assert_eq!(id_token["roles"], Value::Null);
+	})
+	.await;
+}
+
+#[rocket::async_test]
+async fn roles_flow() {
+	common::as_visitor(async move |http_client, db| {
+		let user = create_user(&db).await;
+		let client = create_client(&db, CLIENT_ID).await;
+		let client_not_used = create_client(&db, "not_used").await;
+		let role_global = create_role(&db, "global", None).await;
+		let role_client = create_role(&db, "client", Some(client.id)).await;
+		let role_client_not_used =
+			create_role(&db, "client_not_used", Some(client_not_used.id)).await;
+		let _role_global_not_mapped =
+			create_role(&db, "global_not_mapped", None).await;
+		let _role_client_not_mapped =
+			create_role(&db, "client_not_mapped", Some(client.id)).await;
+
+		role_global
+			.add_user(user.id, &db)
+			.await
+			.expect("add user to global role");
+		role_client
+			.add_user(user.id, &db)
+			.await
+			.expect("add user to user role");
+		role_client_not_used
+			.add_user(user.id, &db)
+			.await
+			.expect("add user to user role");
+
+		let authorize_url = format!(
+			"/oauth/authorize?response_type=code&redirect_uri={}&client_id={}&\
+			 state={}&scope={}",
+			url(REDIRECT_URI),
+			url(CLIENT_ID),
+			url(CLIENT_STATE),
+			url("openid roles")
+		);
+
+		let data = get_token(authorize_url, &http_client, &client, &user).await;
+
+		let url = "/oauth/jwks";
+		let req = http_client.get(url);
+		let response = req.dispatch().await;
+		let response_body =
+			response.into_string().await.expect("response body");
+		let jwk_set: JwkSet =
+			serde_json::from_str(&response_body).expect("response json values");
+
+		let mut validation = Validation::new(jsonwebtoken::Algorithm::ES384);
+		validation.set_audience(&[CLIENT_ID]);
+		validation.set_issuer(&["http://localhost:8000"]);
+
+		let id_token = jsonwebtoken::decode::<Value>(
+			data["id_token"].as_str().unwrap(),
+			&DecodingKey::from_jwk(&jwk_set.keys.get(0).unwrap()).unwrap(),
+			&validation,
+		)
+		.expect("id token")
+		.claims;
+
+		let roles: Vec<String> =
+			serde_json::from_value(id_token["roles"].clone())
+				.expect("roles in id token");
+
+		assert_eq!(roles.len(), 2);
+		assert!(
+			(roles[0] == "global" && roles[1] == "client")
+				|| (roles[0] == "client" && roles[1] == "global")
+		);
+
+		let token = data["access_token"].as_str().expect("access token");
+
+		let response = http_client
+			.get("/current_user")
+			.header(Accept::JSON)
+			.header(Header::new("Authorization", format!("Bearer {}", token)))
+			.dispatch()
+			.await;
+
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
+
+		let roles: Vec<String> = serde_json::from_value(data["roles"].clone())
+			.expect("roles in id token");
+
+		assert_eq!(roles.len(), 2);
+		assert!(
+			(roles[0] == "global" && roles[1] == "client")
+				|| (roles[0] == "client" && roles[1] == "global")
+		);
 	})
 	.await;
 }
