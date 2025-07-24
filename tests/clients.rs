@@ -18,7 +18,7 @@ async fn create_and_update_client() {
 	common::as_admin(async move |http_client: HttpClient, db, _user| {
 		let client_name = "test";
 
-		let client_form = format!("name={}", url(&client_name),);
+		let client_form = format!("name={}", url(client_name),);
 
 		let response = http_client
 			.post("/clients")
