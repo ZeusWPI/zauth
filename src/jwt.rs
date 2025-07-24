@@ -94,7 +94,7 @@ impl JWTBuilder {
 			.map_err(InternalError::from)?)
 	}
 
-	pub async fn encode_id_token(
+	pub fn encode_id_token(
 		&self,
 		client: &Client,
 		user: &User,

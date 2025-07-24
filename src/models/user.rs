@@ -538,7 +538,7 @@ impl User {
 		.map_err(ZauthError::from)
 	}
 
-	pub async fn client_roles(
+	pub async fn roles_for_client(
 		self,
 		client_id: i32,
 		db: &DbConn,

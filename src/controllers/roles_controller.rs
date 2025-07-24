@@ -65,21 +65,6 @@ pub async fn create_role<'r, 'a>(
 	}
 }
 
-#[get("/roles/add?<username>")]
-pub async fn add_user_page<'r>(
-	username: Option<String>,
-	db: DbConn,
-	session: AdminSession,
-) -> Result<impl Responder<'r, 'static>> {
-	let roles = Role::all(&db).await?;
-	Ok(template! {
-		"roles/add_user.html";
-		roles: Vec<Role> = roles,
-		username: String = username.unwrap_or_default(),
-		current_user: User = session.admin
-	})
-}
-
 #[get("/roles/<id>?<error>&<info>")]
 pub async fn show_role_page<'r>(
 	id: i32,
@@ -91,9 +76,16 @@ pub async fn show_role_page<'r>(
 	let role = Role::find(id, &db).await?;
 	let users = role.clone().users(&db).await?;
 
+	let client = if let Some(id) = role.client_id {
+		Some(Client::find(id, &db).await?)
+	} else {
+		None
+	};
+
 	Ok(template! { "roles/show_role.html";
 		current_user: User = session.admin,
 		role: Role = role,
+		client: Option<Client> = client,
 		users: Vec<User> = users,
 		error: Option<String> = error,
 		info: Option<String> = info
@@ -114,20 +106,15 @@ pub async fn delete_role<'r>(
 	})
 }
 
-#[derive(FromForm)]
-pub struct Mapping {
-	username: String,
-	role_id: i32,
-}
-
-#[post("/roles/mapping", data = "<form>")]
+#[post("/roles/<role_id>/users", data = "<username>")]
 pub async fn add_user<'r>(
-	form: Form<Mapping>,
+	username: Form<String>,
+	role_id: i32,
 	db: DbConn,
 	_session: AdminSession,
 ) -> Result<impl Responder<'r, 'static>> {
-	let role = Role::find(form.role_id, &db).await?;
-	let user_result = User::find_by_username(form.username.clone(), &db).await;
+	let role = Role::find(role_id, &db).await?;
+	let user_result = User::find_by_username(username.clone(), &db).await;
 	Ok(match user_result {
 		Ok(user) => {
 			role.add_user(user.id, &db).await?;
@@ -159,7 +146,7 @@ pub async fn add_user<'r>(
 	})
 }
 
-#[delete("/roles/<role_id>/mapping/<user_id>")]
+#[delete("/roles/<role_id>/users/<user_id>")]
 pub async fn delete_user<'r>(
 	role_id: i32,
 	user_id: i32,

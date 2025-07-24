@@ -188,7 +188,7 @@ async fn delete_role() {
 }
 
 #[rocket::async_test]
-async fn add_user_as_user() {
+async fn add_user_to_role_as_user() {
 	common::as_user(async move |http_client: HttpClient, db, user: User| {
 		let role = Role::create(
 			NewRole {
@@ -218,7 +218,7 @@ async fn add_user_as_user() {
 }
 
 #[rocket::async_test]
-async fn add_user_as_admin() {
+async fn add_user_to_role_as_admin() {
 	common::as_admin(async move |http_client: HttpClient, db, user: User| {
 		let role = Role::create(
 			NewRole {

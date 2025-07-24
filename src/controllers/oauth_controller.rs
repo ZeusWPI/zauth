@@ -18,7 +18,7 @@ use crate::jwt::JWTBuilder;
 use crate::models::client::*;
 use crate::models::session::*;
 use crate::models::user::*;
-use crate::util::{roles_optional, scopes};
+use crate::util::split_scopes;
 
 use crate::ephemeral::session::ensure_logged_in_and_redirect;
 use crate::errors::OAuthError::InvalidCookie;
@@ -328,12 +328,22 @@ pub async fn token(
 		)))
 	} else {
 		let user = User::find(token.user_id, &db).await?;
-		let scopes = scopes(&token.scope);
+		let scopes = split_scopes(&token.scope);
 		let id_token = if scopes.contains(&"openid".into()) {
-			let roles = roles_optional(&scopes, &user, client.id, &db).await?;
+			let roles = if scopes.contains(&"roles".into()) {
+				Some(
+					user.clone()
+						.roles_for_client(client.id, &db)
+						.await?
+						.iter()
+						.map(|r| r.clone().name)
+						.collect(),
+				)
+			} else {
+				None
+			};
 			jwt_builder
 				.encode_id_token(&client, &user, config, roles)
-				.await
 				.ok()
 		} else {
 			None

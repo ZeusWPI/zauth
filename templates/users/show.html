@@ -106,7 +106,7 @@
 			<div class="field">
 				<label class="label"> Roles </label>
 				<ul>
-					{% for role in roles %}
+					{% for role in user_roles %}
 						<li> 
 							{% if current_user.admin %}
 								<a href="/roles/{{role.id}}">{{ role.name }}</a> 
@@ -119,7 +119,19 @@
 			</div>
 
 			{% if current_user.admin %}
-				<a class="button is-primary" href="/roles/add?username={{ user.username }}">Give Role</a>
+				<form action="/users/{{current_user.username}}/roles" method="post">
+					<div class="select">
+						<select name="role_id" required>
+							<option selected></option>
+							{% for role in roles %}
+								<option value="{{ role.id }}">{{ role.name}} </option>
+							{% endfor %}
+						</select>
+					</div>
+
+					<button class="button is-primary" type="submit">Add</button>
+				</form>
+
 			{% endif %}
 		</div>
 	</div>

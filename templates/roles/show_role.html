@@ -7,7 +7,17 @@
 			<div class="column is-narrow">
 				<!-- Title -->
 				<div class="title">
-					User mappings of role {{role.name}}
+					Users with role {{role.name}}
+				</div>
+
+				<!-- Subtitle -->
+				<div class="subtitle">
+				{% match client %}
+				{% when Some with (client) %}
+					for client <a href="/clients/{{client.id}}/edit">{{client.name}}</a>.
+				{% when None %}
+					Global role.
+				{% endmatch %}
 				</div>
 
 				<div class="column is-narrow">
@@ -55,7 +65,7 @@
 
 						<!-- Remove -->
 						<td>
-							<form action="/roles/{{role.id}}/mapping/{{user.id}}" method="POST">
+							<form action="/roles/{{role.id}}/users/{{user.id}}" method="POST">
 								<input type="hidden" name="_method" value="delete"/>
 								<button class="button is-danger is-small" type="submit">x</button>
 							</form>
@@ -78,7 +88,7 @@
 		<a class="modal-background" href="#"></a>
 
 		<div class="modal-card">
-			<form action="/roles/mapping" method="post">
+			<form action="/roles/{{role.id}}/users" method="post">
 				<!-- Header -->
 				<header class="modal-card-head">
 					<!-- Title -->
@@ -93,7 +103,6 @@
 						<label class="label">Username</label>
 						<input class="input" name="username" type="text" placeholder="username" minlength="3" required />
 					</div>
-					<input hidden name="role_id" value="{{role.id}}" />
 				</section>
 
 				<!-- Footer -->
