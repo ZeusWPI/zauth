@@ -201,11 +201,10 @@ async fn add_user_to_role_as_user() {
 		.await
 		.unwrap();
 
-		let role_form =
-			format!("username={}&role_id={}", url(&user.username), role.id);
+		let role_form = format!("username={}", url(&user.username));
 
 		let response = http_client
-			.post("/roles/mapping")
+			.post(format!("/roles/{}/users", role.id))
 			.body(role_form)
 			.header(ContentType::Form)
 			.header(Accept::JSON)
@@ -231,11 +230,10 @@ async fn add_user_to_role_as_admin() {
 		.await
 		.unwrap();
 
-		let role_form =
-			format!("username={}&role_id={}", url(&user.username), role.id);
+		let role_form = format!("username={}", url(&user.username));
 
 		let response = http_client
-			.post("/roles/mapping")
+			.post(format!("/roles/{}/users", role.id))
 			.body(role_form)
 			.header(ContentType::Form)
 			.dispatch()
@@ -248,13 +246,74 @@ async fn add_user_to_role_as_admin() {
 		assert_eq!(users[0].id, user.id);
 
 		let response = http_client
-			.delete(format!("/roles/{}/mapping/{}", role.id, user.id))
+			.delete(format!("/roles/{}/users/{}", role.id, user.id))
 			.dispatch()
 			.await;
 		assert_eq!(response.status(), Status::SeeOther);
 
 		let users = role.clone().users(&db).await.unwrap();
 		assert_eq!(users.len(), 0);
+	})
+	.await;
+}
+
+#[rocket::async_test]
+async fn add_role_to_user_as_user() {
+	common::as_user(async move |http_client: HttpClient, db, user: User| {
+		let role = Role::create(
+			NewRole {
+				name: "test".into(),
+				description: "test".into(),
+				client_id: None,
+			},
+			&db,
+		)
+		.await
+		.unwrap();
+
+		let role_form = format!("role_id={}", role.id);
+
+		let response = http_client
+			.post(format!("/users/{}/roles", user.username))
+			.body(role_form)
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::Forbidden);
+	})
+	.await;
+}
+
+#[rocket::async_test]
+async fn add_role_to_user_as_admin() {
+	common::as_admin(async move |http_client: HttpClient, db, user: User| {
+		let role = Role::create(
+			NewRole {
+				name: "test".into(),
+				description: "test".into(),
+				client_id: None,
+			},
+			&db,
+		)
+		.await
+		.unwrap();
+
+		let role_form = format!("role_id={}", role.id);
+
+		let response = http_client
+			.post(format!("/users/{}/roles", user.username))
+			.body(role_form)
+			.header(ContentType::Form)
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::SeeOther);
+
+		let users = role.clone().users(&db).await.unwrap();
+		assert_eq!(users.len(), 1);
+		assert_eq!(users[0].id, user.id);
 	})
 	.await;
 }
