@@ -636,3 +636,19 @@ pub async fn add_role<'r>(
 		json: Custom(Status::NoContent, ()),
 	})
 }
+
+#[delete("/users/<username>/roles/<role_id>")]
+pub async fn delete_role<'r>(
+	role_id: i32,
+	username: String,
+	_session: AdminSession,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let role = Role::find(role_id, &db).await?;
+	let user_result = User::find_by_username(username.clone(), &db).await?;
+	role.remove_user(user_result.id, &db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_user(username))),
+		json: Custom(Status::NoContent, ()),
+	})
+}
