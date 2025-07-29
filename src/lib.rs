@@ -147,10 +147,18 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				users_controller::confirm_email_post,
 				users_controller::show_confirm_unsubscribe,
 				users_controller::unsubscribe_user,
+				users_controller::add_role,
+				users_controller::delete_role,
 				mailing_list_controller::list_mails,
 				mailing_list_controller::send_mail,
 				mailing_list_controller::show_create_mail_page,
 				mailing_list_controller::show_mail,
+				roles_controller::list_roles,
+				roles_controller::create_role,
+				roles_controller::delete_role,
+				roles_controller::show_role_page,
+				roles_controller::add_user,
+				roles_controller::delete_user,
 			],
 		)
 		.register(

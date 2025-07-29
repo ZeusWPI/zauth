@@ -14,7 +14,10 @@ use crate::ephemeral::session::{
 use crate::errors::Either::{self, Left, Right};
 use crate::errors::{InternalError, OneOf, Result, ZauthError};
 use crate::mailer::Mailer;
+use crate::models::client::Client;
+use crate::models::role::Role;
 use crate::models::user::*;
+use crate::util::split_scopes;
 use crate::views::accepter::Accepter;
 use crate::{DbConn, util};
 use askama::Template;
@@ -23,14 +26,78 @@ use rocket::State;
 use rocket::form::Form;
 use rocket::serde::json::Json;
 
-#[get("/current_user")]
-pub fn current_user(session: ClientOrUserSession) -> Json<User> {
-	Json(session.user)
+#[derive(Serialize)]
+pub struct UserInfo {
+	id: i32,
+	username: String,
+	admin: bool,
+	full_name: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	roles: Option<Vec<String>>,
+}
+
+impl UserInfo {
+	async fn new(
+		user: User,
+		client: Option<Client>,
+		scope: Option<String>,
+		db: &DbConn,
+	) -> Result<Self> {
+		let scopes = split_scopes(&scope);
+
+		let roles = if let Some(client) = client {
+			if scopes.contains(&"roles".into()) {
+				Some(
+					user.clone()
+						.roles_for_client(client.id, db)
+						.await?
+						.iter()
+						.map(|r| r.clone().name)
+						.collect(),
+				)
+			} else {
+				None
+			}
+		} else {
+			Some(
+				user.clone()
+					.roles(db)
+					.await?
+					.iter()
+					.map(|r| r.clone().name)
+					.collect(),
+			)
+		};
+
+		Ok(UserInfo {
+			id: user.id,
+			username: user.username,
+			admin: user.admin,
+			full_name: user.full_name,
+			roles,
+		})
+	}
 }
 
 #[get("/current_user")]
-pub fn current_user_as_client(session: ClientSession) -> Json<User> {
-	Json(session.user)
+pub async fn current_user(
+	session: ClientOrUserSession,
+	db: DbConn,
+) -> Result<Json<UserInfo>> {
+	Ok(Json(
+		UserInfo::new(session.user, session.client, session.scope, &db).await?,
+	))
+}
+
+#[get("/current_user")]
+pub async fn current_user_as_client(
+	session: ClientSession,
+	db: DbConn,
+) -> Result<Json<UserInfo>> {
+	Ok(Json(
+		UserInfo::new(session.user, Some(session.client), session.scope, &db)
+			.await?,
+	))
 }
 
 #[get("/users/<username>")]
@@ -41,12 +108,20 @@ pub async fn show_user<'r>(
 ) -> Result<impl Responder<'r, 'static>> {
 	// Cloning the username is necessary because it's used later
 	let user = User::find_by_username(username.clone(), &db).await?;
+	let user_roles = user.clone().roles(&db).await?;
+	let roles = if session.user.admin {
+		Role::all(&db).await?
+	} else {
+		vec![]
+	};
 	// Check whether the current session is allowed to view this user
 	if session.user.admin || session.user.username == username {
 		Ok(Accepter {
 			html: template!("users/show.html";
 							user: User = user.clone(),
 							current_user: User = session.user,
+							user_roles: Vec<Role> = user_roles,
+							roles: Vec<Role> = roles,
 							errors: Option<ValidationErrors> = None
 			),
 			json: Json(user),
@@ -123,9 +198,7 @@ pub async fn create_user<'r>(
 	db: DbConn,
 	config: &State<Config>,
 ) -> Result<impl Responder<'r, 'static> + use<'r>> {
-	let user = User::create(user.into_inner(), config.bcrypt_cost, &db)
-		.await
-		.map_err(ZauthError::from)?;
+	let user = User::create(user.into_inner(), config.bcrypt_cost, &db).await?;
 	// Cloning the username is necessary because it's used later
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_user(user.username.clone()))),
@@ -227,15 +300,20 @@ pub async fn update_user<'r, 'o: 'r>(
 					json: Custom(Status::NoContent, ()),
 				}))
 			},
-			Err(ZauthError::ValidationError(errors)) => Ok(OneOf::Two(Custom(
-				Status::UnprocessableEntity,
-				template! {
-					"users/show.html";
-					user: User = user,
-					current_user: User = session.user,
-					errors: Option<ValidationErrors> = Some(errors.clone()),
-				},
-			))),
+			Err(ZauthError::ValidationError(errors)) => {
+				let roles = user.clone().roles(&db).await?;
+				Ok(OneOf::Two(Custom(
+					Status::UnprocessableEntity,
+					template! {
+						"users/show.html";
+						user: User = user,
+						current_user: User = session.user,
+						user_roles: Vec<Role> =  roles,
+						roles: Vec<Role> = vec![],
+						errors: Option<ValidationErrors> = Some(errors.clone()),
+					},
+				)))
+			},
 			Err(other) => Err(other),
 		}
 	} else {
@@ -541,4 +619,36 @@ pub async fn confirm_email_post<'r>(
 			template! {"users/confirm_email_invalid.html"},
 		))
 	}
+}
+
+#[post("/users/<username>/roles", data = "<role_id>")]
+pub async fn add_role<'r>(
+	username: String,
+	role_id: Form<i32>,
+	db: DbConn,
+	_session: AdminSession,
+) -> Result<impl Responder<'r, 'static>> {
+	let role = Role::find(*role_id, &db).await?;
+	let user_result = User::find_by_username(username.clone(), &db).await?;
+	role.add_user(user_result.id, &db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_user(username))),
+		json: Custom(Status::NoContent, ()),
+	})
+}
+
+#[delete("/users/<username>/roles/<role_id>")]
+pub async fn delete_role<'r>(
+	role_id: i32,
+	username: String,
+	_session: AdminSession,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let role = Role::find(role_id, &db).await?;
+	let user_result = User::find_by_username(username.clone(), &db).await?;
+	role.remove_user(user_result.id, &db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_user(username))),
+		json: Custom(Status::NoContent, ()),
+	})
 }

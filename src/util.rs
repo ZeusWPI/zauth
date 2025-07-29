@@ -10,6 +10,12 @@ pub fn random_token(token_length: usize) -> String {
 		.collect()
 }
 
+pub fn split_scopes(scope: &Option<String>) -> Vec<String> {
+	scope
+		.as_ref()
+		.map_or(vec![], |scope| scope.split(" ").map(String::from).collect())
+}
+
 // pub use dev::seed_database;
 //
 // mod dev {

@@ -1,0 +1,134 @@
+{% extends "base_logged_in.html" %}
+
+<!-- Content -->
+{% block content %}
+	<div class="card card-content">
+
+		<!-- Title -->
+		<div class="columns is-multiline is-justify-content-space-between">
+			<div class="column is-narrow">
+				<!-- Title -->
+				<div class="title">
+					Roles ({{ roles.len() }})
+				</div>
+				<!-- Subtitle -->
+				<div class="subtitle">
+				Roles are given to users, which allows for more fine-grained client-level permissions. <br>
+				If a client requests the user info after login, it can give this user additional permissions based on the included roles. <br>
+				Global roles are always returned; client-specific roles are only returned for that client. <br>
+				The OAuth scope must include 'roles' for the roles to be included in the ID token or user info.
+				</div>
+
+
+			</div>
+
+			<div class="column is-narrow">
+				<a class="button is-primary" href="#new-role">New role</a>
+			</div>
+		</div>
+
+		<!-- Error message -->
+		{% match error %}
+		{% when Some with (error) %}
+		  <div class="notification is-danger is-light">
+			{{ error }}
+		  </div>
+		{% when None %}
+		{% endmatch %}
+
+		<!-- Table -->
+		<table class="table table--responsive table--responsive--labels is-fullwidth">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Description</th>
+					<th></th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for role in roles %}
+					<tr>
+
+						<!-- Name -->
+						<td data-label="Name">
+							<a href="/roles/{{role.id}}">{{ role.name }}</a>
+						</td>
+
+						<!-- Description -->
+						<td data-label="Description">{{ role.description }}</td>
+
+						<!-- Remove -->
+						<td>
+							<form action="/roles/{{role.id}}" method="POST">
+								<input type="hidden" name="_method" value="delete"/>
+								<button class="button is-danger is-small" type="submit">x</button>
+							</form>
+						</td>
+					</tr>
+				{% endfor %}
+
+				<!-- Placeholder -->
+				{% if roles.len() == 0 %}
+					<tr>
+						<td colspan="4">No roles configured</td>
+					</tr>
+				{% endif %}
+			</tbody>
+		</table>
+	</div>
+
+	<!-- New client modal -->
+	<div class="modal modal-target" id="new-role">
+		<a class="modal-background" href="#"></a>
+
+		<div class="modal-card">
+			<form action="/roles" method="post">
+				<!-- Header -->
+				<header class="modal-card-head">
+					<!-- Title -->
+					<div class="modal-card-title">New role</div>
+					<!-- Close -->
+					<a class="delete" href="#"></a>
+				</header>
+
+				<!-- Content -->
+				<section class="modal-card-body">
+					<div class="field">
+						<label class="label">Role name</label>
+						<input class="input" name="name" type="text" placeholder="name" minlength="3" required />
+						<p class="help">
+							Recommended format for client role: client_role E.g. zauth_admin
+						</p>
+					</div>
+
+					<div class="field">
+						<label class="label">Role description</label>
+						<input class="input" name="description" type="text" placeholder="description" minlength="3" required />
+					</div>
+
+					<div class="field">
+						<label class="label">Client</label>
+						<div class="select">
+							<select name="client_id">
+								<option selected></option>
+								{% for client in clients %}
+									<option value="{{ client.id}}">{{ client.name}} </option>
+								{% endfor %}
+							</select>
+						</div>
+						<p class="help">
+							Keeping this empty will create a global role
+						</p>
+					</div>
+				</section>
+
+				<!-- Footer -->
+				<footer class="modal-card-foot is-justify-content-flex-end">
+					<button class="button is-primary" type="submit">Create</button>
+					<a class="button is-danger is-light" href="#">Close</a>
+				</footer>
+			</form>
+		</div>
+	</div>
+{% endblock content %}
