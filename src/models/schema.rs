@@ -21,6 +21,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    clients_roles (client_id, role_id) {
+        client_id -> Int4,
+        role_id -> Int4,
+    }
+}
+
+diesel::table! {
 	mails (id) {
 		id -> Int4,
 		sent_on -> Timestamp,
@@ -60,7 +67,7 @@ diesel::table! {
 		id -> Int4,
 		#[max_length = 255]
 		key -> Nullable<Varchar>,
-		user_id -> Int4,
+		user_id -> Nullable<Int4>,
 		client_id -> Nullable<Int4>,
 		created_at -> Timestamp,
 		expires_at -> Timestamp,
@@ -101,6 +108,8 @@ diesel::table! {
 	}
 }
 
+diesel::joinable!(clients_roles -> clients (client_id));
+diesel::joinable!(clients_roles -> roles (role_id));
 diesel::joinable!(passkeys -> users (user_id));
 diesel::joinable!(roles -> clients (client_id));
 diesel::joinable!(sessions -> clients (client_id));
@@ -110,6 +119,7 @@ diesel::joinable!(users_roles -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
 	clients,
+	clients_roles,
 	mails,
 	passkeys,
 	roles,

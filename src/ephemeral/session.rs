@@ -79,7 +79,7 @@ impl<'r> FromRequest<'r> for SessionCookie {
 			.map(|cookie| SessionCookie::from_str(cookie.value()));
 		match session {
 			Some(Ok(session)) => Outcome::Success(session),
-			_ => Outcome::Error((Status::Unauthorized, "invalid session")),
+			_ => Outcome::Forward(Status::Unauthorized),
 		}
 	}
 }
@@ -118,15 +118,9 @@ impl<'r> FromRequest<'r> for UserSession {
 		match Session::find_by_id(cookie.session_id, &db).await {
 			Ok(session) => match session.user(&db).await {
 				Ok(user) => Outcome::Success(UserSession { user, session }),
-				_ => Outcome::Error((
-					Status::Unauthorized,
-					"user not found for database session",
-				)),
+				_ => Outcome::Forward(Status::Unauthorized),
 			},
-			_ => Outcome::Error((
-				Status::Unauthorized,
-				"session not found for valid cookie",
-			)),
+			_ => Outcome::Forward(Status::Unauthorized),
 		}
 	}
 }
@@ -154,8 +148,55 @@ impl<'r> FromRequest<'r> for AdminSession {
 }
 
 #[derive(Debug)]
-pub struct ClientSession {
+pub struct UserClientSession {
 	pub user: User,
+	pub client: Client,
+	pub scope: Option<String>,
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for UserClientSession {
+	type Error = &'static str;
+
+	async fn from_request(
+		request: &'r Request<'_>,
+	) -> Outcome<Self, Self::Error> {
+		let headers: Vec<_> = request.headers().get("Authorization").collect();
+		if headers.is_empty() || headers.len() > 1 {
+			return Outcome::Forward(Status::BadRequest);
+		}
+
+		let auth_header = headers[0];
+		let prefix = "Bearer ";
+		if !auth_header.starts_with(prefix) {
+			return Outcome::Forward(Status::BadRequest);
+		}
+		let key = &auth_header[prefix.len()..];
+
+		let db =
+			try_outcome!(request.guard::<DbConn>().await.map_error(|_| {
+				(Status::InternalServerError, "could not connect to database")
+			}));
+
+		match Session::find_by_key(key.to_string(), &db).await {
+			Ok(session) => match session.user(&db).await {
+				Ok(user) => match session.client(&db).await {
+					Ok(Some(client)) => Outcome::Success(UserClientSession {
+						user,
+						client,
+						scope: session.scope,
+					}),
+					_ => Outcome::Forward(Status::Unauthorized),
+				},
+				_ => Outcome::Forward(Status::Unauthorized),
+			},
+			_ => Outcome::Forward(Status::Unauthorized),
+		}
+	}
+}
+
+#[derive(Debug)]
+pub struct ClientSession {
 	pub client: Client,
 	pub scope: Option<String>,
 }
@@ -168,25 +209,14 @@ impl<'r> FromRequest<'r> for ClientSession {
 		request: &'r Request<'_>,
 	) -> Outcome<Self, Self::Error> {
 		let headers: Vec<_> = request.headers().get("Authorization").collect();
-		if headers.is_empty() {
-			return Outcome::Error((
-				Status::BadRequest,
-				"no authorization header found",
-			));
-		} else if headers.len() > 1 {
-			return Outcome::Error((
-				Status::BadRequest,
-				"found more than one authorization header",
-			));
+		if headers.is_empty() || headers.len() > 1 {
+			return Outcome::Forward(Status::BadRequest);
 		}
 
 		let auth_header = headers[0];
 		let prefix = "Bearer ";
 		if !auth_header.starts_with(prefix) {
-			return Outcome::Error((
-				Status::BadRequest,
-				"only support Bearer tokens are supported",
-			));
+			return Outcome::Forward(Status::BadRequest);
 		}
 		let key = &auth_header[prefix.len()..];
 
@@ -197,65 +227,16 @@ impl<'r> FromRequest<'r> for ClientSession {
 
 		match Session::find_by_key(key.to_string(), &db).await {
 			Ok(session) => match session.user(&db).await {
-				Ok(user) => match session.client(&db).await {
+				Ok(_) => Outcome::Forward(Status::Unauthorized),
+				Err(_) => match session.client(&db).await {
 					Ok(Some(client)) => Outcome::Success(ClientSession {
-						user,
 						client,
 						scope: session.scope,
 					}),
-					_ => Outcome::Error((
-						Status::Unauthorized,
-						"there is no client associated to this client session",
-					)),
+					_ => Outcome::Forward(Status::Unauthorized),
 				},
-				_ => Outcome::Error((
-					Status::Unauthorized,
-					"user not found for database session",
-				)),
 			},
-			_ => Outcome::Error((
-				Status::Unauthorized,
-				"session not found for valid cookie",
-			)),
-		}
-	}
-}
-
-#[derive(Debug)]
-pub struct ClientOrUserSession {
-	pub user: User,
-	pub client: Option<Client>,
-	pub scope: Option<String>,
-}
-
-#[rocket::async_trait]
-impl<'r> FromRequest<'r> for ClientOrUserSession {
-	type Error = &'static str;
-
-	async fn from_request(
-		request: &'r Request<'_>,
-	) -> Outcome<Self, Self::Error> {
-		match request.guard::<UserSession>().await {
-			Outcome::Success(session) => {
-				Outcome::Success(ClientOrUserSession {
-					user: session.user,
-					client: None,
-					scope: None,
-				})
-			},
-			_ => match request.guard::<ClientSession>().await {
-				Outcome::Success(session) => {
-					Outcome::Success(ClientOrUserSession {
-						user: session.user,
-						client: Some(session.client),
-						scope: session.scope,
-					})
-				},
-				_ => Outcome::Error((
-					Status::Unauthorized,
-					"found neither a user session or client session",
-				)),
-			},
+			_ => Outcome::Forward(Status::Unauthorized),
 		}
 	}
 }

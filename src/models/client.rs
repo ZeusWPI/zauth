@@ -9,11 +9,11 @@ use crate::util::random_token;
 use chrono::NaiveDateTime;
 use validator::Validate;
 
-use super::role::Role;
+use super::role::{ClientRole, Role};
 
 const SECRET_LENGTH: usize = 64;
 
-#[derive(Serialize, AsChangeset, Queryable, Debug, Clone)]
+#[derive(Serialize, AsChangeset, Queryable, Debug, Clone, Identifiable)]
 pub struct Client {
 	pub id: i32,
 	pub name: String,
@@ -165,15 +165,15 @@ impl Client {
 		self.update(db).await
 	}
 
-	pub async fn roles(&self, db: &DbConn) -> Result<Vec<Role>> {
-		let id = self.id;
+	pub async fn roles(self, db: &DbConn) -> Result<Vec<Role>> {
 		db.run(move |conn| {
-			roles::table
-				.filter(roles::client_id.eq(id))
+			ClientRole::belonging_to(&self)
+				.inner_join(roles::table)
 				.select(Role::as_select())
-				.get_results(conn)
+				.load(conn)
 		})
 		.await
 		.map_err(ZauthError::from)
 	}
+
 }

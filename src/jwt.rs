@@ -34,6 +34,17 @@ struct IDToken {
 	roles: Option<Vec<String>>,
 }
 
+#[derive(Serialize, Debug)]
+struct ClientIDToken {
+	sub: String,
+	iss: String,
+	aud: String,
+	exp: i64,
+	iat: i64,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	roles: Option<Vec<String>>,
+}
+
 impl JWTBuilder {
 	pub fn new(config: &Config) -> Result<JWTBuilder> {
 		let mut file = File::open(&config.ec_private_key)
@@ -109,6 +120,23 @@ impl JWTBuilder {
 			exp: Utc::now().timestamp() + config.client_session_seconds,
 			preferred_username: user.username.clone(),
 			email: user.email.clone(),
+			roles,
+		};
+		self.encode(&id_token)
+	}
+
+	pub fn encode_id_token_client(
+		&self,
+		client: &Client,
+		config: &Config,
+		roles: Option<Vec<String>>,
+	) -> Result<String> {
+		let id_token = ClientIDToken {
+			sub: client.id.to_string(),
+			iss: config.base_url().to_string(),
+			aud: client.name.clone(),
+			iat: Utc::now().timestamp(),
+			exp: Utc::now().timestamp() + config.client_session_seconds,
 			roles,
 		};
 		self.encode(&id_token)
