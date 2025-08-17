@@ -13,7 +13,9 @@ use super::role::{ClientRole, Role};
 
 const SECRET_LENGTH: usize = 64;
 
-#[derive(Serialize, AsChangeset, Queryable, Debug, Clone, Identifiable)]
+#[derive(
+	Serialize, AsChangeset, Queryable, Debug, Clone, Identifiable, Selectable,
+)]
 pub struct Client {
 	pub id: i32,
 	pub name: String,
@@ -175,5 +177,4 @@ impl Client {
 		.await
 		.map_err(ZauthError::from)
 	}
-
 }

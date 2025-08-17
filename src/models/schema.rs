@@ -21,10 +21,10 @@ diesel::table! {
 }
 
 diesel::table! {
-    clients_roles (client_id, role_id) {
-        client_id -> Int4,
-        role_id -> Int4,
-    }
+	clients_roles (client_id, role_id) {
+		client_id -> Int4,
+		role_id -> Int4,
+	}
 }
 
 diesel::table! {

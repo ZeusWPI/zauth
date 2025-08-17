@@ -164,6 +164,8 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				roles_controller::show_role_page,
 				roles_controller::add_user,
 				roles_controller::delete_user,
+				roles_controller::add_client,
+				roles_controller::delete_client,
 			],
 		)
 		.register(

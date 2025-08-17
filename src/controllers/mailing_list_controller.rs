@@ -37,7 +37,7 @@ pub async fn list_mails<'r>(
 }
 
 /// Send a new mail and archive it
-#[post("/mails", data = "<new_mail>", rank=2)]
+#[post("/mails", data = "<new_mail>", rank = 2)]
 pub async fn send_mail_as_user<'r>(
 	_session: AdminSession,
 	new_mail: Api<NewMail>,
@@ -49,7 +49,7 @@ pub async fn send_mail_as_user<'r>(
 }
 
 /// Send a new mail as a client and archive it
-#[post("/mails", data = "<new_mail>", rank=1)]
+#[post("/mails", data = "<new_mail>", rank = 1)]
 pub async fn send_mail_as_client<'r>(
 	client_session: ClientSession,
 	new_mail: Api<NewMail>,

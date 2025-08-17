@@ -5,7 +5,9 @@ use crate::{
 use diesel::{self, prelude::*};
 use validator::Validate;
 
-use crate::models::schema::{clients_roles, roles, users, users_roles};
+use crate::models::schema::{
+	clients, clients_roles, roles, users, users_roles,
+};
 use crate::models::{client::Client, user::User};
 
 #[derive(
@@ -122,7 +124,7 @@ impl Role {
 			.map_err(ZauthError::from)?;
 
 		if client_role.is_none() {
-			// UserRole not already exists
+			// ClientRole does not already exists
 			let client_role = ClientRole {
 				role_id: self.id,
 				client_id,
@@ -179,6 +181,17 @@ impl Role {
 			UserRole::belonging_to(&self)
 				.inner_join(users::table)
 				.select(User::as_select())
+				.load(conn)
+		})
+		.await
+		.map_err(ZauthError::from)
+	}
+
+	pub async fn clients(self, db: &DbConn) -> Result<Vec<Client>> {
+		db.run(move |conn| {
+			ClientRole::belonging_to(&self)
+				.inner_join(clients::table)
+				.select(Client::as_select())
 				.load(conn)
 		})
 		.await
