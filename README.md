@@ -40,10 +40,12 @@ The name is open for discussion.
 
     This will also run the migrations.
 
-6. Run `npm run build` to compile the css assets. \
+6. Run `npm install` to install all the node dependencies.
+
+7. Run `npm run build` to compile the css assets. \
    When working on the stylesheets, you can run `npm run watch` to automatically recompile them on every change.
 
-7. You can now start the server with `cargo run`. If you want to create an admin user you can start it with the `ZAUTH_ADMIN_PASSWORD` environment variable:
+8. You can now start the server with `cargo run`. If you want to create an admin user you can start it with the `ZAUTH_ADMIN_PASSWORD` environment variable:
 
     ```shell script
     ZAUTH_ADMIN_PASSWORD=adminadmin cargo run

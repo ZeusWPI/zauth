@@ -75,6 +75,7 @@ pub async fn show_role_page<'r>(
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(id, &db).await?;
 	let users = role.clone().users(&db).await?;
+	let clients = role.clone().clients(&db).await?;
 
 	let client = if let Some(id) = role.client_id {
 		Some(Client::find(id, &db).await?)
@@ -87,6 +88,7 @@ pub async fn show_role_page<'r>(
 		role: Role = role,
 		client: Option<Client> = client,
 		users: Vec<User> = users,
+				clients: Vec<Client>  = clients,
 		error: Option<String> = error,
 		info: Option<String> = info
 	})
@@ -146,6 +148,46 @@ pub async fn add_user<'r>(
 	})
 }
 
+#[post("/roles/<role_id>/clients", data = "<client_name>")]
+pub async fn add_client<'r>(
+	client_name: Form<String>,
+	role_id: i32,
+	db: DbConn,
+	_session: AdminSession,
+) -> Result<impl Responder<'r, 'static>> {
+	let role = Role::find(role_id, &db).await?;
+	let client_result = Client::find_by_name(client_name.clone(), &db).await;
+	Ok(match client_result {
+		Ok(client) => {
+			role.add_client(client.id, &db).await?;
+			Accepter {
+				html: Redirect::to(uri!(show_role_page(
+					role.id,
+					None::<String>,
+					Some("client added")
+				))),
+				json: Custom(Status::Ok, ()),
+			}
+		},
+		Err(ZauthError::NotFound(_)) => Accepter {
+			html: Redirect::to(uri!(show_role_page(
+				role.id,
+				Some("client not found"),
+				None::<String>
+			))),
+			json: Custom(Status::NotFound, ()),
+		},
+		_ => Accepter {
+			html: Redirect::to(uri!(show_role_page(
+				role.id,
+				Some("error occured"),
+				None::<String>
+			))),
+			json: Custom(Status::InternalServerError, ()),
+		},
+	})
+}
+
 #[delete("/roles/<role_id>/users/<user_id>")]
 pub async fn delete_user<'r>(
 	role_id: i32,
@@ -160,6 +202,25 @@ pub async fn delete_user<'r>(
 			role_id,
 			None::<String>,
 			Some("user deleted")
+		))),
+		json: Custom(Status::Ok, ()),
+	})
+}
+
+#[delete("/roles/<role_id>/clients/<client_id>")]
+pub async fn delete_client<'r>(
+	role_id: i32,
+	client_id: i32,
+	_session: AdminSession,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let role = Role::find(role_id, &db).await?;
+	role.remove_client(client_id, &db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_role_page(
+			role_id,
+			None::<String>,
+			Some("client deleted")
 		))),
 		json: Custom(Status::Ok, ()),
 	})
