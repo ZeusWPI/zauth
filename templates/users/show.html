@@ -2,19 +2,21 @@
 
 <!-- Content -->
 {% block content %}
-<div class="profile-title">
-	{% if current_user.id == user.id %}
-		Welcome back,
-	{% endif %}
-	{{ user.username }}
-</div>
+<div class="profile-header">
+	<a class="profile-image-link" href="https://zpi.zeus.gent/"><img class="profile-image" src="http://zpi.zeus.gent/image/{{ user.id }}?placeholder=true&size=128"/></a>
+	<div class="profile-title-box">
+		<div class="profile-title">
+			{% if current_user.id == user.id %} Welcome back, {% endif %} {{ user.username }}
+		</div>
 
-<div class="profile-subtitle">
-	{% if user.admin %}
-		Zeus Admin
-	{% else %}
-		Zeus Member
-	{% endif %}
+		<div class="profile-subtitle">
+			{% if user.admin %}
+				Zeus Admin
+			{% else %}
+				Zeus Member
+			{% endif %}
+		</div>
+	</div>
 </div>
 
 <div class="columns is-multiline mt-4">
@@ -112,7 +114,7 @@
 						<span class="tag is-medium">
 					{% endif %}
 						{% if current_user.admin %}
-							<a href="/roles/{{role.id}}">{{ role.name }}</a> 
+							<a href="/roles/{{role.id}}">{{ role.name }}</a>
 							<a class="is-small delete" href="#delete-role-{{role.id}}"></a>
 							<div class="modal modal-target" id="delete-role-{{role.id}}">
 								<a class="modal-background" href="#"></a>

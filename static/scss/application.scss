@@ -177,9 +177,27 @@ body {
 
 // Profile page
 .profile {
+  &-header {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 1rem;
+  }
+  &-image {
+      height: 5rem;
+      border-color: $primary;
+      border-radius: 11px;
+      &-link {
+          display: contents;
+      }
+  }
   &-title {
     font-size: $size-2;
     font-weight: 900;
+    &-box {
+        display: flex;
+        flex-direction: column;
+    }
   }
 
   &-subtitle {
@@ -427,4 +445,3 @@ body {
     }
   }
 }
-
