@@ -323,6 +323,15 @@ body {
 // Responsive table
 .table--responsive {
   width: 100%;
+  
+  td {
+      vertical-align: middle;
+      img:first-child  {
+          height: 2.5rem;
+          border-radius: 100%;
+          display: block;
+      }
+  }
 
   @include until($tablet) {
     &--labels {
