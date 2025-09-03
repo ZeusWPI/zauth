@@ -267,28 +267,25 @@ pub struct TokenSuccess {
 #[derive(FromForm, Debug)]
 pub struct TokenFormData {
 	grant_type: String,
-	code: String,
-	redirect_uri: String,
+	code: Option<String>,
+	redirect_uri: Option<String>,
 	client_id: Option<String>,
 	client_secret: Option<String>,
+	scope: Option<String>,
 }
 
-#[post("/oauth/token", data = "<form>")]
-pub async fn token(
+pub async fn authorization_code_grant(
 	auth: Option<BasicAuthentication>,
-	form: Form<TokenFormData>,
+	data: TokenFormData,
 	config: &State<Config>,
 	token_state: &State<TokenStore<UserToken>>,
 	jwt_builder: &State<JWTBuilder>,
 	db: DbConn,
 ) -> Result<Json<TokenSuccess>> {
-	let data = form.into_inner();
-
-	if !data.grant_type.eq("authorization_code") {
-		return Err(ZauthError::from(OAuthError::GrantTypeMismatch));
-	}
-
-	let token = data.code.clone();
+	let token = data
+		.code
+		.clone()
+		.ok_or(ZauthError::from(OAuthError::InvalidRequest))?;
 	let data_redirect_uri = data.redirect_uri.clone();
 	let token_store = token_state.inner();
 
@@ -322,7 +319,10 @@ pub async fn token(
 		Err(ZauthError::from(OAuthError::InvalidGrant(
 			"token was not authorized to this client".to_string(),
 		)))
-	} else if token.redirect_uri != data_redirect_uri {
+	} else if token.redirect_uri
+		!= data_redirect_uri
+			.ok_or(ZauthError::from(OAuthError::InvalidRequest))?
+	{
 		Err(ZauthError::from(OAuthError::InvalidGrant(
 			"redirect uri does not match".to_string(),
 		)))
@@ -350,7 +350,7 @@ pub async fn token(
 		};
 
 		let session = Session::create_client_session(
-			&user,
+			Some(&user),
 			&client,
 			token.scope,
 			config,
@@ -363,6 +363,99 @@ pub async fn token(
 			id_token,
 			expires_in: config.client_session_seconds,
 		}))
+	}
+}
+
+pub async fn client_credentials_grant(
+	data: TokenFormData,
+	config: &State<Config>,
+	jwt_builder: &State<JWTBuilder>,
+	db: DbConn,
+) -> Result<Json<TokenSuccess>> {
+	let client_id = data
+		.client_id
+		.ok_or(ZauthError::from(OAuthError::InvalidRequest))?;
+
+	let client_secret = data
+		.client_secret
+		.ok_or(ZauthError::from(OAuthError::InvalidRequest))?;
+
+	let client = match Client::find_and_authenticate(
+		client_id.clone(),
+		&client_secret,
+		&db,
+	)
+	.await
+	{
+		Ok(client) => client,
+		Err(ZauthError::AuthError(_)) => {
+			return Err(ZauthError::AuthError(
+				AuthenticationError::Unauthorized(client_id),
+			));
+		},
+		Err(e) => return Err(e),
+	};
+
+	let scopes = split_scopes(&data.scope);
+	let id_token = if scopes.contains(&"openid".into()) {
+		let roles = if scopes.contains(&"roles".into()) {
+			Some(
+				client
+					.clone()
+					.roles(&db)
+					.await?
+					.iter()
+					.map(|r| r.clone().name)
+					.collect(),
+			)
+		} else {
+			None
+		};
+		jwt_builder
+			.encode_id_token_client(&client, config, roles)
+			.ok()
+	} else {
+		None
+	};
+
+	let session =
+		Session::create_client_session(None, &client, data.scope, config, &db)
+			.await?;
+	Ok(Json(TokenSuccess {
+		access_token: session.key.unwrap().clone(),
+		token_type: String::from("bearer"),
+		id_token,
+		expires_in: config.client_session_seconds,
+	}))
+}
+
+#[post("/oauth/token", data = "<form>")]
+pub async fn token(
+	auth: Option<BasicAuthentication>,
+	form: Form<TokenFormData>,
+	config: &State<Config>,
+	token_state: &State<TokenStore<UserToken>>,
+	jwt_builder: &State<JWTBuilder>,
+	db: DbConn,
+) -> Result<Json<TokenSuccess>> {
+	let data = form.into_inner();
+
+	match data.grant_type.as_str() {
+		"authorization_code" => {
+			authorization_code_grant(
+				auth,
+				data,
+				config,
+				token_state,
+				jwt_builder,
+				db,
+			)
+			.await
+		},
+		"client_credentials" => {
+			client_credentials_grant(data, config, jwt_builder, db).await
+		},
+		_ => Err(ZauthError::from(OAuthError::GrantTypeMismatch)),
 	}
 }
 

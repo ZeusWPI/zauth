@@ -8,9 +8,7 @@ use validator::ValidationErrors;
 use crate::config::{AdminEmail, Config};
 use crate::controllers::sessions_controller::rocket_uri_macro_new_session;
 use crate::ephemeral::from_api::Api;
-use crate::ephemeral::session::{
-	AdminSession, ClientOrUserSession, ClientSession, UserSession,
-};
+use crate::ephemeral::session::{AdminSession, UserClientSession, UserSession};
 use crate::errors::Either::{self, Left, Right};
 use crate::errors::{InternalError, OneOf, Result, ZauthError};
 use crate::mailer::Mailer;
@@ -79,25 +77,23 @@ impl UserInfo {
 	}
 }
 
-#[get("/current_user")]
-pub async fn current_user(
-	session: ClientOrUserSession,
-	db: DbConn,
-) -> Result<Json<UserInfo>> {
-	Ok(Json(
-		UserInfo::new(session.user, session.client, session.scope, &db).await?,
-	))
-}
-
-#[get("/current_user")]
+#[get("/current_user", rank = 1)]
 pub async fn current_user_as_client(
-	session: ClientSession,
+	session: UserClientSession,
 	db: DbConn,
 ) -> Result<Json<UserInfo>> {
 	Ok(Json(
 		UserInfo::new(session.user, Some(session.client), session.scope, &db)
 			.await?,
 	))
+}
+
+#[get("/current_user", rank = 2)]
+pub async fn current_user(
+	session: UserSession,
+	db: DbConn,
+) -> Result<Json<UserInfo>> {
+	Ok(Json(UserInfo::new(session.user, None, None, &db).await?))
 }
 
 #[get("/users/<username>")]
