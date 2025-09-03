@@ -34,6 +34,7 @@ pub struct UserInfo {
 	full_name: String,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	roles: Option<Vec<String>>,
+	picture: String,
 }
 
 impl UserInfo {
@@ -75,6 +76,7 @@ impl UserInfo {
 			admin: user.admin,
 			full_name: user.full_name,
 			roles,
+			picture: format!("https://zpi.zeus.gent/image/{}", user.id),
 		})
 	}
 }
