@@ -111,7 +111,7 @@ impl JWTBuilder {
 			preferred_username: user.username.clone(),
 			email: user.email.clone(),
 			roles,
-			picture: format!("https://zpi.zeus.gent/image/{}", user.id),
+			picture: format!("{}{}", config.picture_url_prefix(), user.id),
 		};
 		self.encode(&id_token)
 	}

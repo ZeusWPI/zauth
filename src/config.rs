@@ -22,6 +22,7 @@ pub struct Config {
 	pub mailing_list_name: String,
 	pub mailing_list_email: String,
 	pub maximum_pending_users: usize,
+	pub picture_url_prefix: String,
 }
 
 impl Config {
@@ -43,6 +44,10 @@ impl Config {
 
 	pub fn base_url(&self) -> Absolute<'_> {
 		Absolute::parse(&self.base_url).expect("valid base_url")
+	}
+
+	pub fn picture_url_prefix(&self) -> String {
+		self.picture_url_prefix.clone()
 	}
 }
 
