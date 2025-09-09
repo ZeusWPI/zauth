@@ -89,7 +89,8 @@ pub async fn current_user(
 	config: &State<Config>,
 ) -> Result<Json<UserInfo>> {
 	Ok(Json(
-		UserInfo::new(session.user, session.client, session.scope, &db, config).await?,
+		UserInfo::new(session.user, session.client, session.scope, &db, config)
+			.await?,
 	))
 }
 
@@ -100,8 +101,14 @@ pub async fn current_user_as_client(
 	config: &State<Config>,
 ) -> Result<Json<UserInfo>> {
 	Ok(Json(
-		UserInfo::new(session.user, Some(session.client), session.scope, &db, config)
-			.await?,
+		UserInfo::new(
+			session.user,
+			Some(session.client),
+			session.scope,
+			&db,
+			config,
+		)
+		.await?,
 	))
 }
 
