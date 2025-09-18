@@ -32,6 +32,7 @@ struct IDToken {
 	email: String,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	roles: Option<Vec<String>>,
+	picture: String,
 }
 
 impl JWTBuilder {
@@ -110,6 +111,7 @@ impl JWTBuilder {
 			preferred_username: user.username.clone(),
 			email: user.email.clone(),
 			roles,
+			picture: format!("{}{}", config.picture_url_prefix(), user.id),
 		};
 		self.encode(&id_token)
 	}

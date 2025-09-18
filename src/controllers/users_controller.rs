@@ -34,6 +34,7 @@ pub struct UserInfo {
 	full_name: String,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	roles: Option<Vec<String>>,
+	picture: String,
 }
 
 impl UserInfo {
@@ -42,6 +43,7 @@ impl UserInfo {
 		client: Option<Client>,
 		scope: Option<String>,
 		db: &DbConn,
+		config: &Config,
 	) -> Result<Self> {
 		let scopes = split_scopes(&scope);
 
@@ -75,6 +77,7 @@ impl UserInfo {
 			admin: user.admin,
 			full_name: user.full_name,
 			roles,
+			picture: format!("{}{}", config.picture_url_prefix(), user.id),
 		})
 	}
 }
@@ -83,9 +86,11 @@ impl UserInfo {
 pub async fn current_user(
 	session: ClientOrUserSession,
 	db: DbConn,
+	config: &State<Config>,
 ) -> Result<Json<UserInfo>> {
 	Ok(Json(
-		UserInfo::new(session.user, session.client, session.scope, &db).await?,
+		UserInfo::new(session.user, session.client, session.scope, &db, config)
+			.await?,
 	))
 }
 
@@ -93,10 +98,17 @@ pub async fn current_user(
 pub async fn current_user_as_client(
 	session: ClientSession,
 	db: DbConn,
+	config: &State<Config>,
 ) -> Result<Json<UserInfo>> {
 	Ok(Json(
-		UserInfo::new(session.user, Some(session.client), session.scope, &db)
-			.await?,
+		UserInfo::new(
+			session.user,
+			Some(session.client),
+			session.scope,
+			&db,
+			config,
+		)
+		.await?,
 	))
 }
 
