@@ -54,6 +54,9 @@ pub fn config() -> Config {
 		mailing_list_email: "leden@zeus.ugent.be".to_string(),
 		maximum_pending_users: 5,
 		picture_url_prefix: "https://zpi.zeus.gent/image/".to_string(),
+		mail_use_tls: false,
+		mail_username: None,
+		mail_password: None,
 	}
 }
 
