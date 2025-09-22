@@ -127,6 +127,13 @@ impl Mailer {
 		if let (Some(username), Some(password)) =
 			(&config.mail_username, &config.mail_password)
 		{
+			if !config.mail_use_tls {
+				return Err(ZauthError::Launch(
+					LaunchError::BadConfigValueType(
+						"Can't use SMTP authentication without TLS".to_owned(),
+					),
+				));
+			}
 			transport_builder = transport_builder.credentials(
 				Credentials::new(username.clone(), password.clone()),
 			);
