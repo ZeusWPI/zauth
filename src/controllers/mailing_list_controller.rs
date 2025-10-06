@@ -64,7 +64,7 @@ pub async fn send_mail_as_client<'r>(
 		.iter()
 		.map(|r| r.name.as_str())
 		.collect::<Vec<&str>>()
-		.contains("mailer")
+		.contains(conf.mailer_role.as_str())
 	{
 		return Err(ZauthError::AuthError(AuthenticationError::Unauthorized(
 			"this client is unauthorized to send mails".into(),

@@ -53,6 +53,7 @@ pub fn config() -> Config {
 		mailing_list_name: "Leden".to_string(),
 		mailing_list_email: "leden@zeus.ugent.be".to_string(),
 		maximum_pending_users: 5,
+		mailer_role: "mailer".to_string(),
 	}
 }
 

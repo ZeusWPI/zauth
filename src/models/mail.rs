@@ -21,7 +21,9 @@ pub struct Mail {
 	pub author: String,
 }
 
-#[derive(Clone, Debug, Deserialize, FromForm, Insertable, Validate)]
+#[derive(
+	Clone, Debug, Deserialize, Serialize, FromForm, Insertable, Validate,
+)]
 #[diesel(table_name = mails)]
 pub struct NewMail {
 	pub author: String,

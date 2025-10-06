@@ -5,7 +5,7 @@ extern crate serde_json;
 extern crate urlencoding;
 extern crate zauth;
 
-use self::serde_json::Value;
+use self::serde_json::{Number, Value};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use common::HttpClient;
@@ -454,6 +454,70 @@ async fn roles_flow() {
 			(roles[0] == "global" && roles[1] == "client")
 				|| (roles[0] == "client" && roles[1] == "global")
 		);
+	})
+	.await;
+}
+
+#[rocket::async_test]
+async fn client_credentials_flow() {
+	common::as_visitor(async move |http_client, db| {
+		let client = create_client(&db, CLIENT_ID).await;
+		let role_global = create_role(&db, "global", None).await;
+		role_global
+			.add_client(client.id, &db)
+			.await
+			.expect("add client to global role");
+
+		let token_url = "/oauth/token";
+		let form_body = format!(
+			"grant_type=client_credentials&&client_id={}&client_secret={}",
+			CLIENT_ID, client.secret
+		);
+
+		let req = http_client
+			.post(token_url)
+			.header(ContentType::Form)
+			.body(form_body);
+
+		let response = req.dispatch().await;
+
+		assert_eq!(response.status(), Status::Ok);
+		assert_eq!(
+			response.content_type().expect("content type"),
+			ContentType::JSON
+		);
+
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
+
+		assert!(data["access_token"].is_string());
+		assert_eq!(data["token_type"], "bearer");
+		let token = data["access_token"].as_str().expect("access token");
+
+		let response = http_client
+			.get("/current_client")
+			.header(Accept::JSON)
+			.header(Header::new("Authorization", format!("Bearer {}", token)))
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::Ok);
+		assert_eq!(
+			response.content_type().expect("content type"),
+			ContentType::JSON
+		);
+
+		let response_body =
+			response.into_string().await.expect("response body");
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
+
+		let id: Number = client.id.into();
+		assert_eq!(data["id"], Value::Number(id));
+		assert_eq!(data["name"], "test");
+		assert_eq!(data["roles"], Value::Array(vec!["global".into()]));
 	})
 	.await;
 }

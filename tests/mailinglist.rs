@@ -1,8 +1,13 @@
 extern crate diesel;
 extern crate rocket;
 
-use common::HttpClient;
+use common::{HttpClient, config};
+use rocket::http::Header;
 use rocket::http::{Accept, ContentType, Status};
+use serde_json::Value;
+use zauth::models::client::{Client, NewClient};
+use zauth::models::role::NewRole;
+use zauth::models::role::Role;
 
 use zauth::DbConn;
 use zauth::models::mail::NewMail;
@@ -274,6 +279,89 @@ async fn admin_can_use_mailinglist() {
 			specific_mail_response.status(),
 			Status::Ok,
 			"admins should be able to see specific mail page"
+		);
+	})
+	.await;
+}
+
+/// Ensure admins can see mails pages and create new mails
+#[rocket::async_test]
+async fn authorized_client_can_use_mailinglist() {
+	common::as_visitor(async move |http_client: HttpClient, db| {
+		let client = Client::create(
+			NewClient {
+				name: "test".into(),
+			},
+			&db,
+		)
+		.await
+		.expect("client created");
+		let token_url = "/oauth/token";
+		let form_body = format!(
+			"grant_type=client_credentials&&client_id={}&client_secret={}",
+			client.name, client.secret
+		);
+
+		let req = http_client
+			.post(token_url)
+			.header(ContentType::Form)
+			.body(form_body);
+
+		let response_body = req.dispatch().await.into_string().await.unwrap();
+		let data: Value =
+			serde_json::from_str(&response_body).expect("response json values");
+		let token = data["access_token"].as_str().expect("access token");
+
+		let test_mail = NewMail {
+			author: client.name,
+			subject: "foo".to_string(),
+			body: "bar".to_string(),
+		};
+
+		let send_mail_response = http_client
+			.post(format!("/mails"))
+			.body(serde_json::to_string(&test_mail).unwrap())
+			.header(Accept::JSON)
+			.header(ContentType::JSON)
+			.header(Header::new("Authorization", format!("Bearer {}", token)))
+			.dispatch()
+			.await;
+
+		assert_eq!(
+			send_mail_response.status(),
+			Status::Unauthorized,
+			"unauthorized client should not be able to send mail"
+		);
+
+		let mailer_role = Role::create(
+			NewRole {
+				name: config().mailer_role.to_string(),
+				description: "test".into(),
+				client_id: None,
+			},
+			&db,
+		)
+		.await
+		.unwrap();
+
+		mailer_role
+			.add_client(client.id, &db)
+			.await
+			.expect("add client to mailer role");
+
+		let send_mail_response = http_client
+			.post(format!("/mails"))
+			.body(serde_json::to_string(&test_mail).unwrap())
+			.header(Accept::JSON)
+			.header(ContentType::JSON)
+			.header(Header::new("Authorization", format!("Bearer {}", token)))
+			.dispatch()
+			.await;
+
+		assert_eq!(
+			send_mail_response.status(),
+			Status::Ok,
+			"authorized client should be able to send mail"
 		);
 	})
 	.await;
