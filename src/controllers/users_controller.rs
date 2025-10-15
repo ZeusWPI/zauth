@@ -35,6 +35,7 @@ pub struct UserInfo {
 	#[serde(skip_serializing_if = "Option::is_none")]
 	roles: Option<Vec<String>>,
 	picture: String,
+	sub: String,
 }
 
 impl UserInfo {
@@ -78,6 +79,7 @@ impl UserInfo {
 			full_name: user.full_name,
 			roles,
 			picture: format!("{}{}", config.picture_url_prefix(), user.id),
+			sub: format!("{}", user.id),
 		})
 	}
 }
