@@ -117,22 +117,29 @@ impl Mailer {
 	}
 
 	fn build_smtp_transport(config: &Config) -> Result<SmtpTransport> {
+		let port = config.mail_port.unwrap_or(if config.mail_use_tls {
+			587
+		} else {
+			25
+		});
+
 		let mut transport_builder = if config.mail_use_tls {
 			SmtpTransport::relay(&config.mail_server)
 				.map_err(LaunchError::from)?
+				.port(port)
 		} else {
-			SmtpTransport::builder_dangerous(&config.mail_server)
+			SmtpTransport::builder_dangerous(&config.mail_server).port(port)
 		};
 
 		if let (Some(username), Some(password)) =
 			(&config.mail_username, &config.mail_password)
 		{
-			if !config.mail_use_tls {
+			if !config.mail_use_tls && config.mail_server != "localhost" {
 				return Err(ZauthError::Launch(
-					LaunchError::BadConfigValueType(
-						"Can't use SMTP authentication without TLS".to_owned(),
-					),
-				));
+						LaunchError::BadConfigValueType(
+							"Can't use SMTP authentication without TLS on non-localhost".to_owned(),
+						),
+					));
 			}
 			transport_builder = transport_builder.credentials(
 				Credentials::new(username.clone(), password.clone()),

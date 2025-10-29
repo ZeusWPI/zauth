@@ -45,7 +45,15 @@ The name is open for discussion.
 7. Run `npm run build` to compile the css assets. \
    When working on the stylesheets, you can run `npm run watch` to automatically recompile them on every change.
 
-8. You can now start the server with `cargo run`. If you want to create an admin user you can start it with the `ZAUTH_ADMIN_PASSWORD` environment variable:
+8. If you want to receive mails in development you can start the mail server with `docker compose up maildev -d` and view your mails in the browser at `http://localhost:8000`. \
+   Don't forget to set the following config variables:
+
+    - mail_server: localhost
+    - mail_port: 1025
+    - mail_password: mailpass
+    - mail_username: mail
+
+9. You can now start the server with `cargo run`. If you want to create an admin user you can start it with the `ZAUTH_ADMIN_PASSWORD` environment variable:
 
     ```shell script
     ZAUTH_ADMIN_PASSWORD=adminadmin cargo run
