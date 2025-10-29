@@ -123,7 +123,7 @@ async fn delete_client_with_session() {
 			.unwrap();
 
 		let session = Session::create_client_session(
-			&user,
+			Some(&user),
 			&client,
 			None,
 			&config(),

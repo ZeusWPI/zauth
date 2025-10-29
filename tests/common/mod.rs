@@ -53,6 +53,7 @@ pub fn config() -> Config {
 		mailing_list_name: "Leden".to_string(),
 		mailing_list_email: "leden@zeus.ugent.be".to_string(),
 		maximum_pending_users: 5,
+		mailer_role: "mailer".to_string(),
 		picture_url_prefix: "https://zpi.zeus.gent/image/".to_string(),
 		mail_use_tls: false,
 		mail_username: None,
@@ -62,7 +63,7 @@ pub fn config() -> Config {
 
 async fn reset_db(db: &DbConn) {
 	db.run(|conn| {
-		sql_query("TRUNCATE TABLE mails, sessions, users, clients, passkeys, users_roles, roles")
+		sql_query("TRUNCATE TABLE mails, sessions, users, clients, passkeys, users_roles, clients_roles, roles")
 			.execute(conn)
 			.expect("drop all tables");
 	})

@@ -1,49 +1,58 @@
 {% extends "base_logged_in.html" %}
 
 {% block content %}
-	<div class="card card-content">
+
+<div class="profile-title">
+	Role {{role.name}}
+</div>
+
+<div class="profile-subtitle mb-4">
+	{% match client %}
+	{% when Some with (client) %}
+		for client <a href="/clients/{{client.id}}/edit">{{client.name}}</a>
+	{% when None %}
+		Global role
+	{% endmatch %}
+</div>
+
+<!-- Error message -->
+{% match error %}
+{% when Some with (error) %}
+  <div class="notification is-danger is-light">
+	{{ error }}
+  </div>
+{% when None %}
+{% endmatch %}
+
+<!-- info message -->
+{% match info %}
+{% when Some with (info) %}
+  <div class="notification is-info is-light">
+	{{ info }}
+  </div>
+{% when None %}
+{% endmatch %}
+
+<div class="cards">
+	<div class="card card-content mb-4">
 		<!-- Title -->
 		<div class="columns is-multiline is-justify-content-space-between">
 			<div class="column is-narrow">
 				<!-- Title -->
 				<div class="title">
-					Users with role {{role.name}}
+					Users
 				</div>
 
-				<!-- Subtitle -->
 				<div class="subtitle">
-				{% match client %}
-				{% when Some with (client) %}
-					for client <a href="/clients/{{client.id}}/edit">{{client.name}}</a>.
-				{% when None %}
-					Global role.
-				{% endmatch %}
+					Users that have the this role assigned to.
 				</div>
 
 				<div class="column is-narrow">
 					<a class="button is-primary" href="#new-user">Add user</a>
 				</div>
-
 			</div>
 		</div>
 
-		<!-- Error message -->
-		{% match error %}
-		{% when Some with (error) %}
-		  <div class="notification is-danger is-light">
-			{{ error }}
-		  </div>
-		{% when None %}
-		{% endmatch %}
-
-		<!-- info message -->
-		{% match info %}
-		{% when Some with (info) %}
-		  <div class="notification is-info is-light">
-			{{ info }}
-		  </div>
-		{% when None %}
-		{% endmatch %}
 
 		<!-- Table -->
 		<table class="table table--responsive table--responsive--labels is-fullwidth">
@@ -83,6 +92,64 @@
 		</table>
 	</div>
 
+
+	<div class="card card-content mb-4">
+		<div class="columns is-multiline is-justify-content-space-between">
+			<div class="column is-narrow">
+				<!-- Title -->
+				<div class="title">
+					Clients
+				</div>
+
+				<div class="subtitle">
+					Clients that have the this role assigned to.
+				</div>
+
+
+				<div class="column is-narrow">
+					<a class="button is-primary" href="#new-client">Add Client</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Table -->
+		<table class="table table--responsive table--responsive--labels is-fullwidth">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th></th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for client in clients %}
+					<tr>
+
+						<!-- Name -->
+						<td data-label="Name">
+							<a href="/clients/{{client.id}}/edit">{{ client.name }}</a>
+						</td>
+
+						<!-- Remove -->
+						<td>
+							<form action="/roles/{{role.id}}/clients/{{client.id}}" method="POST">
+								<input type="hidden" name="_method" value="delete"/>
+								<button class="button is-danger is-small" type="submit">x</button>
+							</form>
+						</td>
+					</tr>
+				{% endfor %}
+
+				<!-- Placeholder -->
+				{% if clients.len() == 0 %}
+					<tr>
+						<td colspan="4">No clients mapped yet</td>
+					</tr>
+				{% endif %}
+			</tbody>
+		</table>
+	</div>
+
 	<!-- New user role modal -->
 	<div class="modal modal-target" id="new-user">
 		<a class="modal-background" href="#"></a>
@@ -113,4 +180,38 @@
 			</form>
 		</div>
 	</div>
+
+	<!-- New client role modal -->
+	<div class="modal modal-target" id="new-client">
+		<a class="modal-background" href="#"></a>
+
+		<div class="modal-card">
+			<form action="/roles/{{role.id}}/clients" method="post">
+				<!-- Header -->
+				<header class="modal-card-head">
+					<!-- Title -->
+					<div class="modal-card-title">Add client</div>
+					<!-- Close -->
+					<a class="delete" href="#"></a>
+				</header>
+
+				<!-- Content -->
+				<section class="modal-card-body">
+					<div class="field">
+						<label class="label">Client</label>
+						<input class="input" name="client_name" type="text" placeholder="client name" minlength="3" required />
+					</div>
+				</section>
+
+				<!-- Footer -->
+				<footer class="modal-card-foot is-justify-content-flex-end">
+					<button class="button is-primary" type="submit">Add</button>
+					<a class="button is-danger is-light" href="#">Close</a>
+				</footer>
+			</form>
+		</div>
+	</div>
+
+
+</div>
 {% endblock content %}

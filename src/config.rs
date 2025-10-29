@@ -25,6 +25,7 @@ pub struct Config {
 	pub mailing_list_name: String,
 	pub mailing_list_email: String,
 	pub maximum_pending_users: usize,
+	pub mailer_role: String,
 	pub picture_url_prefix: String,
 }
 

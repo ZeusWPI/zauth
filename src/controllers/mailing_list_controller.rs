@@ -1,4 +1,5 @@
 use lettre::message::Mailbox;
+use rocket::form::validate::Contains;
 use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;
 
@@ -6,7 +7,8 @@ use crate::DbConn;
 use crate::config::Config;
 use crate::controllers::users_controller::rocket_uri_macro_show_confirm_unsubscribe;
 use crate::ephemeral::from_api::Api;
-use crate::ephemeral::session::{AdminSession, UserSession};
+use crate::ephemeral::session::{AdminSession, ClientSession, UserSession};
+use crate::errors::{AuthenticationError, ZauthError};
 use crate::errors::{InternalError, Result};
 use crate::mailer::Mailer;
 use crate::models::mail::*;
@@ -35,9 +37,44 @@ pub async fn list_mails<'r>(
 }
 
 /// Send a new mail and archive it
-#[post("/mails", data = "<new_mail>")]
-pub async fn send_mail<'r>(
+#[post("/mails", data = "<new_mail>", rank = 2)]
+pub async fn send_mail_as_user<'r>(
 	_session: AdminSession,
+	new_mail: Api<NewMail>,
+	db: DbConn,
+	conf: &'r State<Config>,
+	mailer: &'r State<Mailer>,
+) -> Result<impl Responder<'r, 'static>> {
+	send_mail(new_mail, db, conf, mailer).await
+}
+
+/// Send a new mail as a client and archive it
+#[post("/mails", data = "<new_mail>", rank = 1)]
+pub async fn send_mail_as_client<'r>(
+	client_session: ClientSession,
+	new_mail: Api<NewMail>,
+	db: DbConn,
+	conf: &'r State<Config>,
+	mailer: &'r State<Mailer>,
+) -> Result<impl Responder<'r, 'static>> {
+	if !client_session
+		.client
+		.roles(&db)
+		.await?
+		.iter()
+		.map(|r| r.name.as_str())
+		.collect::<Vec<&str>>()
+		.contains(conf.mailer_role.as_str())
+	{
+		return Err(ZauthError::AuthError(AuthenticationError::Unauthorized(
+			"this client is unauthorized to send mails".into(),
+		)));
+	}
+
+	send_mail(new_mail, db, conf, mailer).await
+}
+
+async fn send_mail<'r>(
 	new_mail: Api<NewMail>,
 	db: DbConn,
 	conf: &'r State<Config>,

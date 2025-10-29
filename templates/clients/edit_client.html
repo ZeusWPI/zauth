@@ -74,7 +74,7 @@
 			</div>
 		</div>
 		<div class="column is-4">
-			<div class="card card-content">
+			<div class="card card-content mb-4">
 				<div class="title">
 					Secret
 				</div>
@@ -95,6 +95,54 @@
 					</div>
 				</div>
 			</div>
+
+			<div class="card card-content mb-4">
+				<label class="label"> Roles </label>
+				<div class="field tags">
+					{% for role in client_roles %}
+						{% if let Some(_) = role.client_id %}
+							<span class="tag is-medium" style="border: 2px solid black">
+						{% else %}
+							<span class="tag is-medium">
+						{% endif %}
+							<a href="/roles/{{role.id}}">{{ role.name }}</a> 
+							<a class="is-small delete" href="#delete-role-{{role.id}}"></a>
+							<div class="modal modal-target" id="delete-role-{{role.id}}">
+								<a class="modal-background" href="#"></a>
+								<div class="modal-card">
+									<form action="/clients/{{client.id}}/roles/{{role.id}}" method="POST">
+										<header class="modal-card-head">
+											<div class="modal-card-title">Delete</div>
+											<a class="delete" href="#"></a>
+										</header>
+
+										<section class="modal-card-body">
+											<p> Are you sure you want to remove the <b>{{ role.name }}</b> role from this client? </p>
+										</section>
+
+										<footer class="modal-card-body">
+											<input type="hidden" name="_method" value="delete"/>
+											<button class="button is-danger" type="submit">Yes</button>
+											<a class="button is-danger is-light" href="#">Close</a>
+										</footer>
+									</form>
+								</div>
+							</div>
+						</span>
+					{% endfor %}
+			</div>
+			<form action="/clients/{{client.id}}/roles" method="post">
+				<div class="select">
+					<select name="role_id" required>
+						<option selected></option>
+						{% for role in roles %}
+							<option value="{{ role.id }}">{{ role.name}} </option>
+						{% endfor %}
+					</select>
+				</div>
+
+				<button class="button is-primary" type="submit">Add</button>
+			</form>
 		</div>
 	</div>
 {% endblock content %}
