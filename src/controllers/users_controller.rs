@@ -256,7 +256,7 @@ pub async fn register<'r>(
 	mailer: &'r State<Mailer>,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
 	let new_user = user.into_inner();
-	let pending = User::create_pending(new_user.clone(), &conf, &db).await;
+	let pending = User::create_pending(new_user.clone(), conf, &db).await;
 	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
 	match pending {
 		Ok(user) => {

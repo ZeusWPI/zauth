@@ -107,7 +107,7 @@ async fn delete_client_with_session() {
 	common::as_admin(async move |http_client: HttpClient, db, user: User| {
 		let client_name = "test";
 
-		let client_form = format!("name={}", url(&client_name),);
+		let client_form = format!("name={}", url(client_name),);
 
 		let create = http_client
 			.post("/clients")

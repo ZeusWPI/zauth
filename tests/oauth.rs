@@ -60,7 +60,7 @@ async fn create_user(db: &DbConn) -> User {
 }
 
 async fn create_client(db: &DbConn, name: &str) -> Client {
-	let mut client = Client::create(NewClient { name: name.into() }, &db)
+	let mut client = Client::create(NewClient { name: name.into() }, db)
 		.await
 		.expect("client created");
 
@@ -161,7 +161,7 @@ async fn get_token(
 
 	let redirect_uri_regex = Regex::new("^([^?]+)?(.*)$").unwrap();
 	let (redirect_uri_base, redirect_uri_params) = redirect_uri_regex
-		.captures(&redirect_location)
+		.captures(redirect_location)
 		.map(|c| (c[1].to_string(), c[2].to_string()))
 		.unwrap();
 
@@ -192,7 +192,7 @@ async fn get_token(
 	);
 
 	let credentials =
-		BASE64_STANDARD.encode(&format!("{}:{}", CLIENT_ID, client.secret));
+		BASE64_STANDARD.encode(format!("{}:{}", CLIENT_ID, client.secret));
 
 	let req = http_client
 		.post(token_url)
@@ -351,7 +351,7 @@ async fn openid_flow() {
 
 		let id_token = jsonwebtoken::decode::<Value>(
 			data["id_token"].as_str().unwrap(),
-			&DecodingKey::from_jwk(&jwk_set.keys.get(0).unwrap()).unwrap(),
+			&DecodingKey::from_jwk(jwk_set.keys.first().unwrap()).unwrap(),
 			&validation,
 		)
 		.expect("id token")
@@ -416,7 +416,7 @@ async fn roles_flow() {
 
 		let id_token = jsonwebtoken::decode::<Value>(
 			data["id_token"].as_str().unwrap(),
-			&DecodingKey::from_jwk(&jwk_set.keys.get(0).unwrap()).unwrap(),
+			&DecodingKey::from_jwk(jwk_set.keys.first().unwrap()).unwrap(),
 			&validation,
 		)
 		.expect("id token")

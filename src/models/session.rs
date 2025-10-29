@@ -155,14 +155,14 @@ impl Session {
 			self.user_id.ok_or(ZauthError::Unprocessable(
 				"session has no user".into(),
 			))?,
-			&db,
+			db,
 		)
 		.await
 	}
 
 	pub async fn client(&self, db: &DbConn) -> Result<Option<Client>> {
 		if let Some(client_id) = self.client_id {
-			Ok(Some(Client::find(client_id, &db).await?))
+			Ok(Some(Client::find(client_id, db).await?))
 		} else {
 			Ok(None)
 		}

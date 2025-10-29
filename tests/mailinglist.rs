@@ -15,7 +15,7 @@ use zauth::models::user::*;
 
 mod common;
 
-const TEST_USERS: [(&'static str, UserState, bool); 10] = [
+const TEST_USERS: [(&str, UserState, bool); 10] = [
 	("valid0", UserState::Active, true),
 	("valid1", UserState::Active, true),
 	("pending_approval0", UserState::PendingApproval, true),
@@ -35,15 +35,15 @@ async fn setup_test_users(db: &DbConn) {
 				username: test_user.0.to_string(),
 				password: format!(
 					"{}verylongandsecurepassword",
-					test_user.0.to_string()
+					test_user.0
 				),
 				full_name: test_user.0.to_string(),
-				email: format!("{}@example.com", test_user.0.to_string()),
+				email: format!("{}@example.com", test_user.0),
 				ssh_key: None,
 				not_a_robot: true,
 			},
 			common::BCRYPT_COST,
-			&db,
+			db,
 		)
 		.await
 		.unwrap();
@@ -51,7 +51,7 @@ async fn setup_test_users(db: &DbConn) {
 		created_user.state = test_user.1;
 		created_user.subscribed_to_mailing_list = test_user.2;
 
-		created_user.update(&db).await.unwrap();
+		created_user.update(db).await.unwrap();
 	}
 }
 
@@ -322,7 +322,7 @@ async fn authorized_client_can_use_mailinglist() {
 		};
 
 		let send_mail_response = http_client
-			.post(format!("/mails"))
+			.post("/mails".to_string())
 			.body(serde_json::to_string(&test_mail).unwrap())
 			.header(Accept::JSON)
 			.header(ContentType::JSON)
@@ -353,7 +353,7 @@ async fn authorized_client_can_use_mailinglist() {
 			.expect("add client to mailer role");
 
 		let send_mail_response = http_client
-			.post(format!("/mails"))
+			.post("/mails".to_string())
 			.body(serde_json::to_string(&test_mail).unwrap())
 			.header(Accept::JSON)
 			.header(ContentType::JSON)

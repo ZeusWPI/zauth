@@ -52,12 +52,12 @@ impl<T> TokenStore<T> {
 			token.token_str = token_str.clone();
 		}
 		tokens.insert(token_str.clone(), token);
-		return token_str;
+		token_str
 	}
 
 	pub async fn fetch_token(&self, token_str: String) -> Option<Token<T>> {
-		let mut tokens = &mut self.tokens.lock().await;
-		Self::remove_expired_tokens(&mut tokens);
+		let tokens = &mut self.tokens.lock().await;
+		Self::remove_expired_tokens(tokens);
 		tokens.remove(&token_str)
 	}
 }

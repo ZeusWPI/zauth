@@ -36,8 +36,7 @@ impl Mailer {
 			.subject(subject)
 			.from(Mailbox::new(None, self.from.clone()))
 			.body(text)
-			.map_err(InternalError::from)?
-			.into())
+			.map_err(InternalError::from)?)
 	}
 
 	/// Send an email, but fail when the mail queue is full.
@@ -158,88 +157,80 @@ impl Mailer {
 		Ok(transport_builder.build())
 	}
 
-	fn stub_sender(
+	async fn stub_sender(
 		wait: Duration,
 		mut receiver: Receiver<Message>,
-	) -> impl std::future::Future<Output = impl Send + 'static> {
-		async move {
-			while let Some(mail) = receiver.recv().await {
-				{
-					let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
-					println!(
-						"\n==> [STUB MAILER] Sending email:\n\n{}\n",
-						String::from_utf8_lossy(&mail.formatted())
-					);
-					mailbox.lock().push(mail);
-					condvar.notify_all();
-				}
+	) -> impl Send + 'static {
+ 			while let Some(mail) = receiver.recv().await {
+ 				{
+ 					let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
+ 					println!(
+ 						"\n==> [STUB MAILER] Sending email:\n\n{}\n",
+ 						String::from_utf8_lossy(&mail.formatted())
+ 					);
+ 					mailbox.lock().push(mail);
+ 					condvar.notify_all();
+ 				}
 
-				// sleep for a while to prevent sending mails too fast
-				sleep(wait).await;
-			}
-		}
-	}
+ 				// sleep for a while to prevent sending mails too fast
+ 				sleep(wait).await;
+ 			}
+ 		}
 
-	fn unbounded_stub_sender(
+	async fn unbounded_stub_sender(
 		wait: Duration,
 		mut receiver: UnboundedReceiver<Message>,
-	) -> impl std::future::Future<Output = impl Send + 'static> {
-		async move {
-			while let Some(mail) = receiver.recv().await {
-				{
-					let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
-					eprintln!(
-						"\n==> [UNBOUNDED STUB MAILER] Sending mailinglist \
-						 email:\n\n{}\n",
-						String::from_utf8_lossy(&mail.formatted())
-					);
-					mailbox.lock().push(mail);
-					condvar.notify_all();
-				}
+	) -> impl Send + 'static {
+ 			while let Some(mail) = receiver.recv().await {
+ 				{
+ 					let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
+ 					eprintln!(
+ 						"\n==> [UNBOUNDED STUB MAILER] Sending mailinglist \
+ 						 email:\n\n{}\n",
+ 						String::from_utf8_lossy(&mail.formatted())
+ 					);
+ 					mailbox.lock().push(mail);
+ 					condvar.notify_all();
+ 				}
 
-				// sleep for a while to prevent sending mails too fast
-				sleep(wait).await;
-			}
-		}
-	}
+ 				// sleep for a while to prevent sending mails too fast
+ 				sleep(wait).await;
+ 			}
+ 		}
 
-	fn smtp_sender(
+	async fn smtp_sender(
 		wait: Duration,
 		mut receiver: Receiver<Message>,
 		transport: SmtpTransport,
-	) -> impl std::future::Future<Output = impl Send + 'static + use<>> + use<>
+	) -> impl Send + 'static + use<>
 	{
-		async move {
-			while let Some(mail) = receiver.recv().await {
-				let result = transport.send(&mail);
-				if result.is_ok() {
-					println!("Sent email: {:?}", result);
-				} else {
-					println!("Error sending email: {:?}", result);
-				}
-				// sleep for a while to prevent sending mails too fast
-				sleep(wait).await;
-			}
-		}
-	}
+ 			while let Some(mail) = receiver.recv().await {
+ 				let result = transport.send(&mail);
+ 				if result.is_ok() {
+ 					println!("Sent email: {:?}", result);
+ 				} else {
+ 					println!("Error sending email: {:?}", result);
+ 				}
+ 				// sleep for a while to prevent sending mails too fast
+ 				sleep(wait).await;
+ 			}
+ 		}
 
-	fn unbounded_smtp_sender(
+	async fn unbounded_smtp_sender(
 		wait: Duration,
 		mut receiver: UnboundedReceiver<Message>,
 		transport: SmtpTransport,
-	) -> impl std::future::Future<Output = impl Send + 'static + use<>> + use<>
+	) -> impl Send + 'static + use<>
 	{
-		async move {
-			while let Some(mail) = receiver.recv().await {
-				let result = transport.send(&mail);
-				if result.is_ok() {
-					println!("Sent mailinglist email: {:?}", result);
-				} else {
-					println!("Error sending mailinglist email: {:?}", result);
-				}
-				// sleep for a while to prevent sending mails too fast
-				sleep(wait).await;
-			}
-		}
-	}
+ 			while let Some(mail) = receiver.recv().await {
+ 				let result = transport.send(&mail);
+ 				if result.is_ok() {
+ 					println!("Sent mailinglist email: {:?}", result);
+ 				} else {
+ 					println!("Error sending mailinglist email: {:?}", result);
+ 				}
+ 				// sleep for a while to prevent sending mails too fast
+ 				sleep(wait).await;
+ 			}
+ 		}
 }
