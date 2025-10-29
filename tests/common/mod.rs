@@ -59,6 +59,7 @@ pub fn config() -> Config {
 		mail_username: None,
 		mail_password: None,
 		mail_port: None,
+		user_mail_domain: "zeus.ugent.be".to_string(),
 	}
 }
 
