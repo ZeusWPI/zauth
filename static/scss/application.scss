@@ -177,9 +177,27 @@ body {
 
 // Profile page
 .profile {
+  &-header {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 1rem;
+  }
+  &-image {
+      height: 5rem;
+      border-color: $primary;
+      border-radius: 11px;
+      &-link {
+          display: contents;
+      }
+  }
   &-title {
     font-size: $size-2;
     font-weight: 900;
+    &-box {
+        display: flex;
+        flex-direction: column;
+    }
   }
 
   &-subtitle {
@@ -305,6 +323,15 @@ body {
 // Responsive table
 .table--responsive {
   width: 100%;
+  
+  td {
+      vertical-align: middle;
+      img:first-child  {
+          height: 2.5rem;
+          border-radius: 100%;
+          display: block;
+      }
+  }
 
   @include until($tablet) {
     &--labels {
@@ -427,4 +454,3 @@ body {
     }
   }
 }
-

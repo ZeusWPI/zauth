@@ -19,10 +19,14 @@ pub struct Config {
 	pub mail_queue_wait_seconds: u64,
 	pub mail_from: String,
 	pub mail_server: String,
+	pub mail_use_tls: bool,
+	pub mail_username: Option<String>,
+	pub mail_password: Option<String>,
 	pub mailing_list_name: String,
 	pub mailing_list_email: String,
 	pub maximum_pending_users: usize,
 	pub mailer_role: String,
+	pub picture_url_prefix: String,
 }
 
 impl Config {
@@ -44,6 +48,10 @@ impl Config {
 
 	pub fn base_url(&self) -> Absolute<'_> {
 		Absolute::parse(&self.base_url).expect("valid base_url")
+	}
+
+	pub fn picture_url_prefix(&self) -> String {
+		self.picture_url_prefix.clone()
 	}
 }
 

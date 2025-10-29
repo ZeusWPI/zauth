@@ -5,3 +5,4 @@ db/*
 static/dist/
 node_modules/
 keys/*.pem
+.sass-cache/

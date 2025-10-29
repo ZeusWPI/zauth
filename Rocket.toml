@@ -11,10 +11,12 @@ mail_queue_size = 32
 mail_queue_wait_seconds = 1
 mail_from = "zauth@localhost"
 mail_server = "stub"
+mail_use_tls = false
 mailing_list_name = "Leden"
 mailing_list_email = "leden@zeus.ugent.be"
 maximum_pending_users = 25
 mailer_role = "mailer"
+picture_url_prefix = "https://zpi.zeus.gent/image/"
 
 [debug]
 secret_key = "1vwCFFPSdQya895gNiO556SzmfShG6MokstgttLvwjw="

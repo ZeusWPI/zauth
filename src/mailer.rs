@@ -2,6 +2,7 @@ use crate::config::Config;
 use crate::errors::{InternalError, LaunchError, Result, ZauthError};
 
 use lettre::message::{Mailbox, header::ContentType};
+use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Address, Message, SmtpTransport, Transport};
 use parking_lot::{Condvar, Mutex};
 use rocket::tokio::sync::mpsc::Receiver;
@@ -96,17 +97,12 @@ impl Mailer {
 			rocket::tokio::spawn(Self::stub_sender(wait, recv));
 			rocket::tokio::spawn(Self::unbounded_stub_sender(wait, list_recv));
 		} else {
-			rocket::tokio::spawn(Self::smtp_sender(
-				wait,
-				recv,
-				&config.mail_server,
-			)?);
-
+			let transport = Self::build_smtp_transport(config)?;
+			rocket::tokio::spawn(Self::smtp_sender(wait, recv, transport));
+			let transport = Self::build_smtp_transport(config)?;
 			rocket::tokio::spawn(Self::unbounded_smtp_sender(
-				wait,
-				list_recv,
-				&config.mail_server,
-			)?);
+				wait, list_recv, transport,
+			));
 		}
 
 		Ok(Mailer {
@@ -118,6 +114,32 @@ impl Mailer {
 			queue: sender,
 			mailinglist_queue: list_sender,
 		})
+	}
+
+	fn build_smtp_transport(config: &Config) -> Result<SmtpTransport> {
+		let mut transport_builder = if config.mail_use_tls {
+			SmtpTransport::relay(&config.mail_server)
+				.map_err(LaunchError::from)?
+		} else {
+			SmtpTransport::builder_dangerous(&config.mail_server)
+		};
+
+		if let (Some(username), Some(password)) =
+			(&config.mail_username, &config.mail_password)
+		{
+			if !config.mail_use_tls {
+				return Err(ZauthError::Launch(
+					LaunchError::BadConfigValueType(
+						"Can't use SMTP authentication without TLS".to_owned(),
+					),
+				));
+			}
+			transport_builder = transport_builder.credentials(
+				Credentials::new(username.clone(), password.clone()),
+			);
+		}
+
+		Ok(transport_builder.build())
 	}
 
 	fn stub_sender(
@@ -168,12 +190,10 @@ impl Mailer {
 	fn smtp_sender(
 		wait: Duration,
 		mut receiver: Receiver<Message>,
-		server: &str,
-	) -> Result<
-		impl std::future::Future<Output = impl Send + 'static + use<>> + use<>,
-	> {
-		let transport = SmtpTransport::builder_dangerous(server).build();
-		Ok(async move {
+		transport: SmtpTransport,
+	) -> impl std::future::Future<Output = impl Send + 'static + use<>> + use<>
+	{
+		async move {
 			while let Some(mail) = receiver.recv().await {
 				let result = transport.send(&mail);
 				if result.is_ok() {
@@ -184,18 +204,16 @@ impl Mailer {
 				// sleep for a while to prevent sending mails too fast
 				sleep(wait).await;
 			}
-		})
+		}
 	}
 
 	fn unbounded_smtp_sender(
 		wait: Duration,
 		mut receiver: UnboundedReceiver<Message>,
-		server: &str,
-	) -> Result<
-		impl std::future::Future<Output = impl Send + 'static + use<>> + use<>,
-	> {
-		let transport = SmtpTransport::builder_dangerous(server).build();
-		Ok(async move {
+		transport: SmtpTransport,
+	) -> impl std::future::Future<Output = impl Send + 'static + use<>> + use<>
+	{
+		async move {
 			while let Some(mail) = receiver.recv().await {
 				let result = transport.send(&mail);
 				if result.is_ok() {
@@ -206,6 +224,6 @@ impl Mailer {
 				// sleep for a while to prevent sending mails too fast
 				sleep(wait).await;
 			}
-		})
+		}
 	}
 }

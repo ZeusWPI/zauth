@@ -98,11 +98,14 @@ static NEW_USER_REGEX: LazyLock<Regex> =
 
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
-	#[validate(regex(path = *NEW_USER_REGEX))]
+	#[validate(regex(
+		path = *NEW_USER_REGEX,
+		message = r"Username didn't match regex /^[a-z][-a-z0-9_]{2,31}$/ (don't use uppercase letters).",
+	))]
 	pub username: String,
 	#[validate(length(
 		min = 8,
-		message = "Password too short, must be at least 8 characters"
+		message = "Password too short, must be at least 8 characters."
 	))]
 	pub password: String,
 	#[validate(length(min = 3, max = 254))]
@@ -165,7 +168,7 @@ pub struct ChangeStatus {
 pub struct ChangePassword {
 	#[validate(length(
 		min = 8,
-		message = "Password too short, must be at least 8 characters"
+		message = "Password too short, must be at least 8 characters."
 	))]
 	pub password: String,
 }
@@ -354,7 +357,7 @@ impl User {
 				ValidationError::new(
 					"Because of an unusual amount of registrations, we have \
 					 temporarily disabled registrations. Please come back \
-					 later or contact an admin to request an account",
+					 later or contact an admin to request an account.",
 				),
 			);
 			return Err(ZauthError::from(err));
@@ -651,7 +654,10 @@ fn db_error_to_client_error(error: DieselError) -> ZauthError {
 			== Some(USERNAME_UNIQUENESS_CONSTRAINT_NAME) =>
 		{
 			let mut err = ValidationErrors::new();
-			err.add("username", ValidationError::new("Username already taken"));
+			err.add(
+				"username",
+				ValidationError::new("Username already taken."),
+			);
 			ZauthError::from(err)
 		},
 		DieselError::DatabaseError(
@@ -661,7 +667,7 @@ fn db_error_to_client_error(error: DieselError) -> ZauthError {
 			== Some(EMAIL_UNIQUENESS_CONSTRAINT_NAME) =>
 		{
 			let mut err = ValidationErrors::new();
-			err.add("email", ValidationError::new("Email already taken"));
+			err.add("email", ValidationError::new("Email already taken."));
 			ZauthError::from(err)
 		},
 		other => ZauthError::from(other),

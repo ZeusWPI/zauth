@@ -2,205 +2,203 @@
 
 <!-- Macro for showing the user's state -->
 {%- macro colored_circle(color, tooltip) -%}
-	<svg height="20" width="20">
-		<title>{{ tooltip }}</title>
-		<circle cx="10" cy="10" r="8" stroke="{{ color }}" stroke-width="3" fill="{{ color }}" />
-	</svg>
+<svg height="20" width="20">
+	<title>{{ tooltip }}</title>
+	<circle cx="10" cy="10" r="8" stroke="{{ color }}" stroke-width="3" fill="{{ color }}" />
+</svg>
 {%- endmacro -%}
 
 <!-- Content -->
-{% block content %}
-	{% if registrations_full %}
-	<div class="notification is-danger">
-		<strong>Oops!</strong> We've reached the maximum amount of limited users and
-		the registration form is disabled. Please accept or reject some pending
-		users to enable registrations again.
-	</div>
-	{% endif %}
+{% block content %} {% if registrations_full %}
+<div class="notification is-danger">
+	<strong>Oops!</strong> We've reached the maximum amount of limited users and the registration
+	form is disabled. Please accept or reject some pending users to enable registrations again.
+</div>
+{% endif %}
 
-	<!-- Users pending approval -->
-	<div class="card card-content">
+<!-- Users pending approval -->
+<div class="card card-content">
+	<!-- Title -->
+	<div class="title">Users pending for Approval ({{ users_pending_for_approval.len() }})</div>
 
-		<!-- Title -->
-		<div class="title">	Users pending for Approval ({{ users_pending_for_approval.len() }})</div>
+	<!-- Table -->
+	<table class="table table--responsive table--responsive--labels is-fullwidth">
+		<thead>
+			<tr>
+				<th>Username</th>
+				<th>Full Name</th>
+				<th>Email</th>
+				<th>Created at</th>
+				<th>Approve</th>
+				<th>Reject</th>
+			</tr>
+		</thead>
 
-		<!-- Table -->
-		<table class="table table--responsive table--responsive--labels is-fullwidth">
-			<thead>
-				<tr>
-					<th>Username</th>
-					<th>Full Name</th>
-					<th>Email</th>
-					<th>Created at</th>
-					<th>Approve</th>
-					<th>Reject</th>
-				</tr>
-			</thead>
+		<tbody>
+			{% for user in users_pending_for_approval %}
+			<tr>
+				<!-- Username -->
+				<td data-label="Username">
+					<a href="/users/{{ user.username }}">{{ user.username }}</a>
+				</td>
 
-			<tbody>
-				{% for user in users_pending_for_approval %}
-					<tr>
-						<!-- Username -->
-						<td data-label="Username">
-							<a href="/users/{{ user.username }}">{{ user.username }}</a>
-						</td>
+				<!-- Fullname -->
+				<td data-label="Fullname">{{ user.full_name }}</td>
 
-						<!-- Fullname -->
-						<td data-label="Fullname">{{ user.full_name }}</td>
+				<!-- Email -->
+				<td data-label="Email">{{ user.email }}</td>
 
-						<!-- Email -->
-						<td data-label="Email">{{ user.email }}</td>
+				<!-- Created at -->
+				<td data-label="Created at" title="{{ user.created_at }}">
+					{{ user.created_at.format("%d/%m/%y").to_string() }}
+				</td>
 
-						<!-- Created at -->
-						<td data-label="Created at" title="{{ user.created_at }}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
+				<!-- Approve -->
+				<td>
+					<form action="/users/{{ user.username }}/approve" method="post">
+						<button class="button is-success is-small" type="submit">Approve</button>
+					</form>
+				</td>
 
-						<!-- Approve -->
-						<td>
-							<form action="/users/{{ user.username }}/approve" method="post">
-								<button class="button is-success is-small" type="submit">Approve</button>
-							</form>
-						</td>
+				<!-- Reject -->
+				<td>
+					<form action="/users/{{ user.username }}/reject" method="post">
+						<button class="button is-danger is-small" type="submit">Reject</button>
+					</form>
+				</td>
+			</tr>
+			{% endfor %}
 
-						<!-- Reject -->
-						<td>
-							<form action="/users/{{ user.username }}/reject" method="post">
-								<button class="button is-danger is-small" type="submit">Reject</button>
-							</form>
-						</td>
-					</tr>
-				{% endfor %}
+			<!-- Placeholder -->
+			{% if users_pending_for_approval.len() == 0 %}
+			<tr>
+				<td colspan="8">No users needing approval</td>
+			</tr>
+			{% endif %}
+		</tbody>
+	</table>
+</div>
 
-				<!-- Placeholder -->
-				{% if users_pending_for_approval.len() == 0 %}
-					<tr>
-						<td colspan="8">No users needing approval</td>
-					</tr>
-				{% endif %}
-			</tbody>
-		</table>
-	</div>
-
-	<!-- Users -->
-	<div class="card card-content mt-5">
-
-		<!-- Title -->
-		<div class="columns is-multiline is-justify-content-space-between">
-			<div class="column is-narrow">
-				<div class="title">Users ({{ users.len() }})</div>
-			</div>
-
-			<div class="column is-narrow">
-				<a class="button is-primary" href="/users/new">New user</a>
-			</div>
+<!-- Users -->
+<div class="card card-content mt-5">
+	<!-- Title -->
+	<div class="columns is-multiline is-justify-content-space-between">
+		<div class="column is-narrow">
+			<div class="title">Users ({{ users.len() }})</div>
 		</div>
 
-		<!-- Table -->
-		<table class="table table--responsive table--responsive--labels is-fullwidth">
-			<thead>
-				<tr>
-					<th>Username</th>
-					<th>Admin</th>
-					<th>Full Name</th>
-					<th>Email</th>
-					<th>SSH key</th>
-					<th>State</th>
-					<th>Last login</th>
-					<th>Created at</th>
-				</tr>
-			</thead>
-
-			<tbody>
-				{% for user in users %}
-					<tr>
-
-						<!-- Username -->
-						<td data-label="Username">
-							<a href="/users/{{ user.username }}">{{ user.username }}</a>
-						</td>
-
-						<!-- Is Admin -->
-						{% if user.admin %}
-							<td class="has-text-success" data-label="Admin">
-								<b>Yes</b>
-							</td>
-						{% else %}
-							<td class="has-text-error" data-label="Admin">
-								No
-							</td>
-						{% endif%}
-
-						<!-- Fullname -->
-						<td data-label="Fullname">{{ user.full_name }}</td>
-
-						<!-- Email -->
-						<td data-label="Email">{{ user.email }}</td>
-
-						<!-- SSH Keys -->
-						<td data-label="SSH Keys">
-							{% match user.ssh_key %}
-								{% when Some with (val) %}
-									<a class="button is-small is-light" href="#ssh-key-{{ user.username }}">View</a>
-								{% when None %}
-
-								N/A
-							{% endmatch %}
-        		</td>
-
-						<!-- State -->
-						<td data-label="State">
-							{% match user.state %}
-								{% when UserState::Active %}
-									{%- call colored_circle("#80A66C", user.state) -%}
-								{% when UserState::PendingApproval %}
-									{%- call colored_circle("#F2A950", user.state) -%}
-								{% when UserState::PendingMailConfirmation %}
-									{%- call colored_circle("#FFFF00", user.state) -%}
-								{% when UserState::Disabled %}
-									{%- call colored_circle("#DD6761", user.state) -%}
-							{% endmatch %}
-						</td>
-
-						<!-- Last Login -->
-						<td data-label="Last Login" title="{{ user.last_login }}">{{ user.last_login.format("%d/%m/%y").to_string() }}</td>
-
-						<!-- Created at -->
-        		<td data-label="Created at" title="{{ user.created_at }}">{{ user.created_at.format("%d/%m/%y").to_string() }}</td>
-					</tr>
-
-					<!-- SSH Key Spoiler -->
-					{% match user.ssh_key %}
-						{% when Some with (val) %}
-							<div class="modal modal-target" id="ssh-key-{{ user.username }}">
-								<a class="modal-background" href="#"></a>
-
-								<div class="modal-card">
-
-									<!-- Header -->
-									<header class="modal-card-head">
-										<!-- Title -->
-										<div class="modal-card-title">SSH Keys for {{ user.username }}</div>
-										<!-- Close -->
-										<a class="delete" href="#"></a>
-									</header>
-
-									<!-- Content -->
-									<section class="modal-card-body">
-										<div class="field">
-											<label class="label">SSH Keys</label>
-											<textarea class="textarea" placeholder="SSH Keys" value="{{ val }}" readonly></textarea>
-										</div>
-									</section>
-
-									<!-- Footer -->
-									<footer class="modal-card-foot is-justify-content-flex-end">
-										<a class="button is-danger is-light" href="#">Close</a>
-									</footer>
-								</div>
-							</div>
-						{% when None %}
-					{% endmatch %}
-				{% endfor %}
-			</tbody>
-		</table>
+		<div class="column is-narrow">
+			<a class="button is-primary" href="/users/new">New user</a>
+		</div>
 	</div>
+
+	<!-- Table -->
+	<table class="table table--responsive table--responsive--labels is-fullwidth">
+		<thead>
+			<tr>
+				<th></th>
+				<th>Username</th>
+				<th>Admin</th>
+				<th>Full Name</th>
+				<th>Email</th>
+				<th>SSH key</th>
+				<th>State</th>
+				<th>Last login</th>
+				<th>Created at</th>
+			</tr>
+		</thead>
+
+		<tbody>
+			{% for user in users %}
+			<tr>
+				<td data-label="Image">
+					<img
+						style="height: 2.5rem; border-radius: 100%"
+						src="http://zpi.zeus.gent/image/{{ user.id }}?placeholder=true&size=64"
+					/>
+				</td>
+				<!-- Username -->
+				<td data-label="Username">
+					<a href="/users/{{ user.username }}">{{ user.username }}</a>
+				</td>
+
+				<!-- Is Admin -->
+				{% if user.admin %}
+				<td class="has-text-success" data-label="Admin">
+					<b>Yes</b>
+				</td>
+				{% else %}
+				<td class="has-text-error" data-label="Admin">No</td>
+				{% endif%}
+
+				<!-- Fullname -->
+				<td data-label="Fullname">{{ user.full_name }}</td>
+
+				<!-- Email -->
+				<td data-label="Email">{{ user.email }}</td>
+
+				<!-- SSH Keys -->
+				<td data-label="SSH Keys">
+					{% match user.ssh_key %} {% when Some with (val) %}
+					<a class="button is-small is-light" href="#ssh-key-{{ user.username }}">View</a>
+					{% when None %} N/A {% endmatch %}
+				</td>
+
+				<!-- State -->
+				<td data-label="State">
+					{% match user.state %} {% when UserState::Active %} {%- call
+					colored_circle("#80A66C", user.state) -%} {% when UserState::PendingApproval %}
+					{%- call colored_circle("#F2A950", user.state) -%} {% when
+					UserState::PendingMailConfirmation %} {%- call colored_circle("#FFFF00",
+					user.state) -%} {% when UserState::Disabled %} {%- call
+					colored_circle("#DD6761", user.state) -%} {% endmatch %}
+				</td>
+
+				<!-- Last Login -->
+				<td data-label="Last Login" title="{{ user.last_login }}">
+					{{ user.last_login.format("%d/%m/%y").to_string() }}
+				</td>
+
+				<!-- Created at -->
+				<td data-label="Created at" title="{{ user.created_at }}">
+					{{ user.created_at.format("%d/%m/%y").to_string() }}
+				</td>
+			</tr>
+			<!-- SSH Key Spoiler -->
+			{% match user.ssh_key %} {% when Some with (val) %}
+			<div class="modal modal-target" id="ssh-key-{{ user.username }}">
+				<a class="modal-background" href="#"></a>
+
+				<div class="modal-card">
+					<!-- Header -->
+					<header class="modal-card-head">
+						<!-- Title -->
+						<div class="modal-card-title">SSH Keys for {{ user.username }}</div>
+						<!-- Close -->
+						<a class="delete" href="#"></a>
+					</header>
+
+					<!-- Content -->
+					<section class="modal-card-body">
+						<div class="field">
+							<label class="label">SSH Keys</label>
+							<textarea
+								class="textarea"
+								placeholder="SSH Keys"
+								value="{{ val }}"
+								readonly
+							></textarea>
+						</div>
+					</section>
+
+					<!-- Footer -->
+					<footer class="modal-card-foot is-justify-content-flex-end">
+						<a class="button is-danger is-light" href="#">Close</a>
+					</footer>
+				</div>
+			</div>
+			{% when None %} {% endmatch %} {% endfor %}
+		</tbody>
+	</table>
+</div>
 {% endblock content %}
