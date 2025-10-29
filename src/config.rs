@@ -27,6 +27,7 @@ pub struct Config {
 	pub maximum_pending_users: usize,
 	pub mailer_role: String,
 	pub picture_url_prefix: String,
+	pub user_mail_domain: String,
 }
 
 impl Config {
