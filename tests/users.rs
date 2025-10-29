@@ -432,7 +432,7 @@ async fn forgot_password() {
 
 		common::dont_expect_mail(async || {
 			let response = http_client
-				.post(format!("/users/reset_password/"))
+				.post("/users/reset_password/".to_string())
 				.header(ContentType::Form)
 				.header(Accept::HTML)
 				.body(format!(
@@ -455,7 +455,7 @@ async fn forgot_password() {
 
 		let response = common::expect_mail_to(vec![&email], async || {
 			http_client
-				.post(format!("/users/reset_password/"))
+				.post("/users/reset_password/".to_string())
 				.header(ContentType::Form)
 				.header(Accept::HTML)
 				.body(format!(
@@ -618,7 +618,7 @@ async fn limit_pending_users() {
 		common::dont_expect_mail(async || {
 			let response = post_registration(
 				&http_client,
-				&username,
+				username,
 				"touchaaaaaaaaaaaaaaa",
 				"maa",
 				"spaghettio@example.com",
@@ -652,7 +652,7 @@ async fn limit_pending_users() {
 		common::dont_expect_mail(async || {
 			let response = post_registration(
 				&http_client,
-				&username,
+				username,
 				"touchaaaaaaaaaaaaaaa",
 				"maa",
 				"spaghettio@example.com",
@@ -686,7 +686,7 @@ async fn limit_pending_users() {
 		let _response = common::expect_mail_to(vec![email], async || {
 			let response = post_registration(
 				&http_client,
-				&username,
+				username,
 				"touchaaaaaaaaaaaaaaa",
 				"maa",
 				email,
