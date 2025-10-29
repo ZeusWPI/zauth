@@ -235,7 +235,7 @@ async fn authorization_granted(
 			user_id: user.id,
 			scope: state.scope.clone(),
 			username: user.username.clone(),
-			client_id: state.client_id.clone(),
+			client_id: state.client_id,
 			client_name: state.client_name.clone(),
 			redirect_uri: state.redirect_uri.clone(),
 		})
