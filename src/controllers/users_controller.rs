@@ -104,9 +104,11 @@ pub async fn current_user_as_client(
 pub async fn current_user(
 	session: UserSession,
 	db: DbConn,
-	config: &State<Config>
+	config: &State<Config>,
 ) -> Result<Json<UserInfo>> {
-	Ok(Json(UserInfo::new(session.user, None, None, &db, config).await?))
+	Ok(Json(
+		UserInfo::new(session.user, None, None, &db, config).await?,
+	))
 }
 
 #[get("/users/<username>")]
