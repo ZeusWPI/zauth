@@ -58,6 +58,7 @@ pub fn config() -> Config {
 		mail_use_tls: false,
 		mail_username: None,
 		mail_password: None,
+		mail_port: None,
 	}
 }
 
