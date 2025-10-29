@@ -17,6 +17,7 @@ mailing_list_email = "leden@zeus.ugent.be"
 maximum_pending_users = 25
 mailer_role = "mailer"
 picture_url_prefix = "https://zpi.zeus.gent/image/"
+user_mail_domain = "zeus.ugent.be"
 
 [debug]
 secret_key = "1vwCFFPSdQya895gNiO556SzmfShG6MokstgttLvwjw="

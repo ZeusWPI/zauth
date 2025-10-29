@@ -32,6 +32,8 @@ pub struct UserInfo {
 	full_name: String,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	roles: Option<Vec<String>>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	email: Option<String>,
 	picture: String,
 	sub: String,
 }
@@ -46,7 +48,7 @@ impl UserInfo {
 	) -> Result<Self> {
 		let scopes = split_scopes(&scope);
 
-		let roles = if let Some(client) = client {
+		let roles = if let Some(client) = &client {
 			if scopes.contains(&"roles".into()) {
 				Some(
 					user.clone()
@@ -70,12 +72,19 @@ impl UserInfo {
 			)
 		};
 
+		let email = if client.is_some() && scopes.contains(&"email".into()) {
+			Some(format!("{}@{}", user.username, config.user_mail_domain))
+		} else {
+			None
+		};
+
 		Ok(UserInfo {
 			id: user.id,
 			username: user.username,
 			admin: user.admin,
 			full_name: user.full_name,
 			roles,
+			email,
 			picture: format!("{}{}", config.picture_url_prefix(), user.id),
 			sub: format!("{}", user.id),
 		})
