@@ -33,10 +33,7 @@ async fn setup_test_users(db: &DbConn) {
 		let mut created_user = User::create(
 			NewUser {
 				username: test_user.0.to_string(),
-				password: format!(
-					"{}verylongandsecurepassword",
-					test_user.0
-				),
+				password: format!("{}verylongandsecurepassword", test_user.0),
 				full_name: test_user.0.to_string(),
 				email: format!("{}@example.com", test_user.0),
 				ssh_key: None,

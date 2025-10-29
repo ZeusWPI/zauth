@@ -18,7 +18,6 @@ pub struct Seeder {
 	client_redirect_uri: Option<String>,
 }
 
-
 impl Seeder {
 	pub fn from_env() -> Self {
 		let mut seeder = Self::default();

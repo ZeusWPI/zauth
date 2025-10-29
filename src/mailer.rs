@@ -161,76 +161,74 @@ impl Mailer {
 		wait: Duration,
 		mut receiver: Receiver<Message>,
 	) -> impl Send + 'static {
- 			while let Some(mail) = receiver.recv().await {
- 				{
- 					let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
- 					println!(
- 						"\n==> [STUB MAILER] Sending email:\n\n{}\n",
- 						String::from_utf8_lossy(&mail.formatted())
- 					);
- 					mailbox.lock().push(mail);
- 					condvar.notify_all();
- 				}
+		while let Some(mail) = receiver.recv().await {
+			{
+				let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
+				println!(
+					"\n==> [STUB MAILER] Sending email:\n\n{}\n",
+					String::from_utf8_lossy(&mail.formatted())
+				);
+				mailbox.lock().push(mail);
+				condvar.notify_all();
+			}
 
- 				// sleep for a while to prevent sending mails too fast
- 				sleep(wait).await;
- 			}
- 		}
+			// sleep for a while to prevent sending mails too fast
+			sleep(wait).await;
+		}
+	}
 
 	async fn unbounded_stub_sender(
 		wait: Duration,
 		mut receiver: UnboundedReceiver<Message>,
 	) -> impl Send + 'static {
- 			while let Some(mail) = receiver.recv().await {
- 				{
- 					let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
- 					eprintln!(
- 						"\n==> [UNBOUNDED STUB MAILER] Sending mailinglist \
+		while let Some(mail) = receiver.recv().await {
+			{
+				let (mailbox, condvar) = &STUB_MAILER_OUTBOX;
+				eprintln!(
+					"\n==> [UNBOUNDED STUB MAILER] Sending mailinglist \
  						 email:\n\n{}\n",
- 						String::from_utf8_lossy(&mail.formatted())
- 					);
- 					mailbox.lock().push(mail);
- 					condvar.notify_all();
- 				}
+					String::from_utf8_lossy(&mail.formatted())
+				);
+				mailbox.lock().push(mail);
+				condvar.notify_all();
+			}
 
- 				// sleep for a while to prevent sending mails too fast
- 				sleep(wait).await;
- 			}
- 		}
+			// sleep for a while to prevent sending mails too fast
+			sleep(wait).await;
+		}
+	}
 
 	async fn smtp_sender(
 		wait: Duration,
 		mut receiver: Receiver<Message>,
 		transport: SmtpTransport,
-	) -> impl Send + 'static + use<>
-	{
- 			while let Some(mail) = receiver.recv().await {
- 				let result = transport.send(&mail);
- 				if result.is_ok() {
- 					println!("Sent email: {:?}", result);
- 				} else {
- 					println!("Error sending email: {:?}", result);
- 				}
- 				// sleep for a while to prevent sending mails too fast
- 				sleep(wait).await;
- 			}
- 		}
+	) -> impl Send + 'static + use<> {
+		while let Some(mail) = receiver.recv().await {
+			let result = transport.send(&mail);
+			if result.is_ok() {
+				println!("Sent email: {:?}", result);
+			} else {
+				println!("Error sending email: {:?}", result);
+			}
+			// sleep for a while to prevent sending mails too fast
+			sleep(wait).await;
+		}
+	}
 
 	async fn unbounded_smtp_sender(
 		wait: Duration,
 		mut receiver: UnboundedReceiver<Message>,
 		transport: SmtpTransport,
-	) -> impl Send + 'static + use<>
-	{
- 			while let Some(mail) = receiver.recv().await {
- 				let result = transport.send(&mail);
- 				if result.is_ok() {
- 					println!("Sent mailinglist email: {:?}", result);
- 				} else {
- 					println!("Error sending mailinglist email: {:?}", result);
- 				}
- 				// sleep for a while to prevent sending mails too fast
- 				sleep(wait).await;
- 			}
- 		}
+	) -> impl Send + 'static + use<> {
+		while let Some(mail) = receiver.recv().await {
+			let result = transport.send(&mail);
+			if result.is_ok() {
+				println!("Sent mailinglist email: {:?}", result);
+			} else {
+				println!("Error sending mailinglist email: {:?}", result);
+			}
+			// sleep for a while to prevent sending mails too fast
+			sleep(wait).await;
+		}
+	}
 }

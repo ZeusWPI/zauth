@@ -96,8 +96,6 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 	let jwt_builder = JWTBuilder::new(&config).expect("config");
 	let webauthn = WebAuthnStore::new(&config);
 
-	
-
 	// if rocket.config().environment.is_dev() {
 	// rocket = util::seed_database(rocket, config);
 	//}
