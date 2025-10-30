@@ -22,6 +22,7 @@ pub struct Config {
 	pub mail_use_tls: bool,
 	pub mail_username: Option<String>,
 	pub mail_password: Option<String>,
+	pub mail_port: Option<u16>,
 	pub mailing_list_name: String,
 	pub mailing_list_email: String,
 	pub maximum_pending_users: usize,
