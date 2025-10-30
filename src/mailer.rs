@@ -5,6 +5,7 @@ use lettre::message::{Mailbox, header::ContentType};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Address, Message, SmtpTransport, Transport};
 use parking_lot::{Condvar, Mutex};
+use rocket::Config as RocketConfig;
 use rocket::tokio::sync::mpsc::Receiver;
 use rocket::tokio::sync::mpsc::{self, UnboundedReceiver};
 use rocket::tokio::time::sleep;
@@ -117,6 +118,10 @@ impl Mailer {
 	}
 
 	fn build_smtp_transport(config: &Config) -> Result<SmtpTransport> {
+		let rocket_config: RocketConfig =
+			RocketConfig::figment().extract().unwrap();
+		let is_prod = rocket_config.profile == "release";
+
 		let port = config.mail_port.unwrap_or(if config.mail_use_tls {
 			587
 		} else {
@@ -134,10 +139,10 @@ impl Mailer {
 		if let (Some(username), Some(password)) =
 			(&config.mail_username, &config.mail_password)
 		{
-			if !config.mail_use_tls && config.mail_server != "localhost" {
+			if !config.mail_use_tls && is_prod {
 				return Err(ZauthError::Launch(
 						LaunchError::BadConfigValueType(
-							"Can't use SMTP authentication without TLS on non-localhost".to_owned(),
+							"Can't use SMTP authentication without TLS in production".to_owned(),
 						),
 					));
 			}
