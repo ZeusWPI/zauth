@@ -28,7 +28,7 @@ simple_logger = "5.0"
 diesel = { version = "2.2", features = ["postgres", "r2d2", "chrono"] }
 diesel-derive-enum = { version = "2.1", features = ["postgres"] }
 diesel_migrations = "2.1"
-tempfile = "3.1"
+tempfile = "3.23"
 parking_lot = { version = "0.12" }
 thiserror = "2.0"
 validator = { version = "0.20", features = [ "derive" ] }
