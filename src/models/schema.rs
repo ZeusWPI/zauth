@@ -2,6 +2,10 @@
 
 pub mod sql_types {
 	#[derive(diesel::sql_types::SqlType)]
+	#[diesel(postgres_type(name = "content_type"))]
+	pub struct ContentType;
+
+	#[derive(diesel::sql_types::SqlType)]
 	#[diesel(postgres_type(name = "user_state"))]
 	pub struct UserState;
 }
@@ -28,6 +32,9 @@ diesel::table! {
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use super::sql_types::ContentType;
+
 	mails (id) {
 		id -> Int4,
 		sent_on -> Timestamp,
@@ -35,13 +42,14 @@ diesel::table! {
 		body -> Text,
 		#[max_length = 255]
 		author -> Varchar,
+		content_type -> ContentType,
 	}
 }
 
 diesel::table! {
 	passkeys (id) {
-		id -> Integer,
-		user_id -> Integer,
+		id -> Int4,
+		user_id -> Int4,
 		#[max_length = 255]
 		name -> Varchar,
 		cred -> Varchar,
@@ -80,25 +88,33 @@ diesel::table! {
 	use diesel::sql_types::*;
 	use crate::models::user::UserStateMapping;
 
-		users {
-			id -> Int4,
-			username -> Varchar,
-			hashed_password -> Varchar,
-			admin -> Bool,
-			password_reset_token -> Nullable<Varchar>,
-			password_reset_expiry -> Nullable<Timestamp>,
-			full_name -> Varchar,
-			email -> Varchar,
-			pending_email -> Nullable<Varchar>,
-			pending_email_token -> Nullable<Varchar>,
-			pending_email_expiry -> Nullable<Timestamp>,
-			ssh_key -> Nullable<Text>,
-			state -> UserStateMapping,
-			last_login -> Timestamp,
-			created_at -> Timestamp,
-			subscribed_to_mailing_list -> Bool,
-			unsubscribe_token -> Varchar,
-		}
+	users (id) {
+		id -> Int4,
+		#[max_length = 255]
+		username -> Varchar,
+		#[max_length = 255]
+		hashed_password -> Varchar,
+		#[max_length = 255]
+		password_reset_token -> Nullable<Varchar>,
+		password_reset_expiry -> Nullable<Timestamp>,
+		admin -> Bool,
+		#[max_length = 255]
+		full_name -> Varchar,
+		#[max_length = 255]
+		email -> Varchar,
+		ssh_key -> Nullable<Text>,
+		state -> UserStateMapping,
+		last_login -> Timestamp,
+		created_at -> Timestamp,
+		#[max_length = 255]
+		pending_email -> Nullable<Varchar>,
+		#[max_length = 255]
+		pending_email_token -> Nullable<Varchar>,
+		pending_email_expiry -> Nullable<Timestamp>,
+		subscribed_to_mailing_list -> Bool,
+		#[max_length = 32]
+		unsubscribe_token -> Varchar,
+	}
 }
 
 diesel::table! {

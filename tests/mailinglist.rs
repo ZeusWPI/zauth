@@ -94,7 +94,7 @@ async fn mailinglist_workflow() {
 					.header(ContentType::Form)
 					.header(Accept::JSON)
 					.body(format!(
-						"author={}&subject=foosubject&body=foobody",
+						"author={}&subject=foosubject&body=foobody&content_type=text/plain",
 						admin.username
 					))
 					.dispatch()
@@ -206,6 +206,7 @@ async fn user_can_see_mailinglist() {
 			author: user.username,
 			subject: "foo".to_string(),
 			body: "bar".to_string(),
+			content_type: zauth::models::mail::ContentType::Plain,
 		};
 		let test_mail = test_mail.save(&db).await.unwrap();
 
@@ -255,6 +256,7 @@ async fn admin_can_use_mailinglist() {
 			author: user.username,
 			subject: "foo".to_string(),
 			body: "bar".to_string(),
+			content_type: zauth::models::mail::ContentType::Plain,
 		};
 		let test_mail = test_mail.save(&db).await.unwrap();
 
@@ -316,6 +318,7 @@ async fn authorized_client_can_use_mailinglist() {
 			author: client.name,
 			subject: "foo".to_string(),
 			body: "bar".to_string(),
+			content_type: zauth::models::mail::ContentType::Plain,
 		};
 
 		let send_mail_response = http_client

@@ -10,7 +10,15 @@
 
 			<div class="title">({{ mail.sent_on.format("%d/%m/%y").to_string() }}) {{ mail.subject }}</div>
 
-			<div style="white-space: pre-line">{{ mail.body }}</div>
+			<div style="white-space: pre-line">
+				{% if let Some(body) = rendered_body %}
+					{{ body|safe }}
+				{% else %}
+					<div class="notification is-danger is-light">
+						Could not render the body
+					</div>
+				{% endif %}
+			</div>
 		</div>
 	</div>
 </div>

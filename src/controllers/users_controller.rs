@@ -1,3 +1,4 @@
+use lettre::message::header;
 use rocket::http::Status;
 use rocket::http::uri::Absolute;
 use rocket::response::status::Custom;
@@ -277,6 +278,7 @@ pub async fn register<'r>(
 				)
 				.render()
 				.map_err(InternalError::from)?,
+				header::ContentType::TEXT_PLAIN,
 			)?;
 
 			Ok(Left(Accepter {
@@ -397,6 +399,7 @@ pub async fn set_approved<'r>(
 			)
 			.render()
 			.map_err(InternalError::from)?,
+			header::ContentType::TEXT_PLAIN,
 		)
 		.await?;
 
@@ -472,6 +475,7 @@ pub async fn forgot_password_post<'r>(
 			)
 			.render()
 			.map_err(InternalError::from)?,
+			header::ContentType::TEXT_PLAIN,
 		)?
 	};
 
@@ -563,6 +567,7 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 						&user,
 						String::from("[Zauth] Your password has been reset"),
 						body,
+						header::ContentType::TEXT_PLAIN,
 					)
 					.await?;
 				Ok(OneOf::One(
@@ -628,6 +633,7 @@ pub async fn confirm_email_post<'r>(
 			)
 			.render()
 			.map_err(InternalError::from)?,
+			header::ContentType::TEXT_PLAIN,
 		)?;
 
 		Ok(Either::Left(template! {
