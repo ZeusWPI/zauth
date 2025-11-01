@@ -34,7 +34,7 @@ thiserror = "2.0"
 validator = { version = "0.20", features = [ "derive" ] }
 jsonwebtoken = "9.1"
 openssl = "0.10"
-webauthn-rs = { version = "0.5.0", features = [
+webauthn-rs = { version = "0.5.3", features = [
     "conditional-ui"
 
 ]}
@@ -42,7 +42,7 @@ webauthn-rs = { version = "0.5.0", features = [
 webauthn-rs-proto = "0.5.1"
 
 [dev-dependencies]
-webauthn-rs = { version = "0.5.0", features = [
+webauthn-rs = { version = "0.5.3", features = [
     "conditional-ui", "danger-allow-state-serialisation"
 ]}
 
