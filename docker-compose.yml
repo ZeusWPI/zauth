@@ -1,4 +1,3 @@
-version: '3.5'
 services:
   zauth:
     image: ghcr.io/zeuswpi/zauth:latest
@@ -11,7 +10,7 @@ services:
       sh -c "diesel --database-url 'postgresql://zauth:zauth@database/zauth' database setup && RUST_LOG=info ROCKET_PROFILE=release zauth"
     volumes:
       - ${PWD}/Rocket.toml:/usr/src/zauth/Rocket.toml
-  
+
   smtp-relay:
     image: dcagatay/emailrelay
     command: --forward-on-disconnect --forward-to smtp.ugent.be:25
@@ -43,5 +42,15 @@ services:
     ports:
       - 127.0.0.1:8080:8080
 
+  maildev:
+    image: maildev/maildev
+    environment:
+      MAILDEV_INCOMING_USER: mail
+      MAILDEV_INCOMING_PASS: mailpass
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+
 volumes:
   zauth-database:
+  zauth-mailrelay:
