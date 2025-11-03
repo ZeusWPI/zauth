@@ -4,12 +4,27 @@ use crate::DbConn;
 use crate::errors::{self, ZauthError};
 use chrono::NaiveDateTime;
 use diesel::{self, prelude::*};
+use diesel_derive_enum::DbEnum;
+use markdown::{Options, to_html_with_options};
 
 use diesel::result::Error as DieselError;
 use rocket::serde::Serialize;
 use validator::Validate;
 
 use super::schema::mails;
+
+#[derive(DbEnum, Debug, Deserialize, FromFormField, Serialize, Copy, Clone)]
+#[db_enum(existing_type_path = "crate::models::schema::sql_types::ContentType")]
+pub enum ContentType {
+	#[db_enum(rename = "text/plain")]
+	#[serde(rename = "text/plain")]
+	#[field(value = "text/plain")]
+	Plain,
+	#[db_enum(rename = "text/markdown")]
+	#[serde(rename = "text/markdown")]
+	#[field(value = "text/markdown")]
+	Markdown,
+}
 
 #[derive(Clone, Debug, Queryable, Serialize)]
 #[serde(crate = "rocket::serde")]
@@ -19,6 +34,7 @@ pub struct Mail {
 	pub subject: String,
 	pub body: String,
 	pub author: String,
+	pub content_type: ContentType,
 }
 
 #[derive(
@@ -31,6 +47,7 @@ pub struct NewMail {
 	pub subject: String,
 	#[validate(length(min = 3, max = 10_000))]
 	pub body: String,
+	pub content_type: ContentType,
 }
 
 impl NewMail {
@@ -73,5 +90,18 @@ impl Mail {
 			mails::table.find(id).first(conn).map_err(ZauthError::from)
 		})
 		.await
+	}
+
+	pub fn render_body(&self) -> errors::Result<String> {
+		match self.content_type {
+			ContentType::Plain => Ok(self.body.clone()),
+			ContentType::Markdown => to_html_with_options(
+				&self.body,
+				&Options::gfm(),
+			)
+			.map_err(|_| {
+				ZauthError::Unprocessable("could not parse markdown".into())
+			}),
+		}
 	}
 }

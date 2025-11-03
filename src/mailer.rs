@@ -28,10 +28,11 @@ impl Mailer {
 		receiver: M,
 		subject: String,
 		text: String,
+		content_type: ContentType,
 	) -> Result<Message> {
 		Ok(Message::builder()
 			.to(receiver.try_into().map_err(|e| e.into())?)
-			.header(ContentType::TEXT_PLAIN)
+			.header(content_type)
 			.subject(subject)
 			.from(Mailbox::new(None, self.from.clone()))
 			.body(text)
@@ -47,8 +48,9 @@ impl Mailer {
 		receiver: M,
 		subject: String,
 		text: String,
+		content_type: ContentType,
 	) -> Result<()> {
-		let email = self.build(receiver, subject, text)?;
+		let email = self.build(receiver, subject, text, content_type)?;
 		self.queue
 			.try_send(email)
 			.map_err(|e| ZauthError::from(InternalError::from(e)))
@@ -63,8 +65,9 @@ impl Mailer {
 		receiver: M,
 		subject: String,
 		text: String,
+		content_type: ContentType,
 	) -> Result<()> {
-		let mail = self.build(receiver, subject, text)?;
+		let mail = self.build(receiver, subject, text, content_type)?;
 
 		self.queue
 			.send(mail)
@@ -81,8 +84,9 @@ impl Mailer {
 		receiver: M,
 		subject: String,
 		text: String,
+		content_type: ContentType,
 	) -> Result<()> {
-		let mail = self.build(receiver, subject, text)?;
+		let mail = self.build(receiver, subject, text, content_type)?;
 
 		self.mailinglist_queue
 			.send(mail)

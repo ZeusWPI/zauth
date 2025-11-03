@@ -20,7 +20,14 @@ use validator::{Validate, ValidationError, ValidationErrors};
 use super::role::{Role, UserRole};
 
 #[derive(
-	DbEnum, Debug, Deserialize, FromFormField, Serialize, Clone, PartialEq,
+	DbEnum,
+	Debug,
+	Deserialize,
+	FromFormField,
+	Serialize,
+	Clone,
+	PartialEq,
+	QueryId,
 )]
 pub enum UserState {
 	PendingApproval,
@@ -64,11 +71,11 @@ pub struct User {
 	pub username: String,
 	#[serde(skip)] // Let's not send our users their hashed password, shall we?
 	pub hashed_password: String,
-	pub admin: bool,
 	#[serde(skip)]
 	pub password_reset_token: Option<String>,
 	#[serde(skip)]
 	pub password_reset_expiry: Option<NaiveDateTime>,
+	pub admin: bool,
 	#[validate(length(min = 3, max = 254))]
 	pub full_name: String,
 	#[validate(email)]
@@ -76,18 +83,18 @@ pub struct User {
 	// Don't send backing email address of users, applications could
 	// accidentally use this
 	pub email: String,
-	#[serde(skip)]
-	pub pending_email: Option<String>,
-	#[serde(skip)]
-	pub pending_email_token: Option<String>,
-	#[serde(skip)]
-	pub pending_email_expiry: Option<NaiveDateTime>,
 	#[validate(custom(function = "validate_ssh_key_list"))]
 	pub ssh_key: Option<String>,
 	#[serde(skip)]
 	pub state: UserState,
 	pub last_login: NaiveDateTime,
 	pub created_at: NaiveDateTime,
+	#[serde(skip)]
+	pub pending_email: Option<String>,
+	#[serde(skip)]
+	pub pending_email_token: Option<String>,
+	#[serde(skip)]
+	pub pending_email_expiry: Option<NaiveDateTime>,
 	pub subscribed_to_mailing_list: bool,
 	#[serde(skip)]
 	pub unsubscribe_token: String,

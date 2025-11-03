@@ -1,4 +1,4 @@
-use lettre::message::Mailbox;
+use lettre::message::{Mailbox, header};
 use rocket::form::validate::Contains;
 use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;
@@ -74,6 +74,23 @@ pub async fn send_mail_as_client<'r>(
 	send_mail(new_mail, db, conf, mailer).await
 }
 
+impl From<ContentType> for header::ContentType {
+	fn from(value: ContentType) -> Self {
+		match value {
+			ContentType::Plain => header::ContentType::TEXT_PLAIN,
+			ContentType::Markdown => header::ContentType::TEXT_HTML,
+		}
+	}
+}
+
+// Separate template struct to disable HTML escaping
+#[derive(Template)]
+#[template(path = "mails/mailinglist_mail.html", escape = "none")]
+struct MailingListTemplate {
+	body: String,
+	unsubscribe_url: String,
+}
+
 async fn send_mail<'r>(
 	new_mail: Api<NewMail>,
 	db: DbConn,
@@ -84,21 +101,35 @@ async fn send_mail<'r>(
 
 	let subscribed_users = User::find_subscribed(&db).await?;
 
+	let body = mail.render_body()?;
+
 	for user in &subscribed_users {
 		let receiver = Mailbox::try_from(user)?;
 		let token = user.unsubscribe_token.to_string();
 		let unsubscribe_url =
 			uri!(conf.base_url(), show_confirm_unsubscribe(token));
 
-		let body = template!(
-			"mails/mailinglist_mail.txt";
-			body: String = mail.body.clone(),
-			unsubscribe_url: String = unsubscribe_url.to_string(),
-		)
-		.render()
+		let text = match &mail.content_type {
+			&ContentType::Plain => template!(
+				"mails/mailinglist_mail.txt";
+				body: String = body.clone(),
+				unsubscribe_url: String = unsubscribe_url.to_string(),
+			)
+			.render(),
+			&ContentType::Markdown => MailingListTemplate {
+				body: body.clone(),
+				unsubscribe_url: unsubscribe_url.to_string(),
+			}
+			.render(),
+		}
 		.map_err(InternalError::from)?;
 
-		mailer.create_for_mailinglist(receiver, mail.subject.clone(), body)?;
+		mailer.create_for_mailinglist(
+			receiver,
+			mail.subject.clone(),
+			text,
+			mail.content_type.into(),
+		)?;
 	}
 
 	Ok(Accepter {
@@ -132,6 +163,7 @@ pub async fn show_mail<'r>(
 			"maillist/show_mail.html";
 			current_user: User = session.user,
 			mail: Mail = mail.clone(),
+			rendered_body: Option<String> = mail.render_body().ok(),
 		},
 		json: Json(mail),
 	})
