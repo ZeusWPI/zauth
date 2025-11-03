@@ -94,7 +94,7 @@ async fn mailinglist_workflow() {
 					.header(ContentType::Form)
 					.header(Accept::JSON)
 					.body(format!(
-						"author={}&subject=foosubject&body=foobody&content_type=text/plain",
+						"author={}&subject=foosubject&body=foobody&content_type=text/markdown",
 						admin.username
 					))
 					.dispatch()
