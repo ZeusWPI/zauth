@@ -127,7 +127,7 @@ impl Mailer {
 		let is_prod = rocket_config.profile == "release";
 
 		let port = config.mail_port.unwrap_or(if config.mail_use_tls {
-			587
+			465
 		} else {
 			25
 		});
