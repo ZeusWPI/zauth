@@ -208,7 +208,7 @@ impl User {
 		email: String,
 		db: &DbConn,
 	) -> errors::Result<User> {
-		let query = users::table.filter(users::email.eq(email));
+		let query = users::table.filter(users::email.ilike(email));
 		db.run(move |conn| query.first(conn).map_err(ZauthError::from))
 			.await
 	}
