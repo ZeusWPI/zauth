@@ -10,7 +10,7 @@ macro_rules! template {
 				zauth_version: &'static str
 			}
 			TemplateStruct {
-				zauth_version: crate::ZAUTH_VERSION,
+				zauth_version: $crate::ZAUTH_VERSION,
 			}
 		}
 	};
@@ -28,7 +28,7 @@ macro_rules! template {
 				)+
 			}
 			TemplateStruct {
-				zauth_version: crate::ZAUTH_VERSION,
+				zauth_version: $crate::ZAUTH_VERSION,
 				$(
 					$name: $value,
 				)+
