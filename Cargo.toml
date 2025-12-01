@@ -32,7 +32,7 @@ tempfile = "3.1"
 parking_lot = { version = "0.12" }
 thiserror = "2.0"
 validator = { version = "0.20", features = [ "derive" ] }
-jsonwebtoken = "9.1"
+jsonwebtoken = "10.2"
 openssl = "0.10"
 webauthn-rs = { version = "0.5.0", features = [
     "conditional-ui"
