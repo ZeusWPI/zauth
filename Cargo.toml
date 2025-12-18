@@ -27,7 +27,7 @@ serde_urlencoded = "0.7"
 simple_logger = "5.0"
 diesel = { version = "2.3.4", features = ["postgres", "r2d2", "chrono"] }
 diesel-derive-enum = { version = "3.0.0-beta.1", features = ["postgres"] }
-diesel_migrations = "2.2.8"
+diesel_migrations = "2.3.1"
 tempfile = "3.1"
 parking_lot = { version = "0.12" }
 thiserror = "2.0"
