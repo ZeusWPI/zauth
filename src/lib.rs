@@ -96,7 +96,11 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 	let jwt_builder = JWTBuilder::new(&config).expect("config");
 	let webauthn = WebAuthnStore::new(&config);
 
-	let rocket = rocket
+	// if rocket.config().environment.is_dev() {
+	// rocket = util::seed_database(rocket, config);
+	//}
+
+	rocket
 		.mount(
 			"/",
 			routes![
@@ -185,13 +189,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 		.manage(webauthn)
 		.attach(DbConn::fairing())
 		.attach(AdHoc::config::<Config>())
-		.attach(AdHoc::on_ignite("Database preparation", prepare_database));
-
-	// if rocket.config().environment.is_dev() {
-	// rocket = util::seed_database(rocket, config);
-	//}
-
-	rocket
+		.attach(AdHoc::on_ignite("Database preparation", prepare_database))
 }
 
 async fn prepare_database(rocket: Rocket<Build>) -> Rocket<Build> {

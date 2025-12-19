@@ -8,6 +8,7 @@ use crate::util::random_token;
 use diesel::RunQueryDsl;
 use std::default::Default;
 
+#[derive(Default)]
 pub struct Seeder {
 	empty_db: bool,
 	clients_to_seed: usize,
@@ -17,23 +18,10 @@ pub struct Seeder {
 	client_redirect_uri: Option<String>,
 }
 
-impl Default for Seeder {
-	fn default() -> Self {
-		Seeder {
-			empty_db: false,
-			clients_to_seed: 0,
-			users_to_seed: 0,
-			admin_password: None,
-			client_name: None,
-			client_redirect_uri: None,
-		}
-	}
-}
-
 impl Seeder {
 	pub fn from_env() -> Self {
 		let mut seeder = Self::default();
-		if let Ok(_) = std::env::var("ZAUTH_EMPTY_DB") {
+		if std::env::var("ZAUTH_EMPTY_DB").is_ok() {
 			seeder.empty_db = true;
 		}
 		if let Ok(number) = std::env::var("ZAUTH_SEED_CLIENTS") {
@@ -68,19 +56,19 @@ impl Seeder {
 
 	pub async fn run(&self, bcrypt_cost: u32, db: &DbConn) -> Result<()> {
 		if self.empty_db {
-			self.delete_all(&db).await?;
+			self.delete_all(db).await?;
 		}
 		if self.admin_password.is_some() {
-			self.seed_admin(bcrypt_cost, &db).await?;
+			self.seed_admin(bcrypt_cost, db).await?;
 		}
 		if self.client_name.is_some() {
-			self.seed_client(&db).await?;
+			self.seed_client(db).await?;
 		}
 		if self.clients_to_seed > 0 {
-			self.seed_clients(&db).await?;
+			self.seed_clients(db).await?;
 		}
 		if self.users_to_seed > 0 {
-			self.seed_users(bcrypt_cost, &db).await?;
+			self.seed_users(bcrypt_cost, db).await?;
 		}
 		Ok(())
 	}
@@ -105,13 +93,13 @@ impl Seeder {
 				NewClient {
 					name: format!("Test client {}", i),
 				},
-				&db,
+				db,
 			)
 			.await?;
 			client.redirect_uri_list =
 				format!("http://client{}.example.com/redirect/", i);
 			client.needs_grant = i % 2 == 0;
-			client.update(&db).await?;
+			client.update(db).await?;
 		}
 		eprintln!("Seeded {} clients", self.clients_to_seed);
 		Ok(())
@@ -127,7 +115,7 @@ impl Seeder {
 				ssh_key: None,
 				not_a_robot: true,
 			};
-			User::create(new_user, bcrypt_cost, &db).await?;
+			User::create(new_user, bcrypt_cost, db).await?;
 		}
 		eprintln!("Seeded {} users", self.users_to_seed);
 		Ok(())
@@ -140,7 +128,7 @@ impl Seeder {
 			.as_ref()
 			.unwrap_or(&String::from("admin"))
 			.clone();
-		let admin = User::find_by_username(username.clone(), &db).await;
+		let admin = User::find_by_username(username.clone(), db).await;
 		if admin.is_err() {
 			let mut admin = User::create(
 				NewUser {
@@ -152,11 +140,11 @@ impl Seeder {
 					not_a_robot: true,
 				},
 				bcrypt_cost,
-				&db,
+				db,
 			)
 			.await?;
 			admin.admin = true;
-			admin.update(&db).await?;
+			admin.update(db).await?;
 			eprintln!(
 				"Seeded admin with username \"{}\" and password \"{}\"",
 				username, password
@@ -167,16 +155,16 @@ impl Seeder {
 
 	async fn seed_client(&self, db: &DbConn) -> Result<()> {
 		let name = self.client_name.as_ref().expect("client name");
-		let client = Client::find_by_name(name.clone(), &db).await;
+		let client = Client::find_by_name(name.clone(), db).await;
 		if client.is_err() {
 			let mut client =
-				Client::create(NewClient { name: name.clone() }, &db).await?;
+				Client::create(NewClient { name: name.clone() }, db).await?;
 			client.redirect_uri_list = self
 				.client_redirect_uri
 				.as_ref()
 				.unwrap_or(&String::from(""))
 				.to_string();
-			client.update(&db).await?;
+			client.update(db).await?;
 			eprintln!("Seeded client with name \"{}\"", name)
 		}
 		Ok(())

@@ -267,7 +267,7 @@ where
 	}
 
 	assert!(
-		mailbox.len() >= outbox_size + 1,
+		mailbox.len() > outbox_size,
 		"Expected at least one email to be sent"
 	);
 	let sent_mails = mailbox.clone();

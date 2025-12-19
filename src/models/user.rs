@@ -287,7 +287,7 @@ impl User {
 		if let Some(expiry) = self.pending_email_expiry {
 			return Utc::now().naive_utc() < expiry;
 		}
-		return false;
+		false
 	}
 
 	pub async fn find_by_email_token<'r>(
@@ -357,7 +357,7 @@ impl User {
 		db: &DbConn,
 	) -> errors::Result<User> {
 		user.validate()?;
-		if Self::pending_count(&db).await? >= conf.maximum_pending_users {
+		if Self::pending_count(db).await? >= conf.maximum_pending_users {
 			let mut err = ValidationErrors::new();
 			err.add(
 				"__all__",
@@ -403,7 +403,7 @@ impl User {
 			)));
 		}
 		self.state = UserState::Active;
-		self.update(&db).await
+		self.update(db).await
 	}
 
 	pub async fn confirm_email(mut self, db: &DbConn) -> errors::Result<User> {
@@ -419,7 +419,7 @@ impl User {
 			.to_string();
 		self.pending_email_token = None;
 		self.pending_email_expiry = None;
-		self.update(&db).await
+		self.update(db).await
 	}
 
 	pub fn change_with(&mut self, change: UserChange) -> errors::Result<()> {
@@ -533,7 +533,7 @@ impl User {
 			Err(ZauthError::NotFound(_msg)) => {
 				Err(ZauthError::LoginError(LoginError::UsernamePasswordError))
 			},
-			Err(e) => Err(ZauthError::from(e)),
+			Err(e) => Err(e),
 		}
 	}
 
@@ -583,7 +583,7 @@ fn hash(
 }
 
 fn verify(password: &str, hash: &str) -> bool {
-	bcrypt::verify(password, &hash)
+	bcrypt::verify(password, hash)
 }
 
 impl TryFrom<&User> for Mailbox {

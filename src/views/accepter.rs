@@ -27,7 +27,7 @@ fn preferred_media<'r>(request: &'r Request<'_>) -> Vec<&'r MediaType> {
 				.map(|qmedia| qmedia.media_type())
 				.collect::<Vec<&'r MediaType>>()
 		})
-		.unwrap_or_else(Vec::new)
+		.unwrap_or_default()
 }
 
 fn media_types_match(first: &MediaType, other: &MediaType) -> bool {
@@ -44,7 +44,7 @@ where
 		let preferred = preferred_media(request);
 
 		// No 'Accept' header given, return HTML by default
-		if preferred.len() == 0 {
+		if preferred.is_empty() {
 			return self.html.respond_to(request);
 		}
 
@@ -58,7 +58,7 @@ where
 		}
 
 		// No responder matched, return a 406.
-		return not_acceptable().respond_to(request);
+		not_acceptable().respond_to(request)
 	}
 }
 
