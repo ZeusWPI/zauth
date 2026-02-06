@@ -101,13 +101,13 @@ pub struct User {
 }
 
 static NEW_USER_REGEX: LazyLock<Regex> =
-	LazyLock::new(|| Regex::new(r"^[a-z][-a-z0-9_]{2,31}$").unwrap());
+	LazyLock::new(|| Regex::new(r"^[a-z][-a-z0-9]{2,31}$").unwrap());
 
 #[derive(Validate, FromForm, Deserialize, Debug, Clone)]
 pub struct NewUser {
 	#[validate(regex(
 		path = *NEW_USER_REGEX,
-		message = r"Username didn't match regex /^[a-z][-a-z0-9_]{2,31}$/ (don't use uppercase letters).",
+		message = r"Username didn't match regex /^[a-z][-a-z0-9]{2,31}$/ (don't use uppercase letters or underscores).",
 	))]
 	pub username: String,
 	#[validate(length(
