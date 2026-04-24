@@ -2,3 +2,11 @@
 # see diesel.rs/guides/configuring-diesel-cli
 
 [print_schema]
+file = "src/models/schema.rs"
+import_types = [
+  "diesel::sql_types::*",
+  "crate::models::schema_custom_sql_types::*",
+]
+except_custom_type_definitions = [
+  "UserState",
+]

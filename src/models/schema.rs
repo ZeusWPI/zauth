@@ -4,13 +4,12 @@ pub mod sql_types {
 	#[derive(diesel::sql_types::SqlType)]
 	#[diesel(postgres_type(name = "content_type"))]
 	pub struct ContentType;
-
-	#[derive(diesel::sql_types::SqlType)]
-	#[diesel(postgres_type(name = "user_state"))]
-	pub struct UserState;
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
 	clients (id) {
 		id -> Int4,
 		#[max_length = 255]
@@ -25,6 +24,9 @@ diesel::table! {
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
 	clients_roles (client_id, role_id) {
 		client_id -> Int4,
 		role_id -> Int4,
@@ -33,6 +35,7 @@ diesel::table! {
 
 diesel::table! {
 	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
 	use super::sql_types::ContentType;
 
 	mails (id) {
@@ -47,6 +50,9 @@ diesel::table! {
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
 	passkeys (id) {
 		id -> Int4,
 		user_id -> Int4,
@@ -60,6 +66,9 @@ diesel::table! {
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
 	roles (id) {
 		id -> Int4,
 		#[max_length = 255]
@@ -71,6 +80,9 @@ diesel::table! {
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
 	sessions (id) {
 		id -> Int4,
 		#[max_length = 255]
@@ -86,7 +98,7 @@ diesel::table! {
 
 diesel::table! {
 	use diesel::sql_types::*;
-	use crate::models::user::UserStateMapping;
+	use crate::models::schema_custom_sql_types::*;
 
 	users (id) {
 		id -> Int4,
@@ -103,7 +115,7 @@ diesel::table! {
 		#[max_length = 255]
 		email -> Varchar,
 		ssh_key -> Nullable<Text>,
-		state -> UserStateMapping,
+		state -> UserState,
 		last_login -> Timestamp,
 		created_at -> Timestamp,
 		#[max_length = 255]
@@ -118,6 +130,9 @@ diesel::table! {
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
 	users_roles (user_id, role_id) {
 		user_id -> Int4,
 		role_id -> Int4,
