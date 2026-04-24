@@ -10,6 +10,7 @@ use crate::models::schema::{
 use crate::models::user::User;
 
 #[derive(
+	AsChangeset,
 	Deserialize,
 	Serialize,
 	Queryable,
@@ -201,6 +202,18 @@ impl Role {
 		db.run(move |conn| diesel::QueryDsl::find(roles::table, id).first(conn))
 			.await
 			.map_err(ZauthError::from)
+	}
+
+	pub async fn update(self, db: &DbConn) -> Result<Self> {
+		db.run(move |conn| {
+			conn.transaction(|conn| {
+				let id = self.id;
+				diesel::update(&self).set(&self).execute(conn)?;
+				roles::table.find(id).first(conn)
+			})
+		})
+		.await
+		.map_err(ZauthError::from)
 	}
 
 	pub async fn all(db: &DbConn) -> Result<Vec<Role>> {

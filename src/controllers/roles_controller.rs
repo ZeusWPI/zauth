@@ -99,6 +99,26 @@ pub async fn show_role_page<'r>(
 	})))
 }
 
+#[post("/roles/<role_id>/description", data = "<description>")]
+pub async fn update_description<'r>(
+	description: Form<String>,
+	role_id: i32,
+	_session: AdminSession,
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let mut role: Role = Role::find(role_id, &db).await?;
+	role.description = description.clone();
+	role.update(&db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_role_page(
+			role_id,
+			None::<String>,
+			Some("description changed")
+		))),
+		json: Custom(Status::Ok, ()),
+	})
+}
+
 #[delete("/roles/<id>")]
 pub async fn delete_role<'r>(
 	id: i32,
