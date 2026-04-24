@@ -6,6 +6,7 @@ use lettre::Message;
 use log::warn;
 use rocket::Request;
 use rocket::http::Status;
+use rocket::response::content::RawHtml;
 use rocket::response::{self, Responder, Response};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::mpsc::error::{SendError, TrySendError};
@@ -110,7 +111,7 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ZauthError {
 #[catch(401)]
 pub fn unauthorized<'r>() -> impl Responder<'r, 'static> {
 	Accepter {
-		html: template!("errors/401.html"),
+		html: RawHtml(template!("errors/401.html")),
 		json: Json(JsonError {
 			error: "unauthorized",
 			status: 401,
@@ -122,7 +123,7 @@ pub fn unauthorized<'r>() -> impl Responder<'r, 'static> {
 #[catch(404)]
 pub fn not_found<'r>() -> impl Responder<'r, 'static> {
 	Accepter {
-		html: template!("errors/404.html"),
+		html: RawHtml(template!("errors/404.html")),
 		json: Json(JsonError {
 			error: "not found",
 			status: 404,
@@ -140,9 +141,9 @@ pub fn unprocessable_with_message<'r>(
 	message: Option<String>,
 ) -> impl Responder<'r, 'static> {
 	Accepter {
-		html: template!("errors/422.html", {
+		html: RawHtml(template!("errors/422.html", {
 			message: Option<String> = message.clone(),
-		}),
+		})),
 		json: Json(JsonError {
 			error: "unprocessable",
 			status: 422,
@@ -160,9 +161,9 @@ fn internal_server_error_with_message<'r>(
 	message: String,
 ) -> impl Responder<'r, 'static> {
 	Accepter {
-		html: template!("errors/500.html", {
+		html: RawHtml(template!("errors/500.html", {
 			error: String = message.clone(),
-		}),
+		})),
 		json: Json(JsonError {
 			error: "internal server error",
 			status: 500,
@@ -180,9 +181,9 @@ fn not_implemented_with_message<'r>(
 	message: String,
 ) -> impl Responder<'r, 'static> {
 	Accepter {
-		html: template!("errors/501.html", {
+		html: RawHtml(template!("errors/501.html", {
 			error: String = message.clone(),
-		}),
+		})),
 		json: Json(JsonError {
 			error: "not implemented",
 			status: 501,
