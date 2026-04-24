@@ -65,7 +65,7 @@ pub fn config() -> Config {
 
 async fn reset_db(db: &DbConn) {
 	db.run(|conn| {
-		sql_query("TRUNCATE TABLE mails, sessions, users, clients, passkeys, users_assigned_roles, clients_assigned_roles, roles")
+		sql_query("TRUNCATE TABLE mails, sessions, users, clients, passkeys, roles_limited_to_clients, users_assigned_roles, clients_assigned_roles, roles")
 			.execute(conn)
 			.expect("drop all tables");
 	})
