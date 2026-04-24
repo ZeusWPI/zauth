@@ -173,23 +173,6 @@ pub async fn update_visibility<'r>(
 	})
 }
 
-#[delete("/roles/<id>")]
-pub async fn delete_role<'r>(
-	// from url
-	id: i32,
-	// from headers
-	_session: AdminSession,
-	// injected
-	db: DbConn,
-) -> Result<impl Responder<'r, 'static>> {
-	let role = Role::find(id, &db).await?;
-	role.delete(&db).await?;
-	Ok(Accepter {
-		html: Redirect::to(uri!(list_roles(None::<String>))),
-		json: Custom(Status::NoContent, ()),
-	})
-}
-
 #[post("/roles/<role_id>/users", data = "<user_id>")]
 pub async fn add_user<'r>(
 	// from url
@@ -319,5 +302,22 @@ pub async fn delete_client<'r>(
 			Some("client deleted")
 		))),
 		json: Custom(Status::Ok, ()),
+	})
+}
+
+#[delete("/roles/<id>")]
+pub async fn delete_role<'r>(
+	// from url
+	id: i32,
+	// from headers
+	_session: AdminSession,
+	// injected
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let role = Role::find(id, &db).await?;
+	role.delete(&db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(list_roles(None::<String>))),
+		json: Custom(Status::NoContent, ()),
 	})
 }
