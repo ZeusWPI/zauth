@@ -27,20 +27,12 @@ pub async fn list_roles<'r>(
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let roles: Vec<Role> = Role::all(&db).await?;
-	let clients = Client::all(&db).await?;
-
-	let lookup_client_by_id: Box<dyn Fn(i32, &[Client]) -> Option<Client>> =
-		Box::new(move |id: i32, c: &[Client]| {
-			c.iter().find(|c| c.id == id).cloned()
-		});
 
 	Ok(Accepter {
 		html: RawHtml(template!("roles/index.html", {
-			roles: Vec<Role> = roles.clone(),
-			clients: Vec<Client> = clients,
-			error: Option<String> = error,
 			current_user: User = session.admin,
-			lookup_client_by_id: Box<dyn Fn(i32, &[Client]) -> Option<Client>> = lookup_client_by_id,
+			error: Option<String> = error,
+			roles: Vec<Role> = roles.clone(),
 		})),
 		json: Json(roles),
 	})
@@ -100,17 +92,11 @@ pub async fn show_role_page<'r>(
 	let limited_to_client_ids: Vec<i32> =
 		limited_to_clients.iter().map(|client| client.id).collect();
 
-	let clients: Vec<Client> = role.clone().clients(&db).await?;
-	let client_ids: Vec<i32> = clients.iter().map(|client| client.id).collect();
-
 	let users: Vec<User> = role.clone().users(&db).await?;
 	let user_ids: Vec<i32> = users.iter().map(|user| user.id).collect();
 
-	let client = if let Some(id) = role.client_id {
-		Some(Client::find(id, &db).await?)
-	} else {
-		None
-	};
+	let clients: Vec<Client> = role.clone().clients(&db).await?;
+	let client_ids: Vec<i32> = clients.iter().map(|client| client.id).collect();
 
 	let all_users: Vec<User> = User::all(&db).await?;
 	let all_clients: Vec<Client> = Client::all(&db).await?;
@@ -122,8 +108,6 @@ pub async fn show_role_page<'r>(
 		success: Option<String> = success,
 
 		role: Role = role,
-		client: Option<Client> = client,
-
 		limited_to_clients: Vec<Client> = limited_to_clients,
 		limited_to_client_ids: Vec<i32> = limited_to_client_ids,
 		users: Vec<User> = users,

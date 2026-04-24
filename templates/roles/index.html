@@ -38,7 +38,7 @@
 				<tr>
 					<th>Name</th>
 					<th>Description</th>
-					<th>Client</th>
+					<th>Visibility</th>
 					<th><!-- Remove button --></th>
 				</tr>
 			</thead>
@@ -53,19 +53,9 @@
 						<!-- Description -->
 						<td data-label="Description">{{ role.description }}</td>
 
-						<!-- Client -->
-						<td data-label="Client">
-							{% if let Some(client_id) = role.client_id %}
-								<a href="/clients/{{ client_id }}/edit">
-									{% if let Some(client) = (lookup_client_by_id)(**client_id, clients) %}
-										{{ client.name }}
-									{% else %}
-										{{ client_id }}
-									{% endif %}
-								</a>
-							{% else %}
-								Global
-							{% endif %}
+						<!-- Visibility -->
+						<td data-label="Visibility">
+							{{ role.visibility }}
 						</td>
 
 						<!-- Remove button -->
@@ -118,18 +108,14 @@
 					</div>
 
 					<div class="field">
-						<label class="label">Client</label>
+						<label class="label">Visibility</label>
 						<div class="select">
-							<select name="client_id">
-								<option selected></option>
-								{% for client in clients %}
-									<option value="{{ client.id }}">{{ client.name }}</option>
+							<select name="visibility" required>
+								{% for el in crate::models::role::RoleVisibility::VALUES %}
+									<option value="{{ el }}">{{- el -}}</option>
 								{% endfor %}
 							</select>
 						</div>
-						<p class="help">
-							Keeping this empty will create a global role
-						</p>
 					</div>
 				</section>
 

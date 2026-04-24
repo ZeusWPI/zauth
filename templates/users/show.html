@@ -109,12 +109,7 @@
 				<label class="label"> Roles </label>
 				<div class="field tags">
 					{% for role in user_roles %}
-						<span
-							class="tag is-medium"
-							{% if let Some(_) = role.client_id %}
-								style="border: 2px solid black"
-							{% endif %}
-						>
+						<span class="tag is-medium">
 							{% if current_user.admin %}
 								<a href="/roles/{{ role.id }}">{{ role.name }}</a>
 								<a class="is-small delete" href="#delete-role-{{ role.id }}"></a>

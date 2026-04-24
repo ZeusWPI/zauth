@@ -117,15 +117,10 @@
 			</div>
 
 			<div class="card card-content mb-4">
-				<label class="label">Roles</label>
+				<label class="label">Assigned roles</label>
 				<div class="field tags">
 					{% for role in client_roles %}
-						<span
-							class="tag is-medium"
-							{% if let Some(_) = role.client_id %}
-								style="border: 2px solid black"
-							{% endif %}
-						>
+						<span class="tag is-medium">
 							<a href="/roles/{{ role.id }}">{{ role.name }}</a>
 							<a class="is-small delete" href="#delete-role-{{ role.id }}"></a>
 							<div class="modal modal-target" id="delete-role-{{ role.id }}">

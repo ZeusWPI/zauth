@@ -80,7 +80,6 @@ diesel::table! {
 		name -> Varchar,
 		#[max_length = 255]
 		description -> Varchar,
-		client_id -> Nullable<Int4>,
 		visibility -> RoleVisibility,
 	}
 }
@@ -158,7 +157,6 @@ diesel::table! {
 diesel::joinable!(clients_assigned_roles -> clients (client_id));
 diesel::joinable!(clients_assigned_roles -> roles (role_id));
 diesel::joinable!(passkeys -> users (user_id));
-diesel::joinable!(roles -> clients (client_id));
 diesel::joinable!(roles_limited_to_clients -> clients (client_id));
 diesel::joinable!(roles_limited_to_clients -> roles (role_id));
 diesel::joinable!(sessions -> clients (client_id));

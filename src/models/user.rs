@@ -11,12 +11,11 @@ use regex::Regex;
 use rocket::{FromFormField, serde::Serialize};
 use validator::{Validate, ValidationError, ValidationErrors};
 
-use super::role::{Role, UserRole};
-use super::schema::roles;
-use super::schema::users;
 use crate::Config;
 use crate::DbConn;
 use crate::errors::{self, InternalError, LoginError, ZauthError};
+use crate::models::role::{Role, UserRole};
+use crate::models::schema::{roles, users};
 use crate::util::random_token;
 
 #[derive(
@@ -554,6 +553,26 @@ impl User {
 		db: &DbConn,
 	) -> Result<Vec<Role>, ZauthError> {
 		db.run(move |conn| {
+			diesel::sql_query("
+				SELECT roles.*
+				FROM users
+				INNER JOIN users_assigned_roles ON users.id = users_assigned_roles.user_id
+				INNER JOIN roles ON users_assigned_roles.role_id = roles.id
+				LEFT OUTER JOIN roles_limited_to_clients ON roles.id = roles_limited_to_clients.role_id
+				WHERE users.id = $1 AND (
+					roles.visibility = 'global' OR
+					(roles.visibility = 'limited' AND roles_limited_to_clients.client_id = $2)
+				);
+			")
+				.bind::<diesel::sql_types::Int4, _>(self.id)
+				.bind::<diesel::sql_types::Int4, _>(client_id)
+				.get_results(conn)
+		})
+		.await
+		.map_err(ZauthError::from)
+
+		/*
+		db.run(move |conn| {
 			UserRole::belonging_to(&self)
 				.inner_join(roles::table)
 				.filter(
@@ -566,6 +585,37 @@ impl User {
 		})
 		.await
 		.map_err(ZauthError::from)
+		*/
+
+		/*
+		db.run(move |conn| {
+			users::table
+				.filter(users::id.eq(self.id))
+				.inner_join(
+					users_assigned_roles::table.inner_join(
+						roles::table
+							//.left_outer_join(roles_limited_to_clients::table),
+					),
+				)
+				.filter(roles::visibility.eq(RoleVisibility::Global))
+				.select(Role::as_select())
+				.load(conn)
+		})
+		.await
+		.map_err(ZauthError::from)
+		*/
+
+		/*
+			.union(
+				UserRole::belonging_to(&self)
+					.inner_join(
+						roles::table
+							.inner_join(roles_limited_to_clients::table),
+					)
+					.filter(roles::visibility.eq(RoleVisibility::Limited))
+					.select(Role::as_select()),
+			)
+		*/
 	}
 }
 

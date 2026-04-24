@@ -15,7 +15,15 @@ use crate::models::schema::{
 use crate::models::user::User;
 
 #[derive(
-	Clone, DbEnum, Debug, Deserialize, FromFormField, PartialEq, Serialize,
+	Clone,
+	Copy,
+	DbEnum,
+	Debug,
+	Deserialize,
+	FromFormField,
+	Eq,
+	PartialEq,
+	Serialize,
 )]
 #[db_enum(
 	existing_type_path = "crate::models::schema::sql_types::RoleVisibility"
@@ -52,6 +60,7 @@ impl RoleVisibility {
 	Identifiable,
 	PartialEq,
 	Queryable,
+	QueryableByName,
 	Selectable,
 	Serialize,
 )]
@@ -59,7 +68,6 @@ pub struct Role {
 	pub id: i32,
 	pub name: String,
 	pub description: String,
-	pub client_id: Option<i32>,
 	pub visibility: RoleVisibility,
 }
 
@@ -70,7 +78,7 @@ pub struct NewRole {
 	pub name: String,
 	#[validate(length(min = 1, max = 100))]
 	pub description: String,
-	pub client_id: Option<i32>,
+	pub visibility: RoleVisibility,
 }
 
 #[derive(
