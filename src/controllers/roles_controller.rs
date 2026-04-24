@@ -13,7 +13,7 @@ use crate::ephemeral::from_api::Api;
 use crate::ephemeral::session::AdminSession;
 use crate::errors::{Either, InternalError, Result, ZauthError};
 use crate::models::client::Client;
-use crate::models::role::{NewRole, Role};
+use crate::models::role::{NewRole, Role, RoleVisibility};
 use crate::models::user::User;
 use crate::views::accepter::Accepter;
 
@@ -144,6 +144,30 @@ pub async fn update_description<'r>(
 			role_id,
 			None::<String>,
 			Some("description changed")
+		))),
+		json: Custom(Status::Ok, ()),
+	})
+}
+
+#[post("/roles/<role_id>/visibility", data = "<visibility>")]
+pub async fn update_visibility<'r>(
+	// from url
+	role_id: i32,
+	// from body
+	visibility: Form<RoleVisibility>,
+	// from headers
+	_session: AdminSession,
+	// injected
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let mut role: Role = Role::find(role_id, &db).await?;
+	role.visibility = visibility.into_inner();
+	role.update(&db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_role_page(
+			role_id,
+			None::<String>,
+			Some("visibility changed")
 		))),
 		json: Custom(Status::Ok, ()),
 	})
