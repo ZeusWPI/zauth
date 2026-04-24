@@ -34,7 +34,7 @@ pub fn delete_session<'r>(session: UserSession) -> impl Responder<'r, 'static> {
 	}))
 }
 
-#[derive(FromForm, Debug)]
+#[derive(Debug, FromForm)]
 pub struct LoginFormData {
 	username: String,
 	password: String,

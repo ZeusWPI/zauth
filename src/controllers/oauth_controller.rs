@@ -25,7 +25,7 @@ use crate::util::split_scopes;
 
 const OAUTH_COOKIE: &str = "ZAUTH_OAUTH";
 
-#[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
+#[derive(Debug, Deserialize, FromForm, Serialize, UriDisplayQuery)]
 pub struct AuthState {
 	pub client_id: i32,
 	pub client_name: String,
@@ -90,7 +90,7 @@ impl AuthState {
 	}
 }
 
-#[derive(Debug, FromForm, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, FromForm, Serialize)]
 pub struct AuthorizationRequest {
 	pub response_type: String,
 	pub client_id: String,
@@ -137,7 +137,7 @@ pub async fn authorize<'r>(
 	}
 }
 
-#[derive(FromForm, Debug)]
+#[derive(Debug, FromForm)]
 pub struct AuthorizeFormData {
 	authorized: bool,
 }
@@ -155,7 +155,7 @@ pub async fn do_authorize(
 	}
 }
 
-#[derive(FromForm, Debug)]
+#[derive(Debug, FromForm)]
 pub struct GrantFormData {
 	grant: bool,
 }
@@ -252,7 +252,7 @@ fn authorization_denied(state: AuthState) -> Redirect {
 	))
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug, Serialize)]
 pub struct TokenSuccess {
 	access_token: String,
 	token_type: String,
@@ -261,7 +261,7 @@ pub struct TokenSuccess {
 	expires_in: i64,
 }
 
-#[derive(FromForm, Debug)]
+#[derive(Debug, FromForm)]
 pub struct TokenFormData {
 	grant_type: String,
 	code: Option<String>,

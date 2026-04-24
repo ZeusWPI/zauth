@@ -23,7 +23,7 @@ pub struct JWTBuilder {
 	pub jwks: JwkSet,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug, Serialize)]
 struct IDToken {
 	sub: String,
 	iss: String,
@@ -37,7 +37,7 @@ struct IDToken {
 	picture: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug, Serialize)]
 struct ClientIDToken {
 	sub: String,
 	iss: String,

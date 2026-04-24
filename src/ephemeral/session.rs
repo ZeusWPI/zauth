@@ -36,7 +36,7 @@ pub fn stored_redirect_or(cookies: &CookieJar, fallback: Origin) -> Redirect {
 	Redirect::to(location.to_string())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct SessionCookie {
 	session_id: i32,
 }

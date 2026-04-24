@@ -22,7 +22,7 @@ use crate::views::accepter::Accepter;
 // struct does not play nice with any other libraries. (So it can't be
 // deserialized by serde.)
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Deserialize)]
 pub struct JsonClientChange {
 	pub name: Option<String>,
 	pub needs_grant: Option<bool>,
@@ -30,7 +30,7 @@ pub struct JsonClientChange {
 	pub redirect_uri_list: Option<String>,
 }
 
-#[derive(FromForm, Debug)]
+#[derive(Debug, FromForm)]
 pub struct FormClientChange {
 	pub name: Option<String>,
 	pub needs_grant: Vec<bool>,

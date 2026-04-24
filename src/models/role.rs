@@ -11,14 +11,14 @@ use crate::models::user::User;
 
 #[derive(
 	AsChangeset,
-	Deserialize,
-	Serialize,
-	Queryable,
-	Debug,
 	Clone,
+	Debug,
+	Deserialize,
 	Identifiable,
 	PartialEq,
+	Queryable,
 	Selectable,
+	Serialize,
 )]
 pub struct Role {
 	pub id: i32,
@@ -27,7 +27,7 @@ pub struct Role {
 	pub client_id: Option<i32>,
 }
 
-#[derive(Validate, FromForm, Debug, Insertable, Deserialize)]
+#[derive(Debug, Deserialize, FromForm, Insertable, Validate)]
 #[diesel(table_name = roles)]
 pub struct NewRole {
 	#[validate(length(min = 1, max = 30))]
@@ -38,7 +38,7 @@ pub struct NewRole {
 }
 
 #[derive(
-	Identifiable, Selectable, Queryable, Associations, Debug, Insertable,
+	Associations, Debug, Identifiable, Insertable, Queryable, Selectable,
 )]
 #[diesel(belongs_to(Role))]
 #[diesel(belongs_to(User))]
@@ -50,7 +50,7 @@ pub struct UserRole {
 }
 
 #[derive(
-	Identifiable, Selectable, Queryable, Associations, Debug, Insertable,
+	Associations, Debug, Identifiable, Insertable, Queryable, Selectable,
 )]
 #[diesel(belongs_to(Role))]
 #[diesel(belongs_to(Client))]

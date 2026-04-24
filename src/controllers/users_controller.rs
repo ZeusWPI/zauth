@@ -427,7 +427,7 @@ pub fn forgot_password_get<'r>() -> impl Responder<'r, 'static> {
 	RawHtml(template!("users/forgot_password.html"))
 }
 
-#[derive(Debug, FromForm, Deserialize)]
+#[derive(Debug, Deserialize, FromForm)]
 pub struct ResetPassword {
 	for_email: String,
 }

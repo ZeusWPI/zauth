@@ -12,7 +12,7 @@ use super::schema::mails;
 use crate::DbConn;
 use crate::errors::{self, ZauthError};
 
-#[derive(DbEnum, Debug, Deserialize, FromFormField, Serialize, Copy, Clone)]
+#[derive(Clone, Copy, DbEnum, Debug, Deserialize, FromFormField, Serialize)]
 #[db_enum(existing_type_path = "crate::models::schema::sql_types::ContentType")]
 pub enum ContentType {
 	#[db_enum(rename = "text/plain")]
@@ -37,7 +37,7 @@ pub struct Mail {
 }
 
 #[derive(
-	Clone, Debug, Deserialize, Serialize, FromForm, Insertable, Validate,
+	Clone, Debug, Deserialize, FromForm, Insertable, Serialize, Validate,
 )]
 #[diesel(table_name = mails)]
 pub struct NewMail {

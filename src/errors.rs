@@ -16,7 +16,7 @@ use webauthn_rs::prelude::WebauthnError;
 
 use crate::views::accepter::Accepter;
 
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum ZauthError {
 	#[error("Internal server error {0:?}")]
 	Internal(#[from] InternalError),
@@ -203,7 +203,7 @@ impl From<diesel::result::Error> for ZauthError {
 
 pub type Result<T> = std::result::Result<T, ZauthError>;
 
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum InternalError {
 	#[error("Hash error")]
 	HashError(#[from] pwhash::error::Error),
@@ -233,7 +233,7 @@ pub enum InternalError {
 
 pub type InternalResult<T> = std::result::Result<T, InternalError>;
 
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum LoginError {
 	#[error("Username or password incorrect")]
 	UsernamePasswordError,
@@ -252,7 +252,7 @@ pub enum LoginError {
 	PasskeyDiscoverableError,
 }
 
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum AuthenticationError {
 	#[error("Not authorized '{0}'")]
 	Unauthorized(String),
@@ -263,7 +263,7 @@ pub enum AuthenticationError {
 }
 pub type AuthResult<T> = std::result::Result<T, AuthenticationError>;
 
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum LaunchError {
 	#[error("Incorrect config value type for key '{0}'")]
 	BadConfigValueType(String),
@@ -273,7 +273,7 @@ pub enum LaunchError {
 	SMTPError(#[from] lettre::transport::smtp::Error),
 }
 
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum OAuthError {
 	#[error(
 		"The cookie used for storing OAuth information is invalid or has \

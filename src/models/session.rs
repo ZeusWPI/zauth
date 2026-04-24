@@ -9,7 +9,7 @@ use crate::models::client::Client;
 use crate::models::user::User;
 use crate::util::random_token;
 
-#[derive(Serialize, AsChangeset, Queryable, Associations, Debug, Clone)]
+#[derive(AsChangeset, Associations, Clone, Debug, Queryable, Serialize)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(Client))]
 #[diesel(table_name = sessions)]
@@ -24,7 +24,7 @@ pub struct Session {
 	pub scope: Option<String>,
 }
 
-#[derive(Insertable, Debug, Clone)]
+#[derive(Clone, Debug, Insertable)]
 #[diesel(table_name = sessions)]
 pub struct NewSession {
 	pub key: Option<String>,
