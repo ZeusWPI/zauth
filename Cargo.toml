@@ -5,8 +5,7 @@ edition = "2024"
 authors = ["Rien Maertens <rien.maertens@posteo.be>"]
 
 [dependencies]
-askama = { git = "https://github.com/djc/askama.git", rev = "40bb338", features = ["with-rocket", "mime", "mime_guess"] }
-askama_rocket = { git = "https://github.com/djc/askama.git", rev = "40bb338" }
+askama = "0.15.6"
 base64 = "0.22"
 bincode = {version = "2.0", features = ["serde"]}
 pwhash = "1.0"
