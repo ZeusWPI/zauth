@@ -27,13 +27,11 @@
 				<div class="title">Update profile information</div>
 
 				<!-- Error messages -->
-				{% match errors %}
-					{% when Some with (errors) %}
-						<div class="notification is-danger is-light">
-							{{ errors }}
-						</div>
-					{% when None %}
-				{% endmatch %}
+				{% if let Some(errors) = errors %}
+					<div class="notification is-danger is-light">
+						{{ errors }}
+					</div>
+				{% endif %}
 
 				<form class="profile-edit-form" action="/users/{{ user.username }}" method="POST">
 					<input type="hidden" name="_method" value="put"/>
@@ -70,11 +68,9 @@
 					<div class="field">
 						<label class="label">SSH Keys</label>
 						<textarea class="textarea" name="ssh_key" placeholder="SSH Keys">
-							{%- match user.ssh_key -%}
-								{%- when Some with (val) -%}
-									{{- val -}}
-								{%- when None -%}
-							{%- endmatch -%}
+							{%- if let Some(ssh_key) = user.ssh_key -%}
+								{{- ssh_key -}}
+							{%- endif -%}
 						</textarea>
 					</div>
 

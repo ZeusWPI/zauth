@@ -142,12 +142,11 @@
 
 						<!-- SSH Keys -->
 						<td data-label="SSH Keys">
-							{% match user.ssh_key %}
-								{% when Some with (val) %}
-									<a class="button is-small is-light" href="#ssh-key-{{ user.username }}">View</a>
-								{% when None %}
-									N/A
-							{% endmatch %}
+							{% if let Some(_) = user.ssh_key %}
+								<a class="button is-small is-light" href="#ssh-key-{{ user.username }}">View</a>
+							{% else %}
+								N/A
+							{% endif %}
 						</td>
 
 						<!-- State -->
@@ -175,41 +174,39 @@
 						</td>
 					</tr>
 					<!-- SSH Key Spoiler -->
-					{% match user.ssh_key %}
-						{% when Some with (val) %}
-							<div class="modal modal-target" id="ssh-key-{{ user.username }}">
-								<a class="modal-background" href="#"></a>
+					{% if let Some(ssh_key) = user.ssh_key %}
+						<div class="modal modal-target" id="ssh-key-{{ user.username }}">
+							<a class="modal-background" href="#"></a>
 
-								<div class="modal-card">
-									<!-- Header -->
-									<header class="modal-card-head">
-										<!-- Title -->
-										<div class="modal-card-title">SSH Keys for {{ user.username }}</div>
-										<!-- Close -->
-										<a class="delete" href="#"></a>
-									</header>
+							<div class="modal-card">
+								<!-- Header -->
+								<header class="modal-card-head">
+									<!-- Title -->
+									<div class="modal-card-title">SSH Keys for {{ user.username }}</div>
+									<!-- Close -->
+									<a class="delete" href="#"></a>
+								</header>
 
-									<!-- Content -->
-									<section class="modal-card-body">
-										<div class="field">
-											<label class="label">SSH Keys</label>
-											<textarea
-												class="textarea"
-												placeholder="SSH Keys"
-												value="{{ val }}"
-												readonly
-											></textarea>
-										</div>
-									</section>
+								<!-- Content -->
+								<section class="modal-card-body">
+									<div class="field">
+										<label class="label">SSH Keys</label>
+										<textarea
+											class="textarea"
+											placeholder="SSH Keys"
+											value="{{ ssh_key }}"
+											readonly
+										></textarea>
+									</div>
+								</section>
 
-									<!-- Footer -->
-									<footer class="modal-card-foot is-justify-content-flex-end">
-										<a class="button is-danger is-light" href="#">Close</a>
-									</footer>
-								</div>
+								<!-- Footer -->
+								<footer class="modal-card-foot is-justify-content-flex-end">
+									<a class="button is-danger is-light" href="#">Close</a>
+								</footer>
 							</div>
-						{% when None %}
-					{% endmatch %}
+						</div>
+					{% endif %}
 				{% endfor %}
 			</tbody>
 		</table>

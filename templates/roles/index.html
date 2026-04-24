@@ -26,13 +26,11 @@
 		</div>
 
 		<!-- Error message -->
-		{% match error %}
-			{% when Some with (error) %}
-				<div class="notification is-danger is-light">
-					{{ error }}
-				</div>
-			{% when None %}
-		{% endmatch %}
+		{% if let Some(error) = error %}
+			<div class="notification is-danger is-light">
+				{{ error }}
+			</div>
+		{% endif %}
 
 		<!-- Table -->
 		<table class="table table--responsive table--responsive--labels is-fullwidth">

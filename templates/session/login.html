@@ -4,20 +4,17 @@
 {% block content %}
 	<div class="card-page">
 		<div class="card-page-content">
-
 			<!-- Logo -->
 			<a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
 				<img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
 			</a>
 
 			<!-- Error messages -->
-			{% match error %}
-				{% when Some with (message) %}
-					<div class="notification is-danger is-light">
-						{{ message }}
-					</div>
-				{% when None %}
-			{% endmatch %}
+			{% if let Some(error) = error %}
+				<div class="notification is-danger is-light">
+					{{ error }}
+				</div>
+			{% endif %}
 
 			<div class="card-page-card">
 				<!-- Title -->

@@ -2,36 +2,33 @@
 
 <!-- Content -->
 {% block content %}
+	<!-- Title -->
 	<div class="profile-title">
 		Role {{ role.name }}
 	</div>
 
+	<!-- Subtitle -->
 	<div class="profile-subtitle mb-4">
-		{% match client %}
-			{% when Some with (client) %}
-				for client <a href="/clients/{{ client.id }}/edit">{{ client.name }}</a>
-			{% when None %}
-				Global role
-		{% endmatch %}
+		{% if let Some(client) = client %}
+			for client <a href="/clients/{{ client.id }}/edit">{{ client.name }}</a>
+		{% else %}
+			Global role
+		{% endif %}
 	</div>
 
 	<!-- Error message -->
-	{% match error %}
-		{% when Some with (error) %}
-			<div class="notification is-danger is-light">
-				{{ error }}
-			</div>
-		{% when None %}
-	{% endmatch %}
+	{% if let Some(error) = error %}
+		<div class="notification is-danger is-light">
+			{{ error }}
+		</div>
+	{% endif %}
 
 	<!-- info message -->
-	{% match info %}
-		{% when Some with (info) %}
-			<div class="notification is-info is-light">
-				{{ info }}
-			</div>
-		{% when None %}
-	{% endmatch %}
+	{% if let Some(info) = info %}
+		<div class="notification is-info is-light">
+			{{ info }}
+		</div>
+	{% endif %}
 
 	<div class="cards">
 		<div class="card card-content mb-4">

@@ -11,9 +11,7 @@
 		Sorry, but your request could not be processed because.
 		Probably because it would cause an illegal state.
 	</p>
-	{% match message %}
-		{% when Some with (msg) %}
-			<p><strong>Message:</strong> {{ msg }}</p>
-		{% when None %}
-	{% endmatch %}
+	{% if let Some(message) = message %}
+		<p><strong>Message:</strong> {{ message }}</p>
+	{% endif %}
 {% endblock error_content %}

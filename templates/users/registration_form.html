@@ -19,13 +19,11 @@
 			{% else %}
 
 			<!-- Error messages -->
-			{% match errors %}
-				{% when Some with (errors) %}
-					<div class="notification is-danger is-light">
-						{{ errors }}
-					</div>
-				{% when None %}
-			{% endmatch %}
+			{% if let Some(errors) = errors %}
+				<div class="notification is-danger is-light">
+					{{ errors }}
+				</div>
+			{% endif %}
 
 			<div class="card-page-card">
 				<!-- Title -->
