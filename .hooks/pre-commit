@@ -2,3 +2,7 @@
 set -eu
 
 cargo fmt -- --check
+
+if cargo --list | grep -q "sort-derives"; then
+    cargo sort-derives --check
+fi
