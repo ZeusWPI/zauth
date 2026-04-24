@@ -2,7 +2,6 @@ use lettre::message::{Mailbox, header};
 use rocket::form::validate::Contains;
 use rocket::response::content::RawHtml;
 use rocket::response::{Redirect, Responder};
-use std::fmt::Debug;
 
 use crate::DbConn;
 use crate::config::Config;

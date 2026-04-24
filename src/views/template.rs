@@ -27,7 +27,7 @@ macro_rules! template {
 			use crate::errors::{InternalError,Result,ZauthError};
 			use crate::views::template::CommonTemplateData;
 
-			#[derive(Template, Debug)]
+			#[derive(Template)]
 			#[template(path = $template_name)]
 			struct TemplateStruct {
 				#[allow(dead_code)]

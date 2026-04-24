@@ -5,7 +5,6 @@ use rocket::response::content::RawHtml;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder, status};
 use rocket::serde::json::Json;
-use std::fmt::Debug;
 
 use crate::DbConn;
 use crate::ephemeral::from_api::Api;
@@ -22,8 +21,13 @@ pub async fn list_roles<'r>(
 	db: DbConn,
 	session: AdminSession,
 ) -> Result<impl Responder<'r, 'static>> {
-	let roles = Role::all(&db).await?;
+	let roles: Vec<Role> = Role::all(&db).await?;
 	let clients = Client::all(&db).await?;
+
+	let lookup_client_by_id: Box<dyn Fn(i32, &[Client]) -> Option<Client>> =
+		Box::new(move |id: i32, c: &[Client]| {
+			c.iter().find(|c| c.id == id).cloned()
+		});
 
 	Ok(Accepter {
 		html: RawHtml(template!("roles/index.html", {
@@ -31,6 +35,7 @@ pub async fn list_roles<'r>(
 			clients: Vec<Client> = clients,
 			error: Option<String> = error,
 			current_user: User = session.admin,
+			lookup_client_by_id: Box<dyn Fn(i32, &[Client]) -> Option<Client>> = lookup_client_by_id,
 		})),
 		json: Json(roles),
 	})

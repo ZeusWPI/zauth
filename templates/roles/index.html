@@ -43,12 +43,13 @@
 				<tr>
 					<th>Name</th>
 					<th>Description</th>
+					<th>Client</th>
 					<th></th>
 				</tr>
 			</thead>
 
 			<tbody>
-				{% for role in roles %}
+				{% for role in roles.iter() %}
 					<tr>
 
 						<!-- Name -->
@@ -58,6 +59,21 @@
 
 						<!-- Description -->
 						<td data-label="Description">{{ role.description }}</td>
+
+						<!-- Client -->
+						<td data-label="Client">
+							{% if let Some(client_id) = role.client_id %}
+								<a href="/clients/{{ client_id }}/edit">
+									{% if let Some(client) = (lookup_client_by_id)(**client_id, clients) %}
+										{{ client.name }}
+									{% else %}
+										{{ client_id }}
+									{% endif %}
+								</a>
+							{% else %}
+								Global
+							{% endif %}
+						</td>
 
 						<!-- Remove -->
 						<td>
