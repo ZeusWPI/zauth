@@ -7,8 +7,8 @@ use serde_json::Value;
 use zauth::DbConn;
 use zauth::models::client::{Client, NewClient};
 use zauth::models::mail::NewMail;
-use zauth::models::role::NewRole;
 use zauth::models::role::Role;
+use zauth::models::role::{NewRole, RoleVisibility};
 use zauth::models::user::*;
 
 use crate::common::{HttpClient, config};
@@ -335,7 +335,7 @@ async fn authorized_client_can_use_mailinglist() {
 			NewRole {
 				name: config().mailer_role.to_string(),
 				description: "test".into(),
-				client_id: None,
+				visibility: RoleVisibility::Global,
 			},
 			&db,
 		)

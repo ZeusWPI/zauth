@@ -2,8 +2,7 @@ mod common;
 
 use rocket::http::{Accept, ContentType, Status};
 
-use zauth::models::client::{Client, NewClient};
-use zauth::models::role::{NewRole, Role};
+use zauth::models::role::{NewRole, Role, RoleVisibility};
 use zauth::models::user::User;
 
 use crate::common::HttpClient;
@@ -51,46 +50,8 @@ async fn create_role_as_user() {
 async fn create_global_role() {
 	common::as_admin(async move |http_client: HttpClient, db, _user| {
 		let role_name = "test";
-		let role_form =
-			format!("name={role_name}&description=test_description");
-
-		let response = http_client
-			.post("/roles")
-			.body(role_form)
-			.header(ContentType::Form)
-			.header(Accept::JSON)
-			.dispatch()
-			.await;
-
-		assert_eq!(response.status(), Status::Created);
-
-		let json: Role = response.into_json().await.unwrap();
-
-		let created = Role::find(json.id, &db).await.unwrap();
-
-		assert_eq!(created.name, role_name);
-		assert_eq!(created.description, "test_description");
-		assert_eq!(created.client_id, None);
-	})
-	.await;
-}
-
-#[rocket::async_test]
-async fn create_client_role() {
-	common::as_admin(async move |http_client: HttpClient, db, _user| {
-		let client = Client::create(
-			NewClient {
-				name: String::from("test"),
-			},
-			&db,
-		)
-		.await
-		.unwrap();
-
-		let role_name = "test";
 		let role_form = format!(
-			"name={role_name}&description=test_description&client_id={}",
-			client.id
+			"name={role_name}&description=test_description&visibility=global"
 		);
 
 		let response = http_client
@@ -109,7 +70,36 @@ async fn create_client_role() {
 
 		assert_eq!(created.name, role_name);
 		assert_eq!(created.description, "test_description");
-		assert_eq!(created.client_id, Some(client.id));
+		assert_eq!(created.visibility, RoleVisibility::Global);
+	})
+	.await;
+}
+
+#[rocket::async_test]
+async fn create_limited_role() {
+	common::as_admin(async move |http_client: HttpClient, db, _user| {
+		let role_name = "test";
+		let role_form = format!(
+			"name={role_name}&description=test_description&visibility=limited",
+		);
+
+		let response = http_client
+			.post("/roles")
+			.body(role_form)
+			.header(ContentType::Form)
+			.header(Accept::JSON)
+			.dispatch()
+			.await;
+
+		assert_eq!(response.status(), Status::Created);
+
+		let json: Role = response.into_json().await.unwrap();
+
+		let created = Role::find(json.id, &db).await.unwrap();
+
+		assert_eq!(created.name, role_name);
+		assert_eq!(created.description, "test_description");
+		assert_eq!(created.visibility, RoleVisibility::Limited);
 	})
 	.await;
 }
@@ -121,7 +111,7 @@ async fn show_role_as_user() {
 			NewRole {
 				name: "test".into(),
 				description: "test".into(),
-				client_id: None,
+				visibility: RoleVisibility::Global,
 			},
 			&db,
 		)
@@ -145,7 +135,7 @@ async fn show_role_as_admin() {
 			NewRole {
 				name: "test".into(),
 				description: "test".into(),
-				client_id: None,
+				visibility: RoleVisibility::Global,
 			},
 			&db,
 		)
@@ -168,7 +158,7 @@ async fn delete_role() {
 			NewRole {
 				name: "test".into(),
 				description: "test".into(),
-				client_id: None,
+				visibility: RoleVisibility::Global,
 			},
 			&db,
 		)
@@ -194,7 +184,7 @@ async fn add_user_to_role_as_user() {
 			NewRole {
 				name: "test".into(),
 				description: "test".into(),
-				client_id: None,
+				visibility: RoleVisibility::Global,
 			},
 			&db,
 		)
@@ -223,7 +213,7 @@ async fn add_user_to_role_as_admin() {
 			NewRole {
 				name: "test".into(),
 				description: "test".into(),
-				client_id: None,
+				visibility: RoleVisibility::Global,
 			},
 			&db,
 		)
@@ -264,7 +254,7 @@ async fn add_role_to_user_as_user() {
 			NewRole {
 				name: "test".into(),
 				description: "test".into(),
-				client_id: None,
+				visibility: RoleVisibility::Global,
 			},
 			&db,
 		)
@@ -293,7 +283,7 @@ async fn add_role_to_user_as_admin() {
 			NewRole {
 				name: "test".into(),
 				description: "test".into(),
-				client_id: None,
+				visibility: RoleVisibility::Global,
 			},
 			&db,
 		)
