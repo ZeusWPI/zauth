@@ -27,7 +27,7 @@ diesel::table! {
 	use diesel::sql_types::*;
 	use crate::models::schema_custom_sql_types::*;
 
-	clients_roles (client_id, role_id) {
+	clients_assigned_roles (client_id, role_id) {
 		client_id -> Int4,
 		role_id -> Int4,
 	}
@@ -133,28 +133,28 @@ diesel::table! {
 	use diesel::sql_types::*;
 	use crate::models::schema_custom_sql_types::*;
 
-	users_roles (user_id, role_id) {
+	users_assigned_roles (user_id, role_id) {
 		user_id -> Int4,
 		role_id -> Int4,
 	}
 }
 
-diesel::joinable!(clients_roles -> clients (client_id));
-diesel::joinable!(clients_roles -> roles (role_id));
+diesel::joinable!(clients_assigned_roles -> clients (client_id));
+diesel::joinable!(clients_assigned_roles -> roles (role_id));
 diesel::joinable!(passkeys -> users (user_id));
 diesel::joinable!(roles -> clients (client_id));
 diesel::joinable!(sessions -> clients (client_id));
 diesel::joinable!(sessions -> users (user_id));
-diesel::joinable!(users_roles -> roles (role_id));
-diesel::joinable!(users_roles -> users (user_id));
+diesel::joinable!(users_assigned_roles -> roles (role_id));
+diesel::joinable!(users_assigned_roles -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
 	clients,
-	clients_roles,
+	clients_assigned_roles,
 	mails,
 	passkeys,
 	roles,
 	sessions,
 	users,
-	users_roles,
+	users_assigned_roles,
 );

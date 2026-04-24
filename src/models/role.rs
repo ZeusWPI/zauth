@@ -5,7 +5,7 @@ use crate::DbConn;
 use crate::errors::{Result, ZauthError};
 use crate::models::client::Client;
 use crate::models::schema::{
-	clients, clients_roles, roles, users, users_roles,
+	clients, clients_assigned_roles, roles, users, users_assigned_roles,
 };
 use crate::models::user::User;
 
@@ -42,7 +42,7 @@ pub struct NewRole {
 )]
 #[diesel(belongs_to(Role))]
 #[diesel(belongs_to(User))]
-#[diesel(table_name = users_roles)]
+#[diesel(table_name = users_assigned_roles)]
 #[diesel(primary_key(role_id, user_id))]
 pub struct UserRole {
 	pub role_id: i32,
@@ -54,7 +54,7 @@ pub struct UserRole {
 )]
 #[diesel(belongs_to(Role))]
 #[diesel(belongs_to(Client))]
-#[diesel(table_name = clients_roles)]
+#[diesel(table_name = clients_assigned_roles)]
 #[diesel(primary_key(role_id, client_id))]
 pub struct ClientRole {
 	pub role_id: i32,
@@ -78,9 +78,9 @@ impl Role {
 		let id = self.id;
 		let user_role = db
 			.run(move |conn| {
-				users_roles::table
-					.filter(users_roles::user_id.eq(user_id))
-					.filter(users_roles::role_id.eq(id))
+				users_assigned_roles::table
+					.filter(users_assigned_roles::user_id.eq(user_id))
+					.filter(users_assigned_roles::role_id.eq(id))
 					.first::<UserRole>(conn)
 					.optional()
 			})
@@ -94,7 +94,7 @@ impl Role {
 				user_id,
 			};
 			db.run(move |conn| {
-				diesel::insert_into(users_roles::table)
+				diesel::insert_into(users_assigned_roles::table)
 					.values(&user_role)
 					.execute(conn)
 			})
@@ -114,9 +114,9 @@ impl Role {
 		let id = self.id;
 		let client_role = db
 			.run(move |conn| {
-				clients_roles::table
-					.filter(clients_roles::client_id.eq(client_id))
-					.filter(clients_roles::role_id.eq(id))
+				clients_assigned_roles::table
+					.filter(clients_assigned_roles::client_id.eq(client_id))
+					.filter(clients_assigned_roles::role_id.eq(id))
 					.first::<ClientRole>(conn)
 					.optional()
 			})
@@ -130,7 +130,7 @@ impl Role {
 				client_id,
 			};
 			db.run(move |conn| {
-				diesel::insert_into(clients_roles::table)
+				diesel::insert_into(clients_assigned_roles::table)
 					.values(&client_role)
 					.execute(conn)
 			})
@@ -146,9 +146,9 @@ impl Role {
 		let count = db
 			.run(move |conn| {
 				diesel::delete(
-					users_roles::table
-						.filter(users_roles::user_id.eq(user_id))
-						.filter(users_roles::role_id.eq(self.id)),
+					users_assigned_roles::table
+						.filter(users_assigned_roles::user_id.eq(user_id))
+						.filter(users_assigned_roles::role_id.eq(self.id)),
 				)
 				.execute(conn)
 			})
@@ -165,9 +165,9 @@ impl Role {
 		let count = db
 			.run(move |conn| {
 				diesel::delete(
-					clients_roles::table
-						.filter(clients_roles::client_id.eq(client_id))
-						.filter(clients_roles::role_id.eq(self.id)),
+					clients_assigned_roles::table
+						.filter(clients_assigned_roles::client_id.eq(client_id))
+						.filter(clients_assigned_roles::role_id.eq(self.id)),
 				)
 				.execute(conn)
 			})
