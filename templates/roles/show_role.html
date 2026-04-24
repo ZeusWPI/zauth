@@ -33,6 +33,19 @@
 	<div class="cards">
 		<div class="card card-content mb-4">
 			<!-- Title -->
+			<div class="title">Description</div>
+
+			<!-- Description -->
+			<div class="content">
+				<blockquote>{{ role.description }}</blockquote>
+			</div>
+
+			<!-- Edit button -->
+			<a class="button is-primary" href="#edit-description">Edit</a>
+		</div>
+
+		<div class="card card-content mb-4">
+			<!-- Title -->
 			<div class="columns is-multiline is-justify-content-space-between">
 				<div class="column is-narrow">
 					<!-- Title -->
@@ -142,6 +155,44 @@
 					{% endif %}
 				</tbody>
 			</table>
+		</div>
+
+		<!-- Edit description modal -->
+		<div class="modal modal-target" id="edit-description">
+			<a class="modal-background" href="#"></a>
+
+			<div class="modal-card">
+				<form action="/roles/{{ role.id }}/description" method="post">
+					<!-- Header -->
+					<header class="modal-card-head">
+						<!-- Title -->
+						<div class="modal-card-title">Edit description</div>
+						<!-- Close -->
+						<a class="delete" href="#"></a>
+					</header>
+
+					<!-- Content -->
+					<section class="modal-card-body">
+						<div class="field">
+							<label class="label">Description</label>
+							<input
+								class="input"
+								name="description"
+								type="text"
+								placeholder="description"
+								value="{{ role.description }}"
+								required
+							/>
+						</div>
+					</section>
+
+					<!-- Footer -->
+					<footer class="modal-card-foot is-justify-content-flex-end">
+						<button class="button is-primary" type="submit">Apply</button>
+						<a class="button is-danger is-light" href="#">Close</a>
+					</footer>
+				</form>
+			</div>
 		</div>
 
 		<!-- Add user modal -->
