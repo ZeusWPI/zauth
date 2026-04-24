@@ -140,29 +140,27 @@
 					</tr>
 				</thead>
 				<tbody>
-					<!-- Placeholder -->
-					{% if users.len() == 0 %}
+					{% for user in users %}
+						<tr>
+							<!-- Name -->
+							<td data-label="Name">
+								<a href="/users/{{ user.username }}">{{ user.username }}</a>
+							</td>
+
+							<!-- Remove button -->
+							<td>
+								<form action="/roles/{{ role.id }}/users/{{ user.id }}" method="POST">
+									<input type="hidden" name="_method" value="delete"/>
+									<button class="button is-danger is-small" type="submit">x</button>
+								</form>
+							</td>
+						</tr>
+					{% else %}
+						<!-- Placeholder row -->
 						<tr>
 							<td colspan="4">No users mapped yet</td>
 						</tr>
-					{% else %}
-						{% for user in users %}
-							<tr>
-								<!-- Name -->
-								<td data-label="Name">
-									<a href="/users/{{ user.username }}">{{ user.username }}</a>
-								</td>
-
-								<!-- Remove button -->
-								<td>
-									<form action="/roles/{{ role.id }}/users/{{ user.id }}" method="POST">
-										<input type="hidden" name="_method" value="delete"/>
-										<button class="button is-danger is-small" type="submit">x</button>
-									</form>
-								</td>
-							</tr>
-						{% endfor %}
-					{% endif %}
+					{% endfor %}
 				</tbody>
 			</table>
 		</div>
@@ -208,14 +206,12 @@
 								</form>
 							</td>
 						</tr>
-					{% endfor %}
-
-					<!-- Placeholder -->
-					{% if clients.len() == 0 %}
+					{% else %}
+						<!-- Placeholder row -->
 						<tr>
 							<td colspan="4">No clients mapped yet</td>
 						</tr>
-					{% endif %}
+					{% endfor %}
 				</tbody>
 			</table>
 		</div>
