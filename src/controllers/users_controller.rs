@@ -325,7 +325,7 @@ pub async fn update_user<'r, 'o: 'r>(
 					RawHtml(template!("users/show.html", {
 						user: User = user,
 						current_user: User = session.user,
-						user_roles: Vec<Role> =  roles,
+						user_roles: Vec<Role> = roles,
 						roles: Vec<Role> = vec![],
 						errors: Option<ValidationErrors> = Some(errors.clone()),
 					})),
@@ -552,7 +552,9 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 						header::ContentType::TEXT_PLAIN,
 					)
 					.await?;
-				Ok(OneOf::One(RawHtml(template!("users/reset_password_success.html"))))
+				Ok(OneOf::One(RawHtml(template!(
+					"users/reset_password_success.html"
+				))))
 			},
 
 			Err(ZauthError::ValidationError(errors)) => Ok(OneOf::Two(Custom(
@@ -613,15 +615,15 @@ pub async fn confirm_email_post<'r>(
 			header::ContentType::TEXT_PLAIN,
 		)?;
 
-		Ok(Either::Left(
-			RawHtml(template!("users/confirm_email_success.html", {
+		Ok(Either::Left(RawHtml(
+			template!("users/confirm_email_success.html", {
 				user: User = user,
-			})),
-		))
+			}),
+		)))
 	} else {
-		Ok(Either::Right(
-			RawHtml(template!("users/confirm_email_invalid.html")),
-		))
+		Ok(Either::Right(RawHtml(template!(
+			"users/confirm_email_invalid.html"
+		))))
 	}
 }
 

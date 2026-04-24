@@ -106,10 +106,12 @@ pub async fn finish_register<'r>(
 			PassKey::create(passkey, &db).await?;
 			Ok(Either::Left(Redirect::to(uri!(list_passkeys))))
 		},
-		Err(e) => Ok(Either::Right(RawHtml(template!("passkeys/new_passkey.html", {
-			current_user: User = session.user,
-			errors: Option<String> = Some(e.to_string()),
-		})))),
+		Err(e) => Ok(Either::Right(RawHtml(
+			template!("passkeys/new_passkey.html", {
+				current_user: User = session.user,
+				errors: Option<String> = Some(e.to_string()),
+			}),
+		))),
 	}
 }
 

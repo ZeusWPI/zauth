@@ -110,7 +110,7 @@ async fn send_mail<'r>(
 				#[derive(Template)]
 				#[template(
 					path = "mails/mailinglist_mail.html",
-					escape = "none",
+					escape = "none"
 				)]
 				struct MailingListTemplate {
 					body: String,
@@ -121,8 +121,8 @@ async fn send_mail<'r>(
 					unsubscribe_url: unsubscribe_url.to_string(),
 				}
 				.render()
-					.map_err(InternalError::from)
-					.map_err(ZauthError::from)?
+				.map_err(InternalError::from)
+				.map_err(ZauthError::from)?
 			},
 		};
 
