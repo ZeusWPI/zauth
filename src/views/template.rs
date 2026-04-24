@@ -1,5 +1,3 @@
-use std::default::Default;
-
 #[derive(Debug)]
 pub struct CommonTemplateData {
 	pub zauth_version: &'static str,

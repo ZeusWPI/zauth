@@ -1,17 +1,16 @@
 use std::cmp::Reverse;
 
-use crate::DbConn;
-use crate::errors::{self, ZauthError};
 use chrono::NaiveDateTime;
+use diesel::result::Error as DieselError;
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
-use markdown::{Options, to_html_with_options};
-
-use diesel::result::Error as DieselError;
+use markdown;
 use rocket::serde::Serialize;
 use validator::Validate;
 
 use super::schema::mails;
+use crate::DbConn;
+use crate::errors::{self, ZauthError};
 
 #[derive(DbEnum, Debug, Deserialize, FromFormField, Serialize, Copy, Clone)]
 #[db_enum(existing_type_path = "crate::models::schema::sql_types::ContentType")]
@@ -95,9 +94,9 @@ impl Mail {
 	pub fn render_body(&self) -> errors::Result<String> {
 		match self.content_type {
 			ContentType::Plain => Ok(self.body.clone()),
-			ContentType::Markdown => to_html_with_options(
+			ContentType::Markdown => markdown::to_html_with_options(
 				&self.body,
-				&Options::gfm(),
+				&markdown::Options::gfm(),
 			)
 			.map_err(|_| {
 				ZauthError::Unprocessable("could not parse markdown".into())

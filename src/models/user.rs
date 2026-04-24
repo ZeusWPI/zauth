@@ -1,23 +1,23 @@
-use super::schema::{roles, users};
-use crate::DbConn;
-use crate::errors::{self, InternalError, LoginError, ZauthError};
-use diesel::{self, prelude::*};
-use diesel_derive_enum::DbEnum;
 use std::fmt;
 use std::sync::LazyLock;
 
-use crate::Config;
-use crate::util::random_token;
 use chrono::{NaiveDateTime, Utc};
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
+use diesel::{self, prelude::*};
+use diesel_derive_enum::DbEnum;
 use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
 use rocket::{FromFormField, serde::Serialize};
-use std::convert::TryFrom;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 use super::role::{Role, UserRole};
+use super::schema::roles;
+use super::schema::users;
+use crate::Config;
+use crate::DbConn;
+use crate::errors::{self, InternalError, LoginError, ZauthError};
+use crate::util::random_token;
 
 #[derive(
 	DbEnum,

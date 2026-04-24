@@ -5,7 +5,6 @@ use rocket::response::status;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use rocket::serde::json::Json;
-use std::fmt::Debug;
 
 use crate::DbConn;
 use crate::ephemeral::from_api::Api;

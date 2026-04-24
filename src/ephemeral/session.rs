@@ -1,7 +1,10 @@
+use std::str::FromStr;
+
+use rocket::http::uri::Origin;
 use rocket::http::{Cookie, CookieJar, Status};
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome, Request};
-use std::str::FromStr;
+use rocket::response::Redirect;
 
 use crate::DbConn;
 use crate::controllers::sessions_controller::rocket_uri_macro_new_session;
@@ -9,8 +12,6 @@ use crate::errors::Result;
 use crate::models::client::Client;
 use crate::models::session::Session;
 use crate::models::user::User;
-use rocket::http::uri::Origin;
-use rocket::response::Redirect;
 
 const REDIRECT_COOKIE: &str = "ZAUTH_REDIRECT";
 const SESSION_COOKIE: &str = "ZAUTH_SESSION";

@@ -7,23 +7,21 @@ use rocket::http::{Cookie, CookieJar};
 use rocket::response::content::RawHtml;
 use rocket::response::{Redirect, Responder};
 use rocket::serde::json::Json;
-use std::fmt::Debug;
 
 use crate::DbConn;
 use crate::config::Config;
 use crate::ephemeral::session::UserSession;
+use crate::ephemeral::session::ensure_logged_in_and_redirect;
 use crate::errors::Either;
+use crate::errors::OAuthError::InvalidCookie;
 use crate::errors::*;
 use crate::http_authentication::BasicAuthentication;
 use crate::jwt::JWTBuilder;
 use crate::models::client::*;
 use crate::models::session::*;
 use crate::models::user::*;
-use crate::util::split_scopes;
-
-use crate::ephemeral::session::ensure_logged_in_and_redirect;
-use crate::errors::OAuthError::InvalidCookie;
 use crate::token_store::TokenStore;
+use crate::util::split_scopes;
 
 const OAUTH_COOKIE: &str = "ZAUTH_OAUTH";
 

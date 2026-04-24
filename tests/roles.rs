@@ -1,12 +1,12 @@
-use common::{HttpClient, url};
-use rocket::http::{Accept, ContentType, Status};
-use zauth::models::{
-	client::{Client, NewClient},
-	role::{NewRole, Role},
-	user::User,
-};
-
 mod common;
+
+use rocket::http::{Accept, ContentType, Status};
+
+use zauth::models::client::{Client, NewClient};
+use zauth::models::role::{NewRole, Role};
+use zauth::models::user::User;
+
+use crate::common::{HttpClient, url};
 
 #[rocket::async_test]
 async fn list_roles_as_user() {

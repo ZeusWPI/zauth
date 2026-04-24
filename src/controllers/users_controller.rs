@@ -1,12 +1,16 @@
+use chrono::{Duration, Utc};
 use lettre::message::header;
+use rocket::State;
+use rocket::form::Form;
 use rocket::http::Status;
 use rocket::http::uri::Absolute;
 use rocket::response::content::RawHtml;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
-use std::fmt::Debug;
+use rocket::serde::json::Json;
 use validator::ValidationErrors;
 
+use crate::DbConn;
 use crate::config::{AdminEmail, Config};
 use crate::controllers::sessions_controller::rocket_uri_macro_new_session;
 use crate::ephemeral::from_api::Api;
@@ -17,13 +21,8 @@ use crate::mailer::Mailer;
 use crate::models::client::Client;
 use crate::models::role::Role;
 use crate::models::user::*;
-use crate::util::split_scopes;
+use crate::util;
 use crate::views::accepter::Accepter;
-use crate::{DbConn, util};
-use chrono::{Duration, Utc};
-use rocket::State;
-use rocket::form::Form;
-use rocket::serde::json::Json;
 
 #[derive(Serialize)]
 pub struct UserInfo {
@@ -47,7 +46,7 @@ impl UserInfo {
 		db: &DbConn,
 		config: &Config,
 	) -> Result<Self> {
-		let scopes = split_scopes(&scope);
+		let scopes = util::split_scopes(&scope);
 
 		let roles = if let Some(client) = &client {
 			if scopes.contains(&"roles".into()) {

@@ -1,11 +1,5 @@
-extern crate diesel;
-extern crate regex;
-extern crate rocket;
-extern crate serde_json;
-extern crate urlencoding;
-extern crate zauth;
+mod common;
 
-use self::serde_json::{Number, Value};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use common::HttpClient;
@@ -16,6 +10,7 @@ use regex::Regex;
 use rocket::http::Header;
 use rocket::http::Status;
 use rocket::http::{Accept, ContentType};
+use serde_json::{Number, Value};
 
 use zauth::DbConn;
 use zauth::controllers::oauth_controller::UserToken;
@@ -25,7 +20,6 @@ use zauth::models::role::Role;
 use zauth::models::user::{NewUser, User};
 use zauth::token_store::TokenStore;
 
-mod common;
 use crate::common::url;
 
 const REDIRECT_URI: &str = "https://example.com/redirect/me/here";

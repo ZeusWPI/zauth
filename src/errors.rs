@@ -1,15 +1,15 @@
-use askama;
-use rocket::Request;
-use rocket::http::Status;
-use rocket::response::{self, Responder, Response};
-use thiserror::Error;
+use std::convert::Infallible;
 
+use askama;
 use diesel::result::Error::NotFound;
 use lettre::Message;
 use log::warn;
+use rocket::Request;
+use rocket::http::Status;
+use rocket::response::{self, Responder, Response};
 use rocket::serde::json::Json;
 use rocket::tokio::sync::mpsc::error::{SendError, TrySendError};
-use std::convert::Infallible;
+use thiserror::Error;
 use validator::ValidationErrors;
 use webauthn_rs::prelude::WebauthnError;
 

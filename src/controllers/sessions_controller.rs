@@ -1,5 +1,6 @@
 use rocket::State;
 use rocket::form::Form;
+use rocket::http::CookieJar;
 use rocket::response::content::RawHtml;
 use rocket::response::{Redirect, Responder};
 
@@ -12,7 +13,6 @@ use crate::ephemeral::session::{
 use crate::errors::{Either, Result, ZauthError};
 use crate::models::session::Session;
 use crate::models::user::User;
-use rocket::http::CookieJar;
 
 #[get("/login")]
 pub fn new_session<'r>(

@@ -1,7 +1,6 @@
-use crate::config::Config;
-use crate::errors::{InternalError, LaunchError, Result};
-use crate::models::client::Client;
-use crate::models::user::User;
+use std::fs::File;
+use std::io::Read;
+
 use base64::engine::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;
@@ -12,8 +11,11 @@ use jsonwebtoken::{EncodingKey, Header, encode};
 use openssl::bn::{BigNum, BigNumContext};
 use openssl::ec::EcKey;
 use serde::Serialize;
-use std::fs::File;
-use std::io::Read;
+
+use crate::config::Config;
+use crate::errors::{InternalError, LaunchError, Result};
+use crate::models::client::Client;
+use crate::models::user::User;
 
 pub struct JWTBuilder {
 	pub key: EncodingKey,

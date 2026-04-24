@@ -1,15 +1,12 @@
-use diesel::{self, prelude::*};
-
-use crate::DbConn;
-use crate::errors::{AuthenticationError, Result, ZauthError};
-
-use crate::models::schema::{clients, roles};
-
-use crate::util::random_token;
 use chrono::NaiveDateTime;
+use diesel::{self, prelude::*};
 use validator::Validate;
 
 use super::role::{ClientRole, Role};
+use crate::DbConn;
+use crate::errors::{AuthenticationError, Result, ZauthError};
+use crate::models::schema::{clients, roles};
+use crate::util::random_token;
 
 const SECRET_LENGTH: usize = 64;
 

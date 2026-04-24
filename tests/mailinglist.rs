@@ -1,19 +1,17 @@
-extern crate diesel;
-extern crate rocket;
+mod common;
 
-use common::{HttpClient, config};
 use rocket::http::Header;
 use rocket::http::{Accept, ContentType, Status};
 use serde_json::Value;
-use zauth::models::client::{Client, NewClient};
-use zauth::models::role::NewRole;
-use zauth::models::role::Role;
 
 use zauth::DbConn;
+use zauth::models::client::{Client, NewClient};
 use zauth::models::mail::NewMail;
+use zauth::models::role::NewRole;
+use zauth::models::role::Role;
 use zauth::models::user::*;
 
-mod common;
+use crate::common::{HttpClient, config};
 
 const TEST_USERS: [(&str, UserState, bool); 10] = [
 	("valid0", UserState::Active, true),

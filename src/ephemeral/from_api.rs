@@ -1,11 +1,11 @@
+use std::marker::PhantomData;
+
 use rocket::Request;
 use rocket::data::{Data, FromData, Outcome};
 use rocket::form::Form;
 use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::serde::json::Json;
-
-use std::marker::PhantomData;
 
 #[derive(Debug)]
 pub struct Api<T> {

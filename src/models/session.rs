@@ -1,9 +1,8 @@
 use chrono::{Duration, NaiveDateTime, Utc};
 use diesel::{self, prelude::*};
 
-use crate::DbConn;
-
 use super::schema::sessions;
+use crate::DbConn;
 use crate::config::Config;
 use crate::errors::{Result, ZauthError};
 use crate::models::client::Client;

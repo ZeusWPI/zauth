@@ -2,30 +2,30 @@
 #![recursion_limit = "256"]
 
 extern crate chrono;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
+#[macro_use]
+extern crate lazy_static;
 extern crate lettre;
+extern crate log;
 extern crate pwhash;
 extern crate rand;
 extern crate regex;
+#[macro_use]
+extern crate rocket;
+extern crate rocket_sync_db_pools;
+#[macro_use]
+extern crate serde_derive;
 extern crate simple_logger;
 extern crate thiserror;
 extern crate toml;
 extern crate validator;
 
 #[macro_use]
-extern crate rocket;
-extern crate rocket_sync_db_pools;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate lazy_static;
-extern crate log;
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
-
-#[macro_use]
 pub mod views;
+
 pub mod config;
 pub mod controllers;
 pub mod db_seed;
@@ -38,6 +38,8 @@ pub mod models;
 pub mod token_store;
 pub mod util;
 pub mod webauthn;
+
+use std::str::FromStr;
 
 use diesel_migrations::MigrationHarness;
 use jwt::JWTBuilder;
@@ -59,8 +61,6 @@ use crate::errors::{
 };
 use crate::mailer::Mailer;
 use crate::token_store::TokenStore;
-
-use std::str::FromStr;
 
 #[database("postgresql_database")]
 pub struct DbConn(PgConnection);

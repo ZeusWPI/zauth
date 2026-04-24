@@ -2,7 +2,6 @@ use rocket::response::content::RawHtml;
 use rocket::response::{Redirect, Responder};
 
 use crate::controllers::users_controller::rocket_uri_macro_show_user;
-
 use crate::ephemeral::session::UserSession;
 use crate::errors::Either;
 

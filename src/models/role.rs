@@ -1,14 +1,13 @@
-use crate::{
-	DbConn,
-	errors::{Result, ZauthError},
-};
 use diesel::{self, prelude::*};
 use validator::Validate;
 
+use crate::DbConn;
+use crate::errors::{Result, ZauthError};
+use crate::models::client::Client;
 use crate::models::schema::{
 	clients, clients_roles, roles, users, users_roles,
 };
-use crate::models::{client::Client, user::User};
+use crate::models::user::User;
 
 #[derive(
 	Deserialize,

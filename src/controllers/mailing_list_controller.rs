@@ -1,7 +1,10 @@
+use askama::Template;
 use lettre::message::{Mailbox, header};
+use rocket::State;
 use rocket::form::validate::Contains;
 use rocket::response::content::RawHtml;
 use rocket::response::{Redirect, Responder};
+use rocket::serde::json::Json;
 
 use crate::DbConn;
 use crate::config::Config;
@@ -14,9 +17,6 @@ use crate::mailer::Mailer;
 use crate::models::mail::*;
 use crate::models::user::User;
 use crate::views::accepter::Accepter;
-use askama::Template;
-use rocket::State;
-use rocket::serde::json::Json;
 
 /// Show an overview of all mails, sorted by send date
 #[get("/mails")]

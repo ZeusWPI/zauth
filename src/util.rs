@@ -1,4 +1,5 @@
 use core::iter;
+
 use rand::{Rng, distr::Alphanumeric, rng};
 
 pub fn random_token(token_length: usize) -> String {
