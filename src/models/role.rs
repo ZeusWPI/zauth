@@ -1,4 +1,5 @@
 use diesel::{self, prelude::*};
+use diesel_derive_enum::DbEnum;
 use validator::Validate;
 
 use crate::DbConn;
@@ -8,6 +9,23 @@ use crate::models::schema::{
 	clients, clients_assigned_roles, roles, users, users_assigned_roles,
 };
 use crate::models::user::User;
+
+#[derive(
+	Clone, DbEnum, Debug, Deserialize, FromFormField, PartialEq, Serialize,
+)]
+#[db_enum(
+	existing_type_path = "crate::models::schema::sql_types::RoleVisibility"
+)]
+pub enum RoleVisibility {
+	#[db_enum(rename = "global")]
+	#[serde(rename = "global")]
+	#[field(value = "global")]
+	Global,
+	#[db_enum(rename = "limited")]
+	#[serde(rename = "limited")]
+	#[field(value = "limited")]
+	Limited,
+}
 
 #[derive(
 	AsChangeset,
@@ -25,6 +43,7 @@ pub struct Role {
 	pub name: String,
 	pub description: String,
 	pub client_id: Option<i32>,
+	pub visibility: RoleVisibility,
 }
 
 #[derive(Debug, Deserialize, FromForm, Insertable, Validate)]

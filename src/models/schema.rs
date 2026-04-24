@@ -4,6 +4,10 @@ pub mod sql_types {
 	#[derive(diesel::sql_types::SqlType)]
 	#[diesel(postgres_type(name = "content_type"))]
 	pub struct ContentType;
+
+	#[derive(diesel::sql_types::SqlType)]
+	#[diesel(postgres_type(name = "role_visibility"))]
+	pub struct RoleVisibility;
 }
 
 diesel::table! {
@@ -68,6 +72,7 @@ diesel::table! {
 diesel::table! {
 	use diesel::sql_types::*;
 	use crate::models::schema_custom_sql_types::*;
+	use super::sql_types::RoleVisibility;
 
 	roles (id) {
 		id -> Int4,
@@ -76,6 +81,7 @@ diesel::table! {
 		#[max_length = 255]
 		description -> Varchar,
 		client_id -> Nullable<Int4>,
+		visibility -> RoleVisibility,
 	}
 }
 
