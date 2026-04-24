@@ -77,6 +77,41 @@
 			<div>
 				<a class="button is-primary" href="#add-client-to-limited-to">Add client to “limited to” list</a>
 			</div>
+
+			<!-- Table -->
+			<table class="table table--responsive table--responsive--labels is-fullwidth">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th><!-- Remove button --></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for client in limited_to_clients %}
+						<tr>
+							<!-- Name -->
+							<td data-label="Name">
+								<a href="/clients/{{ client.id }}/edit">{{ client.name }}</a>
+							</td>
+
+							<!-- Remove button -->
+							<td>
+								<form action="/roles/{{ role.id }}/limited_to_clients/{{ client.id }}" method="POST">
+									<input type="hidden" name="_method" value="delete"/>
+									<button class="button is-danger is-small" type="submit">x</button>
+								</form>
+							</td>
+						</tr>
+					{% endfor %}
+
+					<!-- Placeholder -->
+					{% if clients.len() == 0 %}
+						<tr>
+							<td colspan="4">No clients mapped yet</td>
+						</tr>
+					{% endif %}
+				</tbody>
+			</table>
 		</div>
 
 		<!-- Users card -->
@@ -289,9 +324,9 @@
 						<div class="select">
 							<select name="client_id">
 								{% for client in all_clients %}
-									{# {% if !limited_to_client_ids.contains(client.id) %} #}
+									{% if !limited_to_client_ids.contains(client.id) %}
 										<option value="{{ client.id }}">{{ client.name }}</option>
-									{# {% endif %} #}
+									{% endif %}
 								{% endfor %}
 							</select>
 						</div>

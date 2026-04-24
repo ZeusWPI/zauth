@@ -227,6 +227,28 @@ impl Role {
 		}
 	}
 
+	pub async fn remove_limited_to_client(
+		self,
+		client_id: i32,
+		db: &DbConn,
+	) -> Result<bool> {
+		let role_id = self.id;
+		let count = db
+			.run(move |conn| {
+				diesel::delete(
+					roles_limited_to_clients::table
+						.filter(
+							roles_limited_to_clients::client_id.eq(client_id),
+						)
+						.filter(roles_limited_to_clients::role_id.eq(role_id)),
+				)
+				.execute(conn)
+			})
+			.await
+			.map_err(ZauthError::from)?;
+		Ok(count > 0)
+	}
+
 	pub async fn remove_user(self, user_id: i32, db: &DbConn) -> Result<bool> {
 		let count = db
 			.run(move |conn| {
@@ -259,6 +281,17 @@ impl Role {
 			.await
 			.map_err(ZauthError::from)?;
 		Ok(count > 0)
+	}
+
+	pub async fn limited_to_clients(self, db: &DbConn) -> Result<Vec<Client>> {
+		db.run(move |conn| {
+			RoleLimitedToClient::belonging_to(&self)
+				.inner_join(clients::table)
+				.select(Client::as_select())
+				.load(conn)
+		})
+		.await
+		.map_err(ZauthError::from)
 	}
 
 	pub async fn users(self, db: &DbConn) -> Result<Vec<User>> {

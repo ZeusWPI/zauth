@@ -95,6 +95,11 @@ pub async fn show_role_page<'r>(
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(id, &db).await?;
 
+	let limited_to_clients: Vec<Client> =
+		role.clone().limited_to_clients(&db).await?;
+	let limited_to_client_ids: Vec<i32> =
+		limited_to_clients.iter().map(|client| client.id).collect();
+
 	let clients: Vec<Client> = role.clone().clients(&db).await?;
 	let client_ids: Vec<i32> = clients.iter().map(|client| client.id).collect();
 
@@ -119,10 +124,12 @@ pub async fn show_role_page<'r>(
 		role: Role = role,
 		client: Option<Client> = client,
 
-		clients: Vec<Client> = clients,
-		client_ids: Vec<i32> = client_ids,
+		limited_to_clients: Vec<Client> = limited_to_clients,
+		limited_to_client_ids: Vec<i32> = limited_to_client_ids,
 		users: Vec<User> = users,
 		user_ids: Vec<i32> = user_ids,
+		clients: Vec<Client> = clients,
+		client_ids: Vec<i32> = client_ids,
 
 		all_clients: Vec<Client> = all_clients,
 		all_users: Vec<User> = all_users,
@@ -318,6 +325,32 @@ pub async fn add_client<'r>(
 			))),
 			json: Custom(Status::InternalServerError, ()),
 		},
+	})
+}
+
+#[delete("/roles/<role_id>/limited_to_clients/<client_id>")]
+pub async fn delete_limited_to_client<'r>(
+	// from url
+	role_id: i32,
+	client_id: i32,
+	// from headers
+	_session: AdminSession,
+	// injected
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let role = Role::find(role_id, &db).await?;
+	let client = Client::find(client_id, &db).await?;
+	role.remove_limited_to_client(client_id, &db).await?;
+	Ok(Accepter {
+		html: Redirect::to(uri!(show_role_page(
+			role_id,
+			None::<String>,
+			Some(format!(
+				"Successfully removed client “{}” from the “limited to” list",
+				client.name,
+			))
+		))),
+		json: Custom(Status::Ok, ()),
 	})
 }
 
