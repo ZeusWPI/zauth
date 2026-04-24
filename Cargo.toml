@@ -11,39 +11,39 @@ base64 = "0.22"
 bincode = {version = "2.0", features = ["serde"]}
 pwhash = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
-lazy_static = "1.1"
+lazy_static = "1.5"
 lettre = { version = "0.11", features = ["builder", "smtp-transport"] }
 log = "0.4"
 urlencoding = "2.1"
 toml = "0.8"
 rand = "0.9"
-regex = "1.6"
-rocket = { version = "0.5.0-rc.3", features = [ "json", "secrets" ] }
-rocket_sync_db_pools = { version = "0.1.0-rc.3", features = [ "diesel_postgres_pool" ] }
+regex = "1.12"
+rocket = { version = "0.5.1", features = [ "json", "secrets" ] }
+rocket_sync_db_pools = { version = "0.1.0", features = [ "diesel_postgres_pool" ] }
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 serde_urlencoded = "0.7"
-simple_logger = "5.0"
-diesel = { version = "2.3.4", features = ["postgres", "r2d2", "chrono"] }
+simple_logger = "5.2"
+diesel = { version = "2.3.7", features = ["postgres", "r2d2", "chrono"] }
 diesel-derive-enum = { version = "3.0.0-beta.1", features = ["postgres"] }
 diesel_migrations = "2.3.1"
-tempfile = "3.1"
+tempfile = "3.27"
 parking_lot = { version = "0.12" }
 thiserror = "2.0"
 validator = { version = "0.20", features = [ "derive" ] }
-jsonwebtoken = "9.1"
+jsonwebtoken = "9.3"
 openssl = "0.10"
-webauthn-rs = { version = "0.5.0", features = [
+webauthn-rs = { version = "0.5.4", features = [
     "conditional-ui"
 
 ]}
 
-webauthn-rs-proto = "0.5.1"
+webauthn-rs-proto = "0.5.4"
 markdown = "1.0.0"
 
 [dev-dependencies]
-webauthn-rs = { version = "0.5.0", features = [
+webauthn-rs = { version = "0.5.4", features = [
     "conditional-ui", "danger-allow-state-serialisation"
 ]}
 
