@@ -120,6 +120,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				mailing_list_controller::send_mail_as_client,
 				mailing_list_controller::show_create_mail_page,
 				mailing_list_controller::show_mail,
+				oauth_controller::get_well_known_openid_configuration,
 				oauth_controller::authorize,
 				oauth_controller::do_authorize,
 				oauth_controller::grant_get,

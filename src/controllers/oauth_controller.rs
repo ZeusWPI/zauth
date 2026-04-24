@@ -23,6 +23,34 @@ use crate::models::user::*;
 use crate::token_store::TokenStore;
 use crate::util::split_scopes;
 
+/// See https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
+#[get("/.well-known/openid-configuration")]
+pub async fn get_well_known_openid_configuration<'r>(
+	// injected
+	config: &State<Config>,
+) -> impl Responder<'r, 'static> {
+	// FIXME: Should only be serialized once on boot since config is immutable.
+	#[derive(Serialize)]
+	pub struct OpenidConfiguration {
+		pub issuer: String,
+		pub authorization_endpoint: String,
+		pub token_endpoint: String,
+		pub jwks_uri: String,
+		pub response_types_supported: Vec<String>,
+		pub grant_types_supported: Vec<String>,
+		pub userinfo_endpoint: String,
+	}
+	Json(OpenidConfiguration {
+		issuer: config.base_url.clone(),
+		authorization_endpoint: config.base_url.clone() + "/oauth/authorize",
+		token_endpoint: config.base_url.clone() + "/oauth/token",
+		jwks_uri: config.base_url.clone() + "/oauth/jwks",
+		response_types_supported: Vec::from(["code".to_string()]),
+		grant_types_supported: Vec::from(["authorization_code".to_string()]),
+		userinfo_endpoint: config.base_url.clone() + "/current_user",
+	})
+}
+
 const OAUTH_COOKIE: &str = "ZAUTH_OAUTH";
 
 #[derive(Debug, Deserialize, FromForm, Serialize, UriDisplayQuery)]
