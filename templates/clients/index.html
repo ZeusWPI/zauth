@@ -3,7 +3,6 @@
 <!-- Content -->
 {% block content %}
 	<div class="card card-content">
-
 		<!-- Title -->
 		<div class="columns is-multiline is-justify-content-space-between">
 			<div class="column is-narrow">
@@ -13,11 +12,10 @@
 				</div>
 				<!-- Subtitle -->
 				<div class="subtitle">
-					An OAuth client is an application which can use our server for authentication. <br>
-					The client would send the user to our webpage to login and we then tell the client who the user is. <br>
+					An OAuth client is an application which can use our server for authentication. <br />
+					The client would send the user to our webpage to login and we then tell the client who the user is. <br />
 					Each application using this server should have its own client and maybe even a separate client for development purposes.
 				</div>
-
 			</div>
 
 			<div class="column is-narrow">
@@ -35,11 +33,9 @@
 					<th></th>
 				</tr>
 			</thead>
-
 			<tbody>
 				{% for client in clients %}
 					<tr>
-
 						<!-- Name -->
 						<td data-label="Name">
 							<a href="/clients/{{ client.id }}/edit">{{ client.name }}</a>
@@ -54,7 +50,7 @@
 						<!-- Remove -->
 						<td>
 							<form action="/clients/{{ client.id }}" method="POST">
-								<input type="hidden" name="_method" value="delete"/>
+								<input type="hidden" name="_method" value="delete" />
 								<button class="button is-danger is-small" type="submit">x</button>
 							</form>
 						</td>

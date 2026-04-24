@@ -1,32 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-		<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
 
-    <title>
-			{% block title %}
+	<title>
+		{% block title %}
 			Zauth
-			{% endblock title %}
-    </title>
+		{% endblock title %}
+	</title>
 
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/static/dist/css/application.css">
+	<link rel="stylesheet" type="text/css" href="/static/dist/css/application.css">
 
 	<script src="/static/js/base64.js" ></script>
 	<script src="/static/js/webauthn.js" async></script>
 
-    {% block head %}
-    {% endblock head %}
+	{% block head %}
+	{% endblock head %}
 </head>
 <body>
-
 	<!-- Navbar -->
-	{% block nav %}{% endblock nav %}
+	{% block nav %}
+	{% endblock nav %}
 
 	<!-- Content -->
 	<div class="container container--main">
-			{% block content %}{% endblock content %}
+		{% block content %}
+		{% endblock content %}
 	</div>
 
 	<!-- Footer -->

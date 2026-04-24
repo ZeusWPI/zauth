@@ -2,89 +2,89 @@
 
 <!-- Content -->
 {% block content %}
-<div class="card-page">
-  <div class="card-page-content">
+	<div class="card-page">
+		<div class="card-page-content">
 
-		<!-- Logo -->
-    <a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
-      <img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
-    </a>
+			<!-- Logo -->
+			<a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
+				<img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
+			</a>
 
-    {% if registrations_full %}
-      <div class="notification is-danger is-light">
-          <b>Sorry!</b> We are receiving an unusual amount of registrations and
-          have temporarily disabled the registration form. Please come back
-          later or contact an admin to create a new account.
-      </div>
-    {% else %}
+			{% if registrations_full %}
+				<div class="notification is-danger is-light">
+						<b>Sorry!</b> We are receiving an unusual amount of registrations and
+						have temporarily disabled the registration form. Please come back
+						later or contact an admin to create a new account.
+				</div>
+			{% else %}
 
-    <!-- Error messages -->
-    {% match errors %}
-    {% when Some with (errors) %}
-      <div class="notification is-danger is-light">
-        {{ errors }}
-      </div>
-    {% when None %}
-    {% endmatch %}
+			<!-- Error messages -->
+			{% match errors %}
+				{% when Some with (errors) %}
+					<div class="notification is-danger is-light">
+						{{ errors }}
+					</div>
+				{% when None %}
+			{% endmatch %}
 
-    <div class="card-page-card">
-      <!-- Title -->
-      <div class="title">
-        Create a new account
-      </div>
+			<div class="card-page-card">
+				<!-- Title -->
+				<div class="title">
+					Create a new account
+				</div>
 
-      <!-- Register form -->
-      <form class="form mb-2" action="/register" method="post">
-        <div class="field">
-          <label class="label">Username</label>
-          <input class="input" name="username" type="text" placeholder="username" value="{{ user.username }}" minlength="3" maxlength="32" pattern="[a-z][a-z0-9_-]{2,32}" title="Username may only contain alphanumeric characters, hyphens or underscores, and must begin with a letter." required />
-        </div>
-        <div class="field">
-          <label class="label">Full name</label>
-          <input class="input" name="full_name" type="text" placeholder="Firstname Lastname" value="{{ user.full_name }}" minlength="3" maxlength="254" title="In the format 'Firstname Lastname' if possible" required />
-        </div>
-        <div class="field">
-          <label class="label">Email</label>
-          <input class="input" name="email" type="email" placeholder="example@example.com" value="{{ user.email }}" required />
-        </div>
+				<!-- Register form -->
+				<form class="form mb-2" action="/register" method="post">
+					<div class="field">
+						<label class="label">Username</label>
+						<input class="input" name="username" type="text" placeholder="username" value="{{ user.username }}" minlength="3" maxlength="32" pattern="[a-z][a-z0-9_-]{2,32}" title="Username may only contain alphanumeric characters, hyphens or underscores, and must begin with a letter." required />
+					</div>
+					<div class="field">
+						<label class="label">Full name</label>
+						<input class="input" name="full_name" type="text" placeholder="Firstname Lastname" value="{{ user.full_name }}" minlength="3" maxlength="254" title="In the format 'Firstname Lastname' if possible" required />
+					</div>
+					<div class="field">
+						<label class="label">Email</label>
+						<input class="input" name="email" type="email" placeholder="example@example.com" value="{{ user.email }}" required />
+					</div>
 
-        <div class="field">
-          <label class="label">Password</label>
-          <input class="input" name="password" type="password" placeholder="Password" value="{{ user.password }}" required />
-          <p class="help">
-          We recommend using a password manager like
-          <a href="https://bitwarden.com/" target="_blank">bitwarden</a> or
-          <a href="https://www.passwordstore.org/" target="_blank">pass</a>
-          to generate a strong password.
-          </p>
-        </div>
+					<div class="field">
+						<label class="label">Password</label>
+						<input class="input" name="password" type="password" placeholder="Password" value="{{ user.password }}" required />
+						<p class="help">
+							We recommend using a password manager like
+							<a href="https://bitwarden.com/" target="_blank">bitwarden</a> or
+							<a href="https://www.passwordstore.org/" target="_blank">pass</a>
+							to generate a strong password.
+						</p>
+					</div>
 
-        <div class="field">
-          <label class="checkbox">
-            <input type="checkbox" name="not_a_robot" class="big-checkbox" {% if user.not_a_robot %} checked {% endif %} onclick="greetNotARobot(event)"/>
-            I'm not a robot
-          </label>
-        </div>
+					<div class="field">
+						<label class="checkbox">
+							<input type="checkbox" name="not_a_robot" class="big-checkbox" {% if user.not_a_robot %} checked {% endif %} onclick="greetNotARobot(event)"/>
+							I'm not a robot
+						</label>
+					</div>
 
-        <button class="button is-primary" type="submit">Register</button>
-      </form>
+					<button class="button is-primary" type="submit">Register</button>
+				</form>
 
-    <!-- Login -->
-     <div class="has-text-grey-light">
-        Already an account? <a href="/login">Login here!</a>
-     </div>
-    </div>
-    {% endif %}
-  </div>
-</div>
+				<!-- Login -->
+				<div class="has-text-grey-light">
+					Already an account? <a href="/login">Login here!</a>
+				</div>
+			</div>
+			{% endif %}
+		</div>
+	</div>
 
-<script>
-  function greetNotARobot(event) {
-    if (event.target.checked) {
-      alert("Hi not a robot! We're Zeus WPI!")
-    } else {
-      alert("Hi robot! You're welcome in Zeus as well, but you need an AIdmin to physically vouch for you.")
-    }
-  }
-</script>
+	<script>
+		function greetNotARobot(event) {
+			if (event.target.checked) {
+				alert("Hi not a robot! We're Zeus WPI!")
+			} else {
+				alert("Hi robot! You're welcome in Zeus as well, but you need an AIdmin to physically vouch for you.")
+			}
+		}
+	</script>
 {% endblock content %}

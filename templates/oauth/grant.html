@@ -2,31 +2,30 @@
 
 <!-- Content -->
 {% block content %}
-<div class="card-page">
-  <div class="card-page-content">
+	<div class="card-page">
+		<div class="card-page-content">
+			<!-- Logo -->
+			<a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
+				<img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
+			</a>
 
-    <!-- Logo -->
-    <a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
-      <img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
-    </a>
+			<div class="card-page-card">
+				<!-- Title -->
+				<div class="title">
+					Grant {{ client_description }} access?
+				</div>
 
-    <div class="card-page-card">
-      <!-- Title -->
-      <div class="title">
-        Grant {{ client_description }} access?
-      </div>
+				<!-- Subtitle -->
+				<div class="subtitle">
+					Are you sure you want to grant this service access to your account?
+				</div>
 
-      <!-- Subtitle -->
-      <div class="subtitle">
-        Are you sure you want to grant this service access to your account?
-      </div>
-
-      <!-- Form -->
-      <form class="is-flex" action="grant" method="post">
-        <button class="button is-success is-medium" type="submit" name="grant" value="true">Yes</button>
-        <button class="button is-danger is-medium ml-2" type="submit" name="grant" value="false">No</button>
-      </form>
-    </div>
-  </div>
-</div>
+				<!-- Form -->
+				<form class="is-flex" action="grant" method="post">
+					<button class="button is-success is-medium" type="submit" name="grant" value="true">Yes</button>
+					<button class="button is-danger is-medium ml-2" type="submit" name="grant" value="false">No</button>
+				</form>
+			</div>
+		</div>
+	</div>
 {% endblock content %}

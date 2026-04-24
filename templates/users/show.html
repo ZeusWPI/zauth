@@ -2,165 +2,169 @@
 
 <!-- Content -->
 {% block content %}
-<div class="profile-header">
-	<a class="profile-image-link" href="https://zpi.zeus.gent/"><img class="profile-image" src="http://zpi.zeus.gent/image/{{ user.id }}?placeholder=true&size=128"/></a>
-	<div class="profile-title-box">
-		<div class="profile-title">
-			{% if current_user.id == user.id %} Welcome back, {% endif %} {{ user.username }}
-		</div>
+	<div class="profile-header">
+		<a class="profile-image-link" href="https://zpi.zeus.gent/"><img class="profile-image" src="http://zpi.zeus.gent/image/{{ user.id }}?placeholder=true&size=128"/></a>
+		<div class="profile-title-box">
+			<div class="profile-title">
+				{% if current_user.id == user.id %} Welcome back, {% endif %} {{ user.username }}
+			</div>
 
-		<div class="profile-subtitle">
-			{% if user.admin %}
-				Zeus Admin
-			{% else %}
-				Zeus Member
-			{% endif %}
-		</div>
-	</div>
-</div>
-
-<div class="columns is-multiline mt-4">
-
-	<!-- Update profile -->
-	<div class="column is-7">
-		<div class="card card-content">
-
-			<div class="title">Update profile information</div>
-
-			<!-- Error messages -->
-			{% match errors %}
-			{% when Some with (errors) %}
-			  <div class="notification is-danger is-light">
-				{{ errors }}
-			  </div>
-			{% when None %}
-			{% endmatch %}
-
-			<form class="profile-edit-form" action="/users/{{ user.username }}" method="POST">
-				<input type="hidden" name="_method" value="put"/>
-
-				<div class="field">
-					<label class="label">Username</label>
-					<input class="input" name="username" type="text" placeholder="Username" value="{{ user.username }}" disabled />
-				</div>
-
-				<div class="field">
-					<label class="label">Full Name</label>
-					<input class="input" name="full_name" type="text" placeholder="Full Name" value="{{ user.full_name }}" disabled />
-				</div>
-
-				<div class="field">
-					<label class="label">Email</label>
-					<input class="input" name="email" type="email" placeholder="Email" value="{{ user.email }}" required />
-				</div>
-
-				<div class="field">
-					<label class="label">Password</label>
-					<input class="input" name="password" type="password" placeholder="Password" disabled />
-				</div>
-
-				<div class="field">
-					<label for="subscribed_to_mailing_list" class="label">Subscribe to Mailing List</label>
-					{% if user.subscribed_to_mailing_list -%}
-						<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list" checked>
-					{% else -%}
-						<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list">
-					{% endif %}
-				</div>
-
-				<div class="field">
-					<label class="label">SSH Keys</label>
-					<textarea class="textarea" name="ssh_key" placeholder="SSH Keys">{% match user.ssh_key %}{% when Some with (val) %}{{ val }}{% when None %}{% endmatch %}</textarea>
-				</div>
-
-				<button class="button is-primary" type="submit">Update</button>
-			</form>
+			<div class="profile-subtitle">
+				{% if user.admin %}
+					Zeus Admin
+				{% else %}
+					Zeus Member
+				{% endif %}
+			</div>
 		</div>
 	</div>
 
-	<div class="column is-5">
-		<div class="card card-content mb-4">
-			<!-- Change password -->
-			<a class="button is-primary" href="/users/forgot_password">Change password</a>
-			<!-- Passkeys list -->
-			<a class="button is-primary" href="/passkeys">Passkeys</a>
-		</div>
+	<div class="columns is-multiline mt-4">
+		<!-- Update profile -->
+		<div class="column is-7">
+			<div class="card card-content">
 
-		{% if current_user.admin %}
-		<!-- Change status -->
-		<div class="card card-content mb-4">
-			<form class="profile-edit-form" action="/users/{{ user.username }}/change_state" autocomplete="off" method="POST">
-				<div class="field">
-					<div class="select">
-						<select name="state">
-							<option value="active" {% if user.state == UserState::Active %}selected{% endif %}>Active</option>
-							<option value="disabled" {% if user.state == UserState::Disabled %}selected{% endif %}>Disabled</option>
-						</select>
+				<div class="title">Update profile information</div>
+
+				<!-- Error messages -->
+				{% match errors %}
+					{% when Some with (errors) %}
+						<div class="notification is-danger is-light">
+							{{ errors }}
+						</div>
+					{% when None %}
+				{% endmatch %}
+
+				<form class="profile-edit-form" action="/users/{{ user.username }}" method="POST">
+					<input type="hidden" name="_method" value="put"/>
+
+					<div class="field">
+						<label class="label">Username</label>
+						<input class="input" name="username" type="text" placeholder="Username" value="{{ user.username }}" disabled />
 					</div>
-				</div>
 
-				<button class="button is-primary" type="submit">Change state</button>
-			</form>
-		</div>
-		{% endif %}
+					<div class="field">
+						<label class="label">Full Name</label>
+						<input class="input" name="full_name" type="text" placeholder="Full Name" value="{{ user.full_name }}" disabled />
+					</div>
 
-		<div class="card card-content mb-4">
-			<label class="label"> Roles </label>
-			<div class="field tags">
-				{% for role in user_roles %}
-					{% if let Some(_) = role.client_id %}
-						<span class="tag is-medium" style="border: 2px solid black">
-					{% else %}
-						<span class="tag is-medium">
-					{% endif %}
-						{% if current_user.admin %}
-							<a href="/roles/{{ role.id }}">{{ role.name }}</a>
-							<a class="is-small delete" href="#delete-role-{{ role.id }}"></a>
-							<div class="modal modal-target" id="delete-role-{{ role.id }}">
-								<a class="modal-background" href="#"></a>
-								<div class="modal-card">
-									<form action="/users/{{ user.username }}/roles/{{ role.id }}" method="POST">
-										<header class="modal-card-head">
-											<div class="modal-card-title">Delete</div>
-											<a class="delete" href="#"></a>
-										</header>
+					<div class="field">
+						<label class="label">Email</label>
+						<input class="input" name="email" type="email" placeholder="Email" value="{{ user.email }}" required />
+					</div>
 
-										<section class="modal-card-body">
-											<p> Are you sure you want to remove the <b>{{ role.name }}</b> role from this user? </p>
-										</section>
+					<div class="field">
+						<label class="label">Password</label>
+						<input class="input" name="password" type="password" placeholder="Password" disabled />
+					</div>
 
-										<footer class="modal-card-body">
-											<input type="hidden" name="_method" value="delete"/>
-											<button class="button is-danger" type="submit">Yes</button>
-											<a class="button is-danger is-light" href="#">Close</a>
-										</footer>
-									</form>
-								</div>
-							</div>
+					<div class="field">
+						<label for="subscribed_to_mailing_list" class="label">Subscribe to Mailing List</label>
+						{% if user.subscribed_to_mailing_list -%}
+							<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list" checked>
 						{% else -%}
-							{{ role.name }}
+							<input name="subscribed_to_mailing_list" type="checkbox" id="subscribed_to_mailing_list">
 						{% endif %}
-					</span>
-				{% endfor %}
+					</div>
+
+					<div class="field">
+						<label class="label">SSH Keys</label>
+						<textarea class="textarea" name="ssh_key" placeholder="SSH Keys">
+							{%- match user.ssh_key -%}
+								{%- when Some with (val) -%}
+									{{- val -}}
+								{%- when None -%}
+							{%- endmatch -%}
+						</textarea>
+					</div>
+
+					<button class="button is-primary" type="submit">Update</button>
+				</form>
+			</div>
+		</div>
+
+		<div class="column is-5">
+			<div class="card card-content mb-4">
+				<!-- Change password -->
+				<a class="button is-primary" href="/users/forgot_password">Change password</a>
+				<!-- Passkeys list -->
+				<a class="button is-primary" href="/passkeys">Passkeys</a>
 			</div>
 
 			{% if current_user.admin %}
-				<form action="/users/{{ user.username }}/roles" method="post">
-					<div class="select">
-						<select name="role_id" required>
-							<option selected></option>
-							{% for role in roles %}
-								<option value="{{ role.id }}">{{ role.name }}</option>
-							{% endfor %}
-						</select>
+			<!-- Change status -->
+			<div class="card card-content mb-4">
+				<form class="profile-edit-form" action="/users/{{ user.username }}/change_state" autocomplete="off" method="POST">
+					<div class="field">
+						<div class="select">
+							<select name="state">
+								<option value="active" {% if user.state == UserState::Active %}selected{% endif %}>Active</option>
+								<option value="disabled" {% if user.state == UserState::Disabled %}selected{% endif %}>Disabled</option>
+							</select>
+						</div>
 					</div>
 
-					<button class="button is-primary" type="submit">Add</button>
+					<button class="button is-primary" type="submit">Change state</button>
 				</form>
-
+			</div>
 			{% endif %}
+
+			<div class="card card-content mb-4">
+				<label class="label"> Roles </label>
+				<div class="field tags">
+					{% for role in user_roles %}
+						<span
+							class="tag is-medium"
+							{% if let Some(_) = role.client_id %}
+								style="border: 2px solid black"
+							{% endif %}
+						>
+							{% if current_user.admin %}
+								<a href="/roles/{{ role.id }}">{{ role.name }}</a>
+								<a class="is-small delete" href="#delete-role-{{ role.id }}"></a>
+								<div class="modal modal-target" id="delete-role-{{ role.id }}">
+									<a class="modal-background" href="#"></a>
+									<div class="modal-card">
+										<form action="/users/{{ user.username }}/roles/{{ role.id }}" method="POST">
+											<header class="modal-card-head">
+												<div class="modal-card-title">Delete</div>
+												<a class="delete" href="#"></a>
+											</header>
+
+											<section class="modal-card-body">
+												<p> Are you sure you want to remove the <b>{{ role.name }}</b> role from this user? </p>
+											</section>
+
+											<footer class="modal-card-body">
+												<input type="hidden" name="_method" value="delete"/>
+												<button class="button is-danger" type="submit">Yes</button>
+												<a class="button is-danger is-light" href="#">Close</a>
+											</footer>
+										</form>
+									</div>
+								</div>
+							{% else -%}
+								{{ role.name }}
+							{% endif %}
+						</span>
+					{% endfor %}
+				</div>
+
+				{% if current_user.admin %}
+					<form action="/users/{{ user.username }}/roles" method="post">
+						<div class="select">
+							<select name="role_id" required>
+								<option selected></option>
+								{% for role in roles %}
+									<option value="{{ role.id }}">{{ role.name }}</option>
+								{% endfor %}
+							</select>
+						</div>
+
+						<button class="button is-primary" type="submit">Add</button>
+					</form>
+				{% endif %}
+			</div>
 		</div>
 	</div>
-
-</div>
 {% endblock content %}

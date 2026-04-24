@@ -3,9 +3,9 @@
 <!-- Content -->
 {% block content %}
 	<div class="columns">
+		<!-- Main -->
 		<div class="column is-8">
 			<div class="card card-content">
-
 				<!-- Title -->
 				<div class="title">
 					Update {{ client.name }}
@@ -13,7 +13,7 @@
 
 				<!-- Form -->
 				<form class="form" action="/clients/{{ client.id }}" method="post">
-					<input type="hidden" name="_method" value="put"/>
+					<input type="hidden" name="_method" value="put" />
 
 					<!-- Name -->
 					<div class="field">
@@ -26,7 +26,8 @@
 							minlength="3"
 							maxlength="80"
 							value="{{ client.name }}"
-							required>
+							required
+						/>
 					</div>
 
 					<!-- Description -->
@@ -37,7 +38,10 @@
 							name="description"
 							rows="4"
 							cols="50"
-							placeholder="Describe what the application does.">{{- client.description -}}</textarea>
+							placeholder="Describe what the application does."
+						>
+							{{- client.description -}}
+						</textarea>
 					</div>
 
 					<!-- Needs Grant -->
@@ -46,13 +50,21 @@
 							<label class="label">Needs Grant?</label>
 							<label class="switch">
 								{#
-								   Do not switch the order of these inputs. We take the
-								   last supplied value for `needs_grant`, which is the
-								   hidden input if unchecked and the checkbox input if
-								   checked.
+									Do not switch the order of these inputs. We take the
+									last supplied value for `needs_grant`, which is the
+									hidden input if unchecked and the checkbox input if
+									checked.
 								#}
-								<input type="hidden" name="needs_grant" value="false">
-								<input type="checkbox" name="needs_grant" {% if client.needs_grant %} checked {% endif %}>
+								<input
+									type="hidden"
+									name="needs_grant"
+									value="false"
+								/>
+								<input
+									type="checkbox"
+									name="needs_grant"
+									{% if client.needs_grant -%} checked {%- endif %}
+								/>
 								<span class="switch-slider"></span>
 							</label>
 						</div>
@@ -66,13 +78,18 @@
 							name="redirect_uri_list"
 							placeholder="http://localhost:3000/auth/callback&#10;https://example.com/auth/callback"
 							rows="4"
-							cols="50">{{- client.redirect_uri_list -}}</textarea>
+							cols="50"
+						>
+							{{- client.redirect_uri_list -}}
+						</textarea>
 					</div>
 
-			  <button class="button is-primary" type="submit">Save</button>
+					<button class="button is-primary" type="submit">Save</button>
 				</form>
 			</div>
 		</div>
+
+		<!-- Secret -->
 		<div class="column is-4">
 			<div class="card card-content mb-4">
 				<div class="title">
@@ -85,7 +102,10 @@
 						<textarea
 							class="textarea"
 							type="text"
-							disabled>{{- client.secret -}}</textarea>
+							disabled
+						>
+							{{- client.secret -}}
+						</textarea>
 					</details>
 				</div>
 
@@ -97,15 +117,16 @@
 			</div>
 
 			<div class="card card-content mb-4">
-				<label class="label"> Roles </label>
+				<label class="label">Roles</label>
 				<div class="field tags">
 					{% for role in client_roles %}
-						{% if let Some(_) = role.client_id %}
-							<span class="tag is-medium" style="border: 2px solid black">
-						{% else %}
-							<span class="tag is-medium">
-						{% endif %}
-							<a href="/roles/{{ role.id }}">{{ role.name }}</a> 
+						<span
+							class="tag is-medium"
+							{% if let Some(_) = role.client_id %}
+								style="border: 2px solid black"
+							{% endif %}
+						>
+							<a href="/roles/{{ role.id }}">{{ role.name }}</a>
 							<a class="is-small delete" href="#delete-role-{{ role.id }}"></a>
 							<div class="modal modal-target" id="delete-role-{{ role.id }}">
 								<a class="modal-background" href="#"></a>
@@ -117,11 +138,11 @@
 										</header>
 
 										<section class="modal-card-body">
-											<p> Are you sure you want to remove the <b>{{ role.name }}</b> role from this client? </p>
+											<p>Are you sure you want to remove the <b>{{ role.name }}</b> role from this client?</p>
 										</section>
 
 										<footer class="modal-card-body">
-											<input type="hidden" name="_method" value="delete"/>
+											<input type="hidden" name="_method" value="delete" />
 											<button class="button is-danger" type="submit">Yes</button>
 											<a class="button is-danger is-light" href="#">Close</a>
 										</footer>
@@ -130,13 +151,15 @@
 							</div>
 						</span>
 					{% endfor %}
+				</div>
 			</div>
+
 			<form action="/clients/{{ client.id }}/roles" method="post">
 				<div class="select">
 					<select name="role_id" required>
 						<option selected></option>
 						{% for role in roles %}
-							<option value="{{ role.id }}">{{ role.name}} </option>
+							<option value="{{ role.id }}">{{ role.name }}</option>
 						{% endfor %}
 					</select>
 				</div>
