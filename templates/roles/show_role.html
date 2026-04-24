@@ -23,10 +23,10 @@
 		</div>
 	{% endif %}
 
-	<!-- Info message -->
-	{% if let Some(info) = info %}
-		<div class="notification is-info is-light">
-			{{ info }}
+	<!-- Success message -->
+	{% if let Some(success) = success %}
+		<div class="notification is-success is-light">
+			{{ success }}
 		</div>
 	{% endif %}
 

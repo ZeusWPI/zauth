@@ -57,7 +57,9 @@ pub async fn create_role<'r, 'a>(
 ) -> Result<
 	Either<impl Responder<'a, 'static>, impl Responder<'r, 'static> + use<'r>>,
 > {
-	let role = Role::create(role.into_inner(), &db).await;
+	let new_role: NewRole = role.into_inner();
+	let new_role_name = new_role.name.clone();
+	let role = Role::create(new_role, &db).await;
 	match role {
 		Ok(role) => Ok(Either::Left(Accepter {
 			html: Redirect::to(uri!(list_roles(None::<String>))),
@@ -68,22 +70,24 @@ pub async fn create_role<'r, 'a>(
 				DatabaseErrorKind::UniqueViolation,
 				_,
 			),
-		))) => Ok(Either::Right(Accepter {
-			html: Redirect::to(uri!(list_roles(Some(
-				"role name already exists"
-			)))),
-			json: "role name already exists",
+		))) => Ok(Either::Right({
+			let error_msg =
+				format!("Role with name “{}” already exists", new_role_name);
+			Accepter {
+				html: Redirect::to(uri!(list_roles(Some(error_msg.clone())))),
+				json: error_msg,
+			}
 		})),
 		Err(err) => Err(err),
 	}
 }
 
-#[get("/roles/<id>?<error>&<info>")]
+#[get("/roles/<id>?<error>&<success>")]
 pub async fn show_role_page<'r>(
 	// from url
 	id: i32,
 	error: Option<String>,
-	info: Option<String>,
+	success: Option<String>,
 	// from headers
 	session: AdminSession,
 	// injected
@@ -110,7 +114,7 @@ pub async fn show_role_page<'r>(
 		current_user: User = session.admin,
 
 		error: Option<String> = error,
-		info: Option<String> = info,
+		success: Option<String> = success,
 
 		role: Role = role,
 		client: Option<Client> = client,
@@ -143,7 +147,7 @@ pub async fn update_description<'r>(
 		html: Redirect::to(uri!(show_role_page(
 			role_id,
 			None::<String>,
-			Some("description changed")
+			Some("Successfully changed description")
 		))),
 		json: Custom(Status::Ok, ()),
 	})
@@ -162,12 +166,15 @@ pub async fn update_visibility<'r>(
 ) -> Result<impl Responder<'r, 'static>> {
 	let mut role: Role = Role::find(role_id, &db).await?;
 	role.visibility = visibility.into_inner();
-	role.update(&db).await?;
+	let role: Role = role.update(&db).await?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_role_page(
 			role_id,
 			None::<String>,
-			Some("visibility changed")
+			Some(format!(
+				"Successfully changed visibility to “{}”",
+				role.visibility,
+			)),
 		))),
 		json: Custom(Status::Ok, ()),
 	})
@@ -193,7 +200,10 @@ pub async fn add_user<'r>(
 				html: Redirect::to(uri!(show_role_page(
 					role.id,
 					None::<String>,
-					Some("user added")
+					Some(format!(
+						"Successfully assigned this role to user “{}”",
+						user.username,
+					)),
 				))),
 				json: Custom(Status::Ok, ()),
 			}
@@ -201,16 +211,16 @@ pub async fn add_user<'r>(
 		Err(ZauthError::NotFound(_)) => Accepter {
 			html: Redirect::to(uri!(show_role_page(
 				role.id,
-				Some("user not found"),
-				None::<String>
+				Some("User not found"),
+				None::<String>,
 			))),
 			json: Custom(Status::NotFound, ()),
 		},
 		_ => Accepter {
 			html: Redirect::to(uri!(show_role_page(
 				role.id,
-				Some("error occured"),
-				None::<String>
+				Some("An internal server error occured"),
+				None::<String>,
 			))),
 			json: Custom(Status::InternalServerError, ()),
 		},
@@ -237,7 +247,10 @@ pub async fn add_client<'r>(
 				html: Redirect::to(uri!(show_role_page(
 					role.id,
 					None::<String>,
-					Some("client added")
+					Some(format!(
+						"Successfully assigned this role to client “{}”",
+						client.name,
+					)),
 				))),
 				json: Custom(Status::Ok, ()),
 			}
@@ -245,16 +258,16 @@ pub async fn add_client<'r>(
 		Err(ZauthError::NotFound(_)) => Accepter {
 			html: Redirect::to(uri!(show_role_page(
 				role.id,
-				Some("client not found"),
-				None::<String>
+				Some("Client not found"),
+				None::<String>,
 			))),
 			json: Custom(Status::NotFound, ()),
 		},
 		_ => Accepter {
 			html: Redirect::to(uri!(show_role_page(
 				role.id,
-				Some("error occured"),
-				None::<String>
+				Some("An internal server error occured"),
+				None::<String>,
 			))),
 			json: Custom(Status::InternalServerError, ()),
 		},
@@ -272,12 +285,16 @@ pub async fn delete_user<'r>(
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;
+	let user = User::find(user_id, &db).await?;
 	role.remove_user(user_id, &db).await?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_role_page(
 			role_id,
 			None::<String>,
-			Some("user deleted")
+			Some(format!(
+				"Successfully removed this role from user “{}”",
+				user.username,
+			))
 		))),
 		json: Custom(Status::Ok, ()),
 	})
@@ -294,12 +311,16 @@ pub async fn delete_client<'r>(
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;
+	let client = Client::find(client_id, &db).await?;
 	role.remove_client(client_id, &db).await?;
 	Ok(Accepter {
 		html: Redirect::to(uri!(show_role_page(
 			role_id,
 			None::<String>,
-			Some("client deleted")
+			Some(format!(
+				"Successfully removed this role from client “{}”",
+				client.name,
+			))
 		))),
 		json: Custom(Status::Ok, ()),
 	})
