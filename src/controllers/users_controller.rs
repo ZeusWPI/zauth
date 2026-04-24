@@ -93,9 +93,11 @@ impl UserInfo {
 
 #[get("/current_user", rank = 1)]
 pub async fn current_user_as_client(
+	// from headers
 	session: UserClientSession,
-	db: DbConn,
+	// injected
 	config: &State<Config>,
+	db: DbConn,
 ) -> Result<Json<UserInfo>> {
 	Ok(Json(
 		UserInfo::new(
@@ -111,9 +113,11 @@ pub async fn current_user_as_client(
 
 #[get("/current_user", rank = 2)]
 pub async fn current_user(
+	// from headers
 	session: UserSession,
-	db: DbConn,
+	// injected
 	config: &State<Config>,
+	db: DbConn,
 ) -> Result<Json<UserInfo>> {
 	Ok(Json(
 		UserInfo::new(session.user, None, None, &db, config).await?,
@@ -122,9 +126,12 @@ pub async fn current_user(
 
 #[get("/users/<username>")]
 pub async fn show_user<'r>(
-	session: UserSession,
-	db: DbConn,
+	// from url
 	username: String,
+	// from headers
+	session: UserSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	// Cloning the username is necessary because it's used later
 	let user = User::find_by_username(username.clone(), &db).await?;
@@ -156,8 +163,10 @@ pub async fn show_user<'r>(
 
 #[get("/users/<username>/keys", rank = 1)]
 pub async fn show_ssh_key<'r>(
-	db: DbConn,
+	// from url
 	username: String,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let user = User::find_by_username(username, &db).await?;
 	let mut keys = vec![];
@@ -184,9 +193,11 @@ pub async fn show_ssh_key<'r>(
 
 #[get("/users")]
 pub async fn list_users<'r>(
+	// from headers
 	session: AdminSession,
-	db: DbConn,
+	// injected
 	conf: &'r State<Config>,
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let users = User::all(&db).await?;
 	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
@@ -205,6 +216,7 @@ pub async fn list_users<'r>(
 
 #[get("/users/new")]
 pub fn create_user_page<'r>(
+	// from headers
 	session: AdminSession,
 ) -> Result<impl Responder<'r, 'static>> {
 	Ok(RawHtml(template!("users/new_user.html", {
@@ -214,10 +226,13 @@ pub fn create_user_page<'r>(
 
 #[post("/users", data = "<user>")]
 pub async fn create_user<'r>(
-	_session: AdminSession,
+	// from body
 	user: Api<NewUser>,
-	db: DbConn,
+	// from headers
+	_session: AdminSession,
+	// injected
 	config: &State<Config>,
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	let user = User::create(user.into_inner(), config.bcrypt_cost, &db).await?;
 	// Cloning the username is necessary because it's used later
@@ -229,8 +244,9 @@ pub async fn create_user<'r>(
 
 #[get("/register")]
 pub async fn register_page<'r>(
-	db: DbConn,
+	// injected
 	conf: &'r State<Config>,
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
 	Ok(RawHtml(template!("users/registration_form.html", {
@@ -249,10 +265,12 @@ pub async fn register_page<'r>(
 
 #[post("/register", data = "<user>")]
 pub async fn register<'r>(
+	// from body
 	user: Api<NewUser>,
-	db: DbConn,
+	// injected
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
+	db: DbConn,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
 	let new_user = user.into_inner();
 	let pending = User::create_pending(new_user.clone(), conf, &db).await;
@@ -302,9 +320,13 @@ pub async fn register<'r>(
 
 #[put("/users/<username>", data = "<change>")]
 pub async fn update_user<'r, 'o: 'r>(
+	// from url
 	username: String,
+	// from body
 	change: Api<UserChange>,
+	// from headers
 	session: UserSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'o>> {
 	let mut user = User::find_by_username(username, &db).await?;
@@ -339,9 +361,13 @@ pub async fn update_user<'r, 'o: 'r>(
 
 #[post("/users/<username>/admin", data = "<value>")]
 pub async fn set_admin<'r>(
+	// from url
 	username: String,
+	// from body
 	value: Api<ChangeAdmin>,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mut user = User::find_by_username(username, &db).await?;
@@ -355,9 +381,13 @@ pub async fn set_admin<'r>(
 
 #[post("/users/<username>/change_state", data = "<value>")]
 pub async fn change_state<'r>(
+	// from url
 	username: String,
+	// from body
 	value: Api<ChangeStatus>,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mut user = User::find_by_username(username, &db).await?;
@@ -371,10 +401,13 @@ pub async fn change_state<'r>(
 
 #[post("/users/<username>/approve")]
 pub async fn set_approved<'r>(
+	// from url
 	username: String,
+	// from headers
 	_session: AdminSession,
-	mailer: &'r State<Mailer>,
+	// injected
 	conf: &'r State<Config>,
+	mailer: &'r State<Mailer>,
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let user = User::find_by_username(username, &db).await?;
@@ -402,8 +435,11 @@ pub async fn set_approved<'r>(
 
 #[post("/users/<username>/reject")]
 pub async fn reject<'r>(
+	// from url
 	username: String,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let user = User::find_by_username(username, &db).await?;
@@ -434,10 +470,12 @@ pub struct ResetPassword {
 
 #[post("/users/forgot_password", data = "<value>")]
 pub async fn forgot_password_post<'r>(
+	// from body
 	value: Form<ResetPassword>,
+	// injected
 	conf: &State<Config>,
-	db: DbConn,
 	mailer: &State<Mailer>,
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	let for_email = value.into_inner().for_email;
 
@@ -474,6 +512,7 @@ pub async fn forgot_password_post<'r>(
 
 #[get("/users/unsubscribe/<token>")]
 pub fn show_confirm_unsubscribe<'r>(
+	// from url
 	token: String,
 ) -> impl Responder<'r, 'static> {
 	RawHtml(template!("users/confirm_unsubscribe_form.html", {
@@ -488,7 +527,9 @@ pub struct UnsubscribeForm {
 
 #[post("/users/unsubscribe", data = "<form>")]
 pub async fn unsubscribe_user<'r>(
+	// from body
 	form: Form<UnsubscribeForm>,
+	// injected
 	db: DbConn,
 ) -> Result<Either<impl Responder<'r, 'static>, impl Responder<'r, 'static>>> {
 	let user =
@@ -511,7 +552,10 @@ pub async fn unsubscribe_user<'r>(
 }
 
 #[get("/users/reset_password/<token>")]
-pub fn reset_password_get<'r>(token: String) -> impl Responder<'r, 'static> {
+pub fn reset_password_get<'r>(
+	// from url
+	token: String,
+) -> impl Responder<'r, 'static> {
 	RawHtml(template!("users/reset_password_form.html", {
 		token: String = token,
 		errors: Option<String> = None,
@@ -526,10 +570,12 @@ pub struct PasswordReset {
 
 #[post("/users/reset_password", data = "<form>")]
 pub async fn reset_password_post<'r, 'o: 'r>(
+	// from body
 	form: Form<PasswordReset>,
-	db: DbConn,
+	// injected
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'o>> {
 	let form = form.into_inner();
 	if let Some(user) =
@@ -574,7 +620,10 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 }
 
 #[get("/users/confirm/<token>")]
-pub fn confirm_email_get<'r>(token: String) -> impl Responder<'r, 'static> {
+pub fn confirm_email_get<'r>(
+	// from url
+	token: String,
+) -> impl Responder<'r, 'static> {
 	RawHtml(template!("users/confirm_email_form.html", {
 		token: String = token,
 	}))
@@ -587,10 +636,12 @@ pub struct EmailConfirmation {
 
 #[post("/users/confirm", data = "<form>")]
 pub async fn confirm_email_post<'r>(
+	// from body
 	form: Form<EmailConfirmation>,
-	mailer: &State<Mailer>,
+	// injected
 	admin_email: &State<AdminEmail>,
 	conf: &'r State<Config>,
+	mailer: &State<Mailer>,
 	db: DbConn,
 ) -> Result<
 	Either<
@@ -628,10 +679,14 @@ pub async fn confirm_email_post<'r>(
 
 #[post("/users/<username>/roles", data = "<role_id>")]
 pub async fn add_role<'r>(
+	// from url
 	username: String,
+	// from body
 	role_id: Form<i32>,
-	db: DbConn,
+	// from headers
 	_session: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(*role_id, &db).await?;
 	let user_result = User::find_by_username(username.clone(), &db).await?;
@@ -644,9 +699,12 @@ pub async fn add_role<'r>(
 
 #[delete("/users/<username>/roles/<role_id>")]
 pub async fn delete_role<'r>(
-	role_id: i32,
+	// from url
 	username: String,
+	role_id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;

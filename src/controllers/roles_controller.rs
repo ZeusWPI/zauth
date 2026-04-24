@@ -17,9 +17,12 @@ use crate::views::accepter::Accepter;
 
 #[get("/roles?<error>")]
 pub async fn list_roles<'r>(
+	// from url
 	error: Option<String>,
-	db: DbConn,
+	// from headers
 	session: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let roles: Vec<Role> = Role::all(&db).await?;
 	let clients = Client::all(&db).await?;
@@ -43,9 +46,12 @@ pub async fn list_roles<'r>(
 
 #[post("/roles", data = "<role>")]
 pub async fn create_role<'r, 'a>(
+	// from body
 	role: Api<NewRole>,
-	db: DbConn,
+	// from headers
 	_admin: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<
 	Either<impl Responder<'a, 'static>, impl Responder<'r, 'static> + use<'r>>,
 > {
@@ -72,10 +78,13 @@ pub async fn create_role<'r, 'a>(
 
 #[get("/roles/<id>?<error>&<info>")]
 pub async fn show_role_page<'r>(
+	// from url
 	id: i32,
 	error: Option<String>,
 	info: Option<String>,
+	// from headers
 	session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(id, &db).await?;
@@ -101,9 +110,13 @@ pub async fn show_role_page<'r>(
 
 #[post("/roles/<role_id>/description", data = "<description>")]
 pub async fn update_description<'r>(
-	description: Form<String>,
+	// from url
 	role_id: i32,
+	// from body
+	description: Form<String>,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mut role: Role = Role::find(role_id, &db).await?;
@@ -121,8 +134,11 @@ pub async fn update_description<'r>(
 
 #[delete("/roles/<id>")]
 pub async fn delete_role<'r>(
+	// from url
 	id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(id, &db).await?;
@@ -135,10 +151,14 @@ pub async fn delete_role<'r>(
 
 #[post("/roles/<role_id>/users", data = "<username>")]
 pub async fn add_user<'r>(
-	username: Form<String>,
+	// from url
 	role_id: i32,
-	db: DbConn,
+	// from body
+	username: Form<String>,
+	// from headers
 	_session: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;
 	let user_result = User::find_by_username(username.clone(), &db).await;
@@ -175,10 +195,14 @@ pub async fn add_user<'r>(
 
 #[post("/roles/<role_id>/clients", data = "<client_name>")]
 pub async fn add_client<'r>(
-	client_name: Form<String>,
+	// from url
 	role_id: i32,
-	db: DbConn,
+	// from body
+	client_name: Form<String>,
+	// from headers
 	_session: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;
 	let client_result = Client::find_by_name(client_name.clone(), &db).await;
@@ -215,9 +239,12 @@ pub async fn add_client<'r>(
 
 #[delete("/roles/<role_id>/users/<user_id>")]
 pub async fn delete_user<'r>(
+	// from url
 	role_id: i32,
 	user_id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;
@@ -234,9 +261,12 @@ pub async fn delete_user<'r>(
 
 #[delete("/roles/<role_id>/clients/<client_id>")]
 pub async fn delete_client<'r>(
+	// from url
 	role_id: i32,
 	client_id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;

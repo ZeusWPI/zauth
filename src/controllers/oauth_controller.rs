@@ -101,8 +101,11 @@ pub struct AuthorizationRequest {
 
 #[get("/oauth/authorize?<req..>")]
 pub async fn authorize<'r>(
-	cookies: &CookieJar<'_>,
+	// from url
 	req: AuthorizationRequest,
+	// from headers
+	cookies: &CookieJar<'_>,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	if !req.response_type.eq("code") {
@@ -144,8 +147,10 @@ pub struct AuthorizeFormData {
 
 #[post("/oauth/authorize", data = "<form>")]
 pub async fn do_authorize(
-	cookies: &CookieJar<'_>,
+	// from body
 	form: Form<AuthorizeFormData>,
+	// from headers
+	cookies: &CookieJar<'_>,
 ) -> Result<Redirect> {
 	let state = AuthState::from_cookies(cookies)?;
 	if form.into_inner().authorized {
@@ -171,8 +176,10 @@ pub struct UserToken {
 
 #[get("/oauth/grant")]
 pub async fn grant_get<'r>(
-	session: UserSession,
+	// from headers
 	cookies: &CookieJar<'_>,
+	session: UserSession,
+	// injected
 	token_store: &State<TokenStore<UserToken>>,
 	db: DbConn,
 ) -> Result<
@@ -205,9 +212,12 @@ pub async fn grant_get<'r>(
 
 #[post("/oauth/grant", data = "<form>")]
 pub async fn grant_post<'r>(
-	session: UserSession,
-	cookies: &CookieJar<'_>,
+	// from body
 	form: Form<GrantFormData>,
+	// from headers
+	cookies: &CookieJar<'_>,
+	session: UserSession,
+	// injected
 	token_store: &State<TokenStore<UserToken>>,
 ) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	let data = form.into_inner();
@@ -428,11 +438,14 @@ pub async fn client_credentials_grant(
 
 #[post("/oauth/token", data = "<form>")]
 pub async fn token(
-	auth: Option<BasicAuthentication>,
+	// from body
 	form: Form<TokenFormData>,
+	// from headers
+	auth: Option<BasicAuthentication>,
+	// injected
 	config: &State<Config>,
-	token_state: &State<TokenStore<UserToken>>,
 	jwt_builder: &State<JWTBuilder>,
+	token_state: &State<TokenStore<UserToken>>,
 	db: DbConn,
 ) -> Result<Json<TokenSuccess>> {
 	let data = form.into_inner();
@@ -457,6 +470,9 @@ pub async fn token(
 }
 
 #[get("/oauth/jwks")]
-pub async fn jwks(jwt_builder: &State<JWTBuilder>) -> Json<JwkSet> {
+pub async fn jwks(
+	// injected
+	jwt_builder: &State<JWTBuilder>,
+) -> Json<JwkSet> {
 	Json(jwt_builder.jwks.clone())
 }

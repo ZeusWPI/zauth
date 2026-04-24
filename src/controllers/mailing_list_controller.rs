@@ -21,7 +21,9 @@ use crate::views::accepter::Accepter;
 /// Show an overview of all mails, sorted by send date
 #[get("/mails")]
 pub async fn list_mails<'r>(
+	// from headers
 	session: UserSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mails = Mail::all(&db).await?;
@@ -38,11 +40,14 @@ pub async fn list_mails<'r>(
 /// Send a new mail and archive it
 #[post("/mails", data = "<new_mail>", rank = 2)]
 pub async fn send_mail_as_user<'r>(
-	_session: AdminSession,
+	// from body
 	new_mail: Api<NewMail>,
-	db: DbConn,
+	// from headers
+	_session: AdminSession,
+	// injected
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	send_mail(new_mail, db, conf, mailer).await
 }
@@ -50,11 +55,14 @@ pub async fn send_mail_as_user<'r>(
 /// Send a new mail as a client and archive it
 #[post("/mails", data = "<new_mail>", rank = 1)]
 pub async fn send_mail_as_client<'r>(
-	client_session: ClientSession,
+	// from body
 	new_mail: Api<NewMail>,
-	db: DbConn,
+	// from headers
+	client_session: ClientSession,
+	// injected
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	if !client_session
 		.client
@@ -142,6 +150,7 @@ async fn send_mail<'r>(
 /// Show the new_mail page
 #[get("/mails/new")]
 pub async fn show_create_mail_page<'r>(
+	// from headers
 	session: AdminSession,
 ) -> Result<impl Responder<'r, 'static>> {
 	Ok(RawHtml(template!("maillist/new_mail.html", {
@@ -152,9 +161,12 @@ pub async fn show_create_mail_page<'r>(
 /// Show a specific mail
 #[get("/mails/<id>")]
 pub async fn show_mail<'r>(
-	session: UserSession,
-	db: DbConn,
+	// from url
 	id: i32,
+	// from headers
+	session: UserSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mail = Mail::get_by_id(id, &db).await?;
 

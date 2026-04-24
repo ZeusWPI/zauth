@@ -62,8 +62,10 @@ impl std::convert::From<FormClientChange> for ClientChange {
 
 #[get("/clients")]
 pub async fn list_clients<'r>(
-	db: DbConn,
+	// from headers
 	session: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let clients = Client::all(&db).await?;
 	Ok(Accepter {
@@ -77,8 +79,11 @@ pub async fn list_clients<'r>(
 
 #[get("/clients/<id>/edit")]
 pub async fn update_client_page<'r>(
+	// from url
 	id: i32,
+	// from headers
 	session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
@@ -95,9 +100,13 @@ pub async fn update_client_page<'r>(
 
 #[put("/clients/<id>", data = "<change>")]
 pub async fn update_client<'r>(
+	// from url
 	id: i32,
+	// from body
 	change: SplitApi<FormClientChange, JsonClientChange, ClientChange>,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mut client = Client::find(id, &db).await?;
@@ -111,8 +120,11 @@ pub async fn update_client<'r>(
 
 #[delete("/clients/<id>")]
 pub async fn delete_client<'r>(
+	// from url
 	id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
@@ -125,9 +137,12 @@ pub async fn delete_client<'r>(
 
 #[post("/clients", data = "<client>")]
 pub async fn create_client<'r>(
+	// from body
 	client: Api<NewClient>,
-	db: DbConn,
+	// from headers
 	_admin: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::create(client.into_inner(), &db).await?;
 	Ok(Accepter {
@@ -138,8 +153,11 @@ pub async fn create_client<'r>(
 
 #[get("/clients/<id>/generate_secret")]
 pub async fn get_generate_secret<'r>(
+	// from url
 	id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
@@ -150,8 +168,11 @@ pub async fn get_generate_secret<'r>(
 
 #[post("/clients/<id>/generate_secret")]
 pub async fn post_generate_secret<'r>(
+	// from url
 	id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
@@ -189,7 +210,9 @@ impl ClientInfo {
 
 #[get("/current_client")]
 pub async fn current_client(
+	// from headers
 	session: ClientSession,
+	// injected
 	db: DbConn,
 ) -> Result<Json<ClientInfo>> {
 	Ok(Json(ClientInfo::new(session.client, &db).await?))
@@ -197,10 +220,14 @@ pub async fn current_client(
 
 #[post("/clients/<id>/roles", data = "<role_id>")]
 pub async fn add_role<'r>(
+	// from url
 	id: i32,
+	// from body
 	role_id: Form<i32>,
-	db: DbConn,
+	// from headers
 	_session: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(*role_id, &db).await?;
 	let client = Client::find(id, &db).await?;
@@ -213,9 +240,12 @@ pub async fn add_role<'r>(
 
 #[delete("/clients/<id>/roles/<role_id>")]
 pub async fn delete_role<'r>(
-	role_id: i32,
+	// from url
 	id: i32,
+	role_id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;

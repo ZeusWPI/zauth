@@ -7,6 +7,7 @@ use crate::errors::Either;
 
 #[get("/")]
 pub fn home_page<'r>(
+	// from headers
 	session: Option<UserSession>,
 ) -> Either<Redirect, impl Responder<'r, 'static>> {
 	match session {
