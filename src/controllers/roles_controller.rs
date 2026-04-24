@@ -180,6 +180,53 @@ pub async fn update_visibility<'r>(
 	})
 }
 
+#[post("/roles/<role_id>/limited_to_clients", data = "<client_id>")]
+pub async fn add_limited_to_client<'r>(
+	// from url
+	role_id: i32,
+	// from body
+	client_id: Form<i32>,
+	// from headers
+	_session: AdminSession,
+	// injected
+	db: DbConn,
+) -> Result<impl Responder<'r, 'static>> {
+	let role = Role::find(role_id, &db).await?;
+	let client_result = Client::find(client_id.clone(), &db).await;
+	Ok(match client_result {
+		Ok(client) => {
+			role.add_client_to_limited_to(client.id, &db).await?;
+			Accepter {
+				html: Redirect::to(uri!(show_role_page(
+					role.id,
+					None::<String>,
+					Some(format!(
+						"Successfully added client “{}” to the “limited to” list",
+						client.name,
+					)),
+				))),
+				json: Custom(Status::Ok, ()),
+			}
+		},
+		Err(ZauthError::NotFound(_)) => Accepter {
+			html: Redirect::to(uri!(show_role_page(
+				role.id,
+				Some("Client not found"),
+				None::<String>,
+			))),
+			json: Custom(Status::NotFound, ()),
+		},
+		_ => Accepter {
+			html: Redirect::to(uri!(show_role_page(
+				role.id,
+				Some("An internal server error occured"),
+				None::<String>,
+			))),
+			json: Custom(Status::InternalServerError, ()),
+		},
+	})
+}
+
 #[post("/roles/<role_id>/users", data = "<user_id>")]
 pub async fn add_user<'r>(
 	// from url

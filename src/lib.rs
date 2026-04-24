@@ -132,6 +132,7 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				roles_controller::show_role_page,
 				roles_controller::update_description,
 				roles_controller::update_visibility,
+				roles_controller::add_limited_to_client,
 				roles_controller::add_user,
 				roles_controller::add_client,
 				roles_controller::delete_user,

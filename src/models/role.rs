@@ -9,7 +9,8 @@ use crate::DbConn;
 use crate::errors::{Result, ZauthError};
 use crate::models::client::Client;
 use crate::models::schema::{
-	clients, clients_assigned_roles, roles, users, users_assigned_roles,
+	clients, clients_assigned_roles, roles, roles_limited_to_clients, users,
+	users_assigned_roles,
 };
 use crate::models::user::User;
 
@@ -76,6 +77,18 @@ pub struct NewRole {
 	Associations, Debug, Identifiable, Insertable, Queryable, Selectable,
 )]
 #[diesel(belongs_to(Role))]
+#[diesel(belongs_to(Client))]
+#[diesel(table_name = roles_limited_to_clients)]
+#[diesel(primary_key(role_id, client_id))]
+pub struct RoleLimitedToClient {
+	pub role_id: i32,
+	pub client_id: i32,
+}
+
+#[derive(
+	Associations, Debug, Identifiable, Insertable, Queryable, Selectable,
+)]
+#[diesel(belongs_to(Role))]
 #[diesel(belongs_to(User))]
 #[diesel(table_name = users_assigned_roles)]
 #[diesel(primary_key(role_id, user_id))]
@@ -107,6 +120,43 @@ impl Role {
 		})
 		.await
 		.map_err(ZauthError::from)
+	}
+
+	pub async fn add_client_to_limited_to(
+		&self,
+		client_id: i32,
+		db: &DbConn,
+	) -> Result<bool> {
+		let role_id = self.id;
+		let role_limited_to_client = db
+			.run(move |conn| {
+				roles_limited_to_clients::table
+					.filter(roles_limited_to_clients::role_id.eq(role_id))
+					.filter(roles_limited_to_clients::client_id.eq(client_id))
+					.first::<RoleLimitedToClient>(conn)
+					.optional()
+			})
+			.await
+			.map_err(ZauthError::from)?;
+
+		match role_limited_to_client {
+			Some(_) => {
+				// Tuple exists
+				Ok(false)
+			},
+			None => {
+				// Tuple doesn't exist yet
+				let tuple = RoleLimitedToClient { role_id, client_id };
+				db.run(move |conn| {
+					diesel::insert_into(roles_limited_to_clients::table)
+						.values(&tuple)
+						.execute(conn)
+				})
+				.await
+				.map_err(ZauthError::from)?;
+				Ok(true)
+			},
+		}
 	}
 
 	pub async fn add_user(&self, user_id: i32, db: &DbConn) -> Result<bool> {
