@@ -1,4 +1,4 @@
 -- This file should undo anything in `up.sql`
 
 ALTER TABLE sessions
-  ALTER COLUMN user_id ADD NOT NULL;
+  ALTER COLUMN user_id SET NOT NULL;
