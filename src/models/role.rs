@@ -1,3 +1,6 @@
+use core::convert::Into;
+use core::fmt;
+
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use validator::Validate;
@@ -25,6 +28,19 @@ pub enum RoleVisibility {
 	#[serde(rename = "limited")]
 	#[field(value = "limited")]
 	Limited,
+}
+
+impl fmt::Display for RoleVisibility {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		match self {
+			Self::Global => write!(f, "global"),
+			Self::Limited => write!(f, "limited"),
+		}
+	}
+}
+
+impl RoleVisibility {
+	pub const VALUES: [Self; 2] = [Self::Global, Self::Limited];
 }
 
 #[derive(

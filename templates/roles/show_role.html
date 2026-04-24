@@ -31,6 +31,7 @@
 	{% endif %}
 
 	<div class="cards">
+		<!-- Description card -->
 		<div class="card card-content mb-4">
 			<!-- Title -->
 			<div class="title">Description</div>
@@ -41,28 +42,58 @@
 			</div>
 
 			<!-- Edit button -->
-			<a class="button is-primary" href="#edit-description">Edit</a>
+			<div>
+				<a class="button is-primary" href="#edit-description">Edit</a>
+			</div>
 		</div>
 
+		<!-- Visibility card -->
 		<div class="card card-content mb-4">
 			<!-- Title -->
-			<div class="columns is-multiline is-justify-content-space-between">
-				<div class="column is-narrow">
-					<!-- Title -->
-					<div class="title">
-						Users
-					</div>
+			<div class="title">
+				Visibility
+			</div>
 
-					<!-- Subtitle -->
-					<div class="subtitle">
-						Users that have this role assigned to them.
-					</div>
+			<!-- Subtitle -->
+			<div class="subtitle">
+				{% match role.visibility %}
+					{% when crate::models::role::RoleVisibility::Global %}
+						Global role, visible to all clients
+					{% when crate::models::role::RoleVisibility::Limited %}
+						Limited role, only visible the following clients:
+				{% endmatch %}
+			</div>
 
-					<!-- Add button -->
-					<div class="column is-narrow">
-						<a class="button is-primary" href="#add-user">Add user</a>
-					</div>
-				</div>
+			<!-- Edit button -->
+			<div>
+				<a class="button is-warning" href="#change-visibility">
+					Change visibility
+				</a>
+			</div>
+
+			<hr />
+
+			<!-- Add button -->
+			<div>
+				<a class="button is-primary" href="#add-client-to-limited-to">Add client to “limited to” list</a>
+			</div>
+		</div>
+
+		<!-- Users card -->
+		<div class="card card-content mb-4">
+			<!-- Title -->
+			<div class="title">
+				Users
+			</div>
+
+			<!-- Subtitle -->
+			<div class="subtitle">
+				Users that have this role assigned to them.
+			</div>
+
+			<!-- Add button -->
+			<div>
+				<a class="button is-primary" href="#add-user">Add user</a>
 			</div>
 
 			<!-- Table -->
@@ -101,24 +132,21 @@
 			</table>
 		</div>
 
+		<!-- Clients card -->
 		<div class="card card-content mb-4">
-			<div class="columns is-multiline is-justify-content-space-between">
-				<div class="column is-narrow">
-					<!-- Title -->
-					<div class="title">
-						Clients
-					</div>
+			<!-- Title -->
+			<div class="title">
+				Clients
+			</div>
 
-					<!-- Subtitle -->
-					<div class="subtitle">
-						Clients that have this role assigned to them.
-					</div>
+			<!-- Subtitle -->
+			<div class="subtitle">
+				Clients that have this role assigned to them.
+			</div>
 
-					<!-- Add button -->
-					<div class="column is-narrow">
-						<a class="button is-primary" href="#add-client">Add Client</a>
-					</div>
-				</div>
+			<!-- Add button -->
+			<div>
+				<a class="button is-primary" href="#add-client">Add Client</a>
 			</div>
 
 			<!-- Table -->
@@ -156,119 +184,201 @@
 				</tbody>
 			</table>
 		</div>
+	</div>
 
-		<!-- Edit description modal -->
-		<div class="modal modal-target" id="edit-description">
-			<a class="modal-background" href="#"></a>
+	<!-- Edit description modal -->
+	<div class="modal modal-target" id="edit-description">
+		<a class="modal-background" href="#"></a>
 
-			<div class="modal-card">
-				<form action="/roles/{{ role.id }}/description" method="post">
-					<!-- Header -->
-					<header class="modal-card-head">
-						<!-- Title -->
-						<div class="modal-card-title">Edit description</div>
-						<!-- Close -->
-						<a class="delete" href="#"></a>
-					</header>
+		<div class="modal-card">
+			<form action="/roles/{{ role.id }}/description" method="post">
+				<!-- Header -->
+				<header class="modal-card-head">
+					<!-- Title -->
+					<div class="modal-card-title">Edit description</div>
+					<!-- Close -->
+					<a class="delete" href="#"></a>
+				</header>
 
-					<!-- Content -->
-					<section class="modal-card-body">
-						<div class="field">
-							<label class="label">Description</label>
-							<input
-								class="input"
-								name="description"
-								type="text"
-								placeholder="description"
-								value="{{ role.description }}"
-								required
-							/>
-						</div>
-					</section>
+				<!-- Content -->
+				<section class="modal-card-body">
+					<div class="field">
+						<label class="label">Description</label>
+						<input
+							class="input"
+							name="description"
+							type="text"
+							placeholder="description"
+							value="{{ role.description }}"
+							required
+						/>
+					</div>
+				</section>
 
-					<!-- Footer -->
-					<footer class="modal-card-foot is-justify-content-flex-end">
-						<button class="button is-primary" type="submit">Apply</button>
-						<a class="button is-danger is-light" href="#">Close</a>
-					</footer>
-				</form>
-			</div>
+				<!-- Footer -->
+				<footer class="modal-card-foot is-justify-content-flex-end">
+					<button class="button is-primary" type="submit">Apply</button>
+					<a class="button is-danger is-light" href="#">Close</a>
+				</footer>
+			</form>
 		</div>
+	</div>
 
-		<!-- Add user modal -->
-		<div class="modal modal-target" id="add-user">
-			<a class="modal-background" href="#"></a>
+	<!-- Change visibility modal -->
+	<div class="modal modal-target" id="change-visibility">
+		<a class="modal-background" href="#"></a>
 
-			<div class="modal-card">
-				<form action="/roles/{{ role.id }}/users" method="post">
-					<!-- Header -->
-					<header class="modal-card-head">
-						<!-- Title -->
-						<div class="modal-card-title">Add user</div>
-						<!-- Close -->
-						<a class="delete" href="#"></a>
-					</header>
+		<div class="modal-card">
+			<form action="/roles/{{ role.id }}/visibility" method="post">
+				<!-- Header -->
+				<header class="modal-card-head">
+					<!-- Title -->
+					<div class="modal-card-title">Change visibility</div>
+					<!-- Close -->
+					<a class="delete" href="#"></a>
+				</header>
 
-					<!-- Content -->
-					<section class="modal-card-body">
-						<div class="field">
-							<label class="label">Username</label>
-							<input
-								class="input"
-								name="username"
-								type="text"
-								placeholder="username"
-								minlength="3"
-								required
-							/>
+				<!-- Content -->
+				<section class="modal-card-body">
+					<div class="field">
+						<label class="label">Visibility</label>
+						<div class="select">
+							<select name="visibility" required>
+								{% for el in crate::models::role::RoleVisibility::VALUES %}
+									<option
+										value="{{ el }}"
+										{% if el == role.visibility -%}
+											selected
+										{%- endif %}
+									>
+										{{- el -}}
+									</option>
+								{% endfor %}
+							</select>
 						</div>
-					</section>
+					</div>
+				</section>
 
-					<!-- Footer -->
-					<footer class="modal-card-foot is-justify-content-flex-end">
-						<button class="button is-primary" type="submit">Add</button>
-						<a class="button is-danger is-light" href="#">Close</a>
-					</footer>
-				</form>
-			</div>
+				<!-- Footer -->
+				<footer class="modal-card-foot is-justify-content-flex-end">
+					<button class="button is-primary" type="submit">Apply</button>
+					<a class="button is-danger is-light" href="#">Close</a>
+				</footer>
+			</form>
 		</div>
+	</div>
 
-		<!-- Add client modal -->
-		<div class="modal modal-target" id="add-client">
-			<a class="modal-background" href="#"></a>
+	<!-- Add client to limited_to modal -->
+	<div class="modal modal-target" id="add-client-to-limited-to">
+		<a class="modal-background" href="#"></a>
 
-			<div class="modal-card">
-				<form action="/roles/{{ role.id }}/clients" method="post">
-					<!-- Header -->
-					<header class="modal-card-head">
-						<!-- Title -->
-						<div class="modal-card-title">Add client</div>
-						<!-- Close -->
-						<a class="delete" href="#"></a>
-					</header>
+		<div class="modal-card">
+			<form action="/roles/{{ role.id }}/limited_to_clients" method="post">
+				<!-- Header -->
+				<header class="modal-card-head">
+					<!-- Title -->
+					<div class="modal-card-title">Add client to “limited to” list</div>
+					<!-- Close -->
+					<a class="delete" href="#"></a>
+				</header>
 
-					<!-- Content -->
-					<section class="modal-card-body">
-						<div class="field">
-							<label class="label">Client</label>
-							<input
-								class="input"
-								name="client_name"
-								type="text"
-								placeholder="client name"
-								minlength="3"
-								required
-							/>
-						</div>
-					</section>
+				<!-- Content -->
+				<section class="modal-card-body">
+					<div class="field">
+						<label class="label">Client</label>
+						<input
+							class="input"
+							name="client_name"
+							type="text"
+							placeholder="client name"
+							minlength="3"
+							required
+						/>
+					</div>
+				</section>
 
-					<!-- Footer -->
-					<footer class="modal-card-foot is-justify-content-flex-end">
-						<button class="button is-primary" type="submit">Add</button>
-						<a class="button is-danger is-light" href="#">Close</a>
-					</footer>
-				</form>
-			</div>
+				<!-- Footer -->
+				<footer class="modal-card-foot is-justify-content-flex-end">
+					<button class="button is-primary" type="submit">Add</button>
+					<a class="button is-danger is-light" href="#">Close</a>
+				</footer>
+			</form>
+		</div>
+	</div>
+
+	<!-- Add user modal -->
+	<div class="modal modal-target" id="add-user">
+		<a class="modal-background" href="#"></a>
+
+		<div class="modal-card">
+			<form action="/roles/{{ role.id }}/users" method="post">
+				<!-- Header -->
+				<header class="modal-card-head">
+					<!-- Title -->
+					<div class="modal-card-title">Add user</div>
+					<!-- Close -->
+					<a class="delete" href="#"></a>
+				</header>
+
+				<!-- Content -->
+				<section class="modal-card-body">
+					<div class="field">
+						<label class="label">Username</label>
+						<input
+							class="input"
+							name="username"
+							type="text"
+							placeholder="username"
+							minlength="3"
+							required
+						/>
+					</div>
+				</section>
+
+				<!-- Footer -->
+				<footer class="modal-card-foot is-justify-content-flex-end">
+					<button class="button is-primary" type="submit">Add</button>
+					<a class="button is-danger is-light" href="#">Close</a>
+				</footer>
+			</form>
+		</div>
+	</div>
+
+	<!-- Add client modal -->
+	<div class="modal modal-target" id="add-client">
+		<a class="modal-background" href="#"></a>
+
+		<div class="modal-card">
+			<form action="/roles/{{ role.id }}/clients" method="post">
+				<!-- Header -->
+				<header class="modal-card-head">
+					<!-- Title -->
+					<div class="modal-card-title">Add client</div>
+					<!-- Close -->
+					<a class="delete" href="#"></a>
+				</header>
+
+				<!-- Content -->
+				<section class="modal-card-body">
+					<div class="field">
+						<label class="label">Client</label>
+						<input
+							class="input"
+							name="client_name"
+							type="text"
+							placeholder="client name"
+							minlength="3"
+							required
+						/>
+					</div>
+				</section>
+
+				<!-- Footer -->
+				<footer class="modal-card-foot is-justify-content-flex-end">
+					<button class="button is-primary" type="submit">Add</button>
+					<a class="button is-danger is-light" href="#">Close</a>
+				</footer>
+			</form>
 		</div>
 	</div>
 {% endblock content %}
