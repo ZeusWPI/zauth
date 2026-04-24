@@ -24,8 +24,8 @@ macro_rules! template {
 		{
 			use askama::Template;
 
-			use crate::errors::{InternalError,Result,ZauthError};
-			use crate::views::template::CommonTemplateData;
+			use $crate::errors::{InternalError,Result,ZauthError};
+			use $crate::views::template::CommonTemplateData;
 
 			#[derive(Template)]
 			#[template(path = $template_name)]
