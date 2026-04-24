@@ -1,6 +1,7 @@
 use lettre::message::header;
 use rocket::http::Status;
 use rocket::http::uri::Absolute;
+use rocket::response::content::RawHtml;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use std::fmt::Debug;
@@ -138,13 +139,13 @@ pub async fn show_user<'r>(
 	// Check whether the current session is allowed to view this user
 	if session.user.admin || session.user.username == username {
 		Ok(Accepter {
-			html: template!("users/show.html";
-							user: User = user.clone(),
-							current_user: User = session.user,
-							user_roles: Vec<Role> = user_roles,
-							roles: Vec<Role> = roles,
-							errors: Option<ValidationErrors> = None
-			),
+			html: RawHtml(template!("users/show.html", {
+				user: User = user.clone(),
+				current_user: User = session.user,
+				user_roles: Vec<Role> = user_roles,
+				roles: Vec<Role> = roles,
+				errors: Option<ValidationErrors> = None,
+			})),
 			json: Json(user),
 		})
 	} else {
@@ -176,7 +177,9 @@ pub async fn show_ssh_key<'r>(
 		}
 	}
 	Ok(Accepter {
-		html: template!("users/keys.html"; keys: String = keys.join("\n")),
+		html: RawHtml(template!("users/keys.html", {
+			keys: String = keys.join("\n"),
+		})),
 		json: Json(keys),
 	})
 }
@@ -192,13 +195,12 @@ pub async fn list_users<'r>(
 	let users_pending_for_approval: Vec<User> =
 		User::find_by_pending(&db).await?;
 	Ok(Accepter {
-		html: template! {
-			"users/index.html";
+		html: RawHtml(template!("users/index.html", {
 			users: Vec<User> = users.clone(),
 			current_user: User = session.admin,
 			registrations_full: bool = full,
 			users_pending_for_approval: Vec<User> = users_pending_for_approval.clone(),
-		},
+		})),
 		json: Json(users),
 	})
 }
@@ -207,9 +209,9 @@ pub async fn list_users<'r>(
 pub fn create_user_page<'r>(
 	session: AdminSession,
 ) -> Result<impl Responder<'r, 'static>> {
-	Ok(template! { "users/new_user.html";
+	Ok(RawHtml(template!("users/new_user.html", {
 		current_user: User = session.admin,
-	})
+	})))
 }
 
 #[post("/users", data = "<user>")]
@@ -233,8 +235,7 @@ pub async fn register_page<'r>(
 	conf: &'r State<Config>,
 ) -> Result<impl Responder<'r, 'static>> {
 	let full = User::pending_count(&db).await? >= conf.maximum_pending_users;
-	Ok(template! {
-		"users/registration_form.html";
+	Ok(RawHtml(template!("users/registration_form.html", {
 		registrations_full: bool = full,
 		errors: Option<ValidationErrors> = None,
 		user: NewUser = NewUser {
@@ -245,7 +246,7 @@ pub async fn register_page<'r>(
 			ssh_key: None,
 			not_a_robot: false,
 		}
-	})
+	})))
 }
 
 #[post("/register", data = "<user>")]
@@ -271,20 +272,17 @@ pub async fn register<'r>(
 			mailer.try_create(
 				&user,
 				String::from("[Zauth] Confirm your email"),
-				template!(
-				"mails/confirm_user_registration.txt";
-				name: String = user.full_name.to_string(),
-				confirm_url: String = confirm_url.to_string(),
-				)
-				.render()
-				.map_err(InternalError::from)?,
+				template!("mails/confirm_user_registration.txt", {
+					name: String = user.full_name.to_string(),
+					confirm_url: String = confirm_url.to_string(),
+				})?,
 				header::ContentType::TEXT_PLAIN,
 			)?;
 
 			Ok(Left(Accepter {
 				html: Custom(
 					Status::Created,
-					template!("users/registration_success.html"),
+					RawHtml(template!("users/registration_success.html")),
 				),
 				json: Custom(Status::Created, Json(user)),
 			}))
@@ -292,12 +290,11 @@ pub async fn register<'r>(
 		Err(ZauthError::ValidationError(errors)) => Ok(Right(Accepter {
 			html: Custom(
 				Status::UnprocessableEntity,
-				template! {
-					"users/registration_form.html";
+				RawHtml(template!("users/registration_form.html", {
 					registrations_full: bool = full,
 					user: NewUser = new_user,
 					errors: Option<ValidationErrors> = Some(errors.clone()),
-				},
+				})),
 			),
 			json: Custom(Status::UnprocessableEntity, Json(errors)),
 		})),
@@ -326,14 +323,13 @@ pub async fn update_user<'r, 'o: 'r>(
 				let roles = user.clone().roles(&db).await?;
 				Ok(OneOf::Two(Custom(
 					Status::UnprocessableEntity,
-					template! {
-						"users/show.html";
+					RawHtml(template!("users/show.html", {
 						user: User = user,
 						current_user: User = session.user,
 						user_roles: Vec<Role> =  roles,
 						roles: Vec<Role> = vec![],
 						errors: Option<ValidationErrors> = Some(errors.clone()),
-					},
+					})),
 				)))
 			},
 			Err(other) => Err(other),
@@ -392,13 +388,10 @@ pub async fn set_approved<'r>(
 		.create(
 			&user,
 			String::from("[Zauth] Your account has been approved"),
-			template!(
-			"mails/user_approved.txt";
-			name: String = user.full_name.to_string(),
-			login_url: String = login_url.to_string(),
-			)
-			.render()
-			.map_err(InternalError::from)?,
+			template!("mails/user_approved.txt", {
+				name: String = user.full_name.to_string(),
+				login_url: String = login_url.to_string(),
+			})?,
 			header::ContentType::TEXT_PLAIN,
 		)
 		.await?;
@@ -433,7 +426,7 @@ pub async fn reject<'r>(
 
 #[get("/users/forgot_password")]
 pub fn forgot_password_get<'r>() -> impl Responder<'r, 'static> {
-	template! { "users/forgot_password.html" }
+	RawHtml(template!("users/forgot_password.html"))
 }
 
 #[derive(Debug, FromForm, Deserialize)]
@@ -468,31 +461,26 @@ pub async fn forgot_password_post<'r>(
 		mailer.try_create(
 			&user,
 			String::from("[Zauth] You've requested a password reset"),
-			template!(
-				"mails/password_reset_token.txt";
+			template!("mails/password_reset_token.txt", {
 				name: String = user.username.to_string(),
 				reset_url: String = reset_url.to_string(),
-			)
-			.render()
-			.map_err(InternalError::from)?,
+			})?,
 			header::ContentType::TEXT_PLAIN,
 		)?
 	};
 
-	Ok(template! {
-		"users/reset_link_sent.html";
-		email: String = for_email
-	})
+	Ok(RawHtml(template!("users/reset_link_sent.html", {
+		email: String = for_email,
+	})))
 }
 
 #[get("/users/unsubscribe/<token>")]
 pub fn show_confirm_unsubscribe<'r>(
 	token: String,
 ) -> impl Responder<'r, 'static> {
-	template! {
-		"users/confirm_unsubscribe_form.html";
+	RawHtml(template!("users/confirm_unsubscribe_form.html", {
 		token: String = token,
-	}
+	}))
 }
 
 #[derive(Debug, FromForm)]
@@ -511,7 +499,7 @@ pub async fn unsubscribe_user<'r>(
 	if user.is_none() {
 		return Ok(Either::Left(Custom(
 			Status::Unauthorized,
-			template!("users/unsubscribe_invalid.html"),
+			RawHtml(template!("users/unsubscribe_invalid.html")),
 		)));
 	}
 
@@ -521,16 +509,15 @@ pub async fn unsubscribe_user<'r>(
 	user.subscribed_to_mailing_list = false;
 	user.update(&db).await?;
 
-	Ok(Either::Right(template!("users/unsubscribed.html")))
+	Ok(Either::Right(RawHtml(template!("users/unsubscribed.html"))))
 }
 
 #[get("/users/reset_password/<token>")]
 pub fn reset_password_get<'r>(token: String) -> impl Responder<'r, 'static> {
-	template! {
-		"users/reset_password_form.html";
+	RawHtml(template!("users/reset_password_form.html", {
 		token: String = token,
 		errors: Option<String> = None,
-	}
+	}))
 }
 
 #[derive(Debug, FromForm)]
@@ -556,47 +543,41 @@ pub async fn reset_password_post<'r, 'o: 'r>(
 		let changed = user.change_password(change, conf, &db).await;
 		match changed {
 			Ok(user) => {
-				let body = template!(
-					"mails/password_reset_success.txt";
-					name: String = user.username.to_string(),
-				)
-				.render()
-				.map_err(InternalError::from)?;
 				mailer
 					.create(
 						&user,
 						String::from("[Zauth] Your password has been reset"),
-						body,
+						template!("mails/password_reset_success.txt", {
+							name: String = user.username.to_string(),
+						})?,
 						header::ContentType::TEXT_PLAIN,
 					)
 					.await?;
-				Ok(OneOf::One(
-					template! { "users/reset_password_success.html" },
-				))
+				Ok(OneOf::One(RawHtml(template!("users/reset_password_success.html"))))
 			},
 
 			Err(ZauthError::ValidationError(errors)) => Ok(OneOf::Two(Custom(
 				Status::UnprocessableEntity,
-				template! {
-					"users/reset_password_form.html";
+				RawHtml(template!("users/reset_password_form.html", {
 					token: String = form.token,
 					errors: Option<ValidationErrors> = Some(errors.clone()),
-				},
+				})),
 			))),
 			Err(other) => Err(other),
 		}
 	} else {
-		let template = template! { "users/reset_password_invalid.html" };
-		Ok(OneOf::Three(Custom(Status::Forbidden, template)))
+		Ok(OneOf::Three(Custom(
+			Status::Forbidden,
+			RawHtml(template!("users/reset_password_invalid.html")),
+		)))
 	}
 }
 
 #[get("/users/confirm/<token>")]
 pub fn confirm_email_get<'r>(token: String) -> impl Responder<'r, 'static> {
-	template! {
-		"users/confirm_email_form.html";
+	RawHtml(template!("users/confirm_email_form.html", {
 		token: String = token,
-	}
+	}))
 }
 
 #[derive(Debug, FromForm)]
@@ -626,23 +607,21 @@ pub async fn confirm_email_post<'r>(
 		mailer.try_create(
 			admin_email.0.clone(),
 			String::from("[Zauth] New user registration"),
-			template!(
-			"mails/new_user_registration.txt";
-			name: String = user.username.to_string(),
-			user_list_url: String = user_list_url.to_string(),
-			)
-			.render()
-			.map_err(InternalError::from)?,
+			template!("mails/new_user_registration.txt", {
+				name: String = user.username.to_string(),
+				user_list_url: String = user_list_url.to_string(),
+			})?,
 			header::ContentType::TEXT_PLAIN,
 		)?;
 
-		Ok(Either::Left(template! {
-			"users/confirm_email_success.html";
-			user: User = user,
-		}))
+		Ok(Either::Left(
+			RawHtml(template!("users/confirm_email_success.html", {
+				user: User = user,
+			})),
+		))
 	} else {
 		Ok(Either::Right(
-			template! {"users/confirm_email_invalid.html"},
+			RawHtml(template!("users/confirm_email_invalid.html")),
 		))
 	}
 }

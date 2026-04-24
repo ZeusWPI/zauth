@@ -1,5 +1,6 @@
 use rocket::State;
 use rocket::form::Form;
+use rocket::response::content::RawHtml;
 use rocket::response::{Redirect, Responder};
 
 use crate::Config;
@@ -19,20 +20,18 @@ pub fn new_session<'r>(
 	cookies: &CookieJar,
 ) -> Either<Redirect, impl Responder<'r, 'static> + use<'r>> {
 	match session {
-		None => Either::Right(template! {
-			"session/login.html";
-			error: Option<String> = None
-		}),
+		None => Either::Right(RawHtml(template!("session/login.html", {
+			error: Option<String> = None,
+		}))),
 		_ => Either::Left(stored_redirect_or(cookies, uri!(home_page))),
 	}
 }
 
 #[get("/logout")]
 pub fn delete_session<'r>(session: UserSession) -> impl Responder<'r, 'static> {
-	template! {
-		"session/logout.html";
-		current_user: User = session.user
-	}
+	RawHtml(template!("session/logout.html", {
+		current_user: User = session.user,
+	}))
 }
 
 #[derive(FromForm, Debug)]
@@ -51,10 +50,9 @@ pub async fn create_session<'r>(
 	let form = form.into_inner();
 	match User::find_and_authenticate(form.username, form.password, &db).await {
 		Err(ZauthError::LoginError(login_error)) => {
-			Ok(Either::Right(template! {
-				"session/login.html";
+			Ok(Either::Right(RawHtml(template!("session/login.html", {
 				error: Option<String> = Some(login_error.to_string()),
-			}))
+			}))))
 		},
 		Ok(user) => {
 			let session =

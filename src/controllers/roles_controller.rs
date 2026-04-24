@@ -1,6 +1,7 @@
 use diesel::result::DatabaseErrorKind;
 use rocket::form::Form;
 use rocket::http::Status;
+use rocket::response::content::RawHtml;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder, status};
 use rocket::serde::json::Json;
@@ -25,13 +26,12 @@ pub async fn list_roles<'r>(
 	let clients = Client::all(&db).await?;
 
 	Ok(Accepter {
-		html: template! {
-			"roles/index.html";
+		html: RawHtml(template!("roles/index.html", {
 			roles: Vec<Role> = roles.clone(),
 			clients: Vec<Client> = clients,
 			error: Option<String> = error,
 			current_user: User = session.admin,
-		},
+		})),
 		json: Json(roles),
 	})
 }
@@ -83,15 +83,15 @@ pub async fn show_role_page<'r>(
 		None
 	};
 
-	Ok(template! { "roles/show_role.html";
+	Ok(RawHtml(template!("roles/show_role.html", {
 		current_user: User = session.admin,
 		role: Role = role,
 		client: Option<Client> = client,
 		users: Vec<User> = users,
-				clients: Vec<Client>  = clients,
+		clients: Vec<Client> = clients,
 		error: Option<String> = error,
-		info: Option<String> = info
-	})
+		info: Option<String> = info,
+	})))
 }
 
 #[delete("/roles/<id>")]

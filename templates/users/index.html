@@ -146,12 +146,16 @@
 
 				<!-- State -->
 				<td data-label="State">
-					{% match user.state %} {% when UserState::Active %} {%- call
-					colored_circle("#80A66C", user.state) -%} {% when UserState::PendingApproval %}
-					{%- call colored_circle("#F2A950", user.state) -%} {% when
-					UserState::PendingMailConfirmation %} {%- call colored_circle("#FFFF00",
-					user.state) -%} {% when UserState::Disabled %} {%- call
-					colored_circle("#DD6761", user.state) -%} {% endmatch %}
+					{% match user.state %}
+						{% when UserState::Active %}
+							{%- call colored_circle("#80A66C", user.state) -%}{%- endcall -%}
+						{% when UserState::PendingApproval %}
+							{%- call colored_circle("#F2A950", user.state) -%}{%- endcall -%}
+						{% when UserState::PendingMailConfirmation %}
+							{%- call colored_circle("#FFFF00", user.state) -%}{%- endcall -%}
+						{% when UserState::Disabled %}
+							{%- call colored_circle("#DD6761", user.state) -%}{%- endcall -%}
+					{% endmatch %}
 				</td>
 
 				<!-- Last Login -->

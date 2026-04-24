@@ -1,5 +1,6 @@
 use rocket::form::Form;
 use rocket::http::Status;
+use rocket::response::content::RawHtml;
 use rocket::response::status;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
@@ -67,11 +68,10 @@ pub async fn list_clients<'r>(
 ) -> Result<impl Responder<'r, 'static>> {
 	let clients = Client::all(&db).await?;
 	Ok(Accepter {
-		html: template! {
-			"clients/index.html";
+		html: RawHtml(template!("clients/index.html", {
 			clients: Vec<Client> = clients.clone(),
 			current_user: User = session.admin,
-		},
+		})),
 		json: Json(clients),
 	})
 }
@@ -86,12 +86,12 @@ pub async fn update_client_page<'r>(
 
 	let roles = Role::all(&db).await?;
 
-	Ok(template! { "clients/edit_client.html";
+	Ok(RawHtml(template!("clients/edit_client.html", {
 		current_user: User = session.admin,
 		client: Client = client.clone(),
 		client_roles: Vec<Role> = client.roles(&db).await?,
 		roles: Vec<Role> = roles
-	})
+	})))
 }
 
 #[put("/clients/<id>", data = "<change>")]
@@ -144,9 +144,9 @@ pub async fn get_generate_secret<'r>(
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
-	Ok(template! { "clients/confirm_generate_secret.html";
+	Ok(RawHtml(template!("clients/confirm_generate_secret.html", {
 		client: Client = client,
-	})
+	})))
 }
 
 #[post("/clients/<id>/generate_secret")]

@@ -1,6 +1,7 @@
 use chrono::{DateTime, Local};
 use rocket::form::Form;
 use rocket::http::{CookieJar, Status};
+use rocket::response::content::RawHtml;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use rocket::{State, serde::json::Json};
@@ -105,11 +106,10 @@ pub async fn finish_register<'r>(
 			PassKey::create(passkey, &db).await?;
 			Ok(Either::Left(Redirect::to(uri!(list_passkeys))))
 		},
-		Err(e) => Ok(Either::Right(template! {
-			"passkeys/new_passkey.html";
+		Err(e) => Ok(Either::Right(RawHtml(template!("passkeys/new_passkey.html", {
 			current_user: User = session.user,
 			errors: Option<String> = Some(e.to_string()),
-		})),
+		})))),
 	}
 }
 
@@ -258,10 +258,9 @@ pub async fn finish_authentication<'r>(
 			Ok(Either::Left(stored_redirect_or(cookies, uri!(home_page))))
 		},
 		Err(ZauthError::LoginError(login_error)) => {
-			Ok(Either::Right(template! {
-				"session/login.html";
+			Ok(Either::Right(RawHtml(template!("session/login.html", {
 				error: Option<String> = Some(login_error.to_string()),
-			}))
+			}))))
 		},
 		Err(e) => Err(e),
 	}
@@ -274,11 +273,10 @@ pub async fn list_passkeys<'r>(
 ) -> Result<impl Responder<'r, 'static>> {
 	let passkeys = PassKey::find_by_user_id(session.user.id, &db).await?;
 	Ok(Accepter {
-		html: template! {
-			"passkeys/index.html";
+		html: RawHtml(template!("passkeys/index.html", {
 			passkeys: Vec<PassKey> = passkeys.clone(),
-			current_user: User = session.user
-		},
+			current_user: User = session.user,
+		})),
 		json: Json(passkeys),
 	})
 }
@@ -287,10 +285,10 @@ pub async fn list_passkeys<'r>(
 pub async fn new_passkey<'r>(
 	session: UserSession,
 ) -> Result<impl Responder<'r, 'static>> {
-	Ok(template! { "passkeys/new_passkey.html";
+	Ok(RawHtml(template!("passkeys/new_passkey.html", {
 		current_user: User = session.user,
 		errors: Option<String> = None,
-	})
+	})))
 }
 
 #[delete("/passkeys/<id>")]

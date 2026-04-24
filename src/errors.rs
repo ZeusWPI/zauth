@@ -1,3 +1,4 @@
+use askama;
 use rocket::Request;
 use rocket::http::Status;
 use rocket::response::{self, Responder, Response};
@@ -139,9 +140,9 @@ pub fn unprocessable_with_message<'r>(
 	message: Option<String>,
 ) -> impl Responder<'r, 'static> {
 	Accepter {
-		html: template!("errors/422.html";
-			message: Option<String> = message.clone()
-		),
+		html: template!("errors/422.html", {
+			message: Option<String> = message.clone(),
+		}),
 		json: Json(JsonError {
 			error: "unprocessable",
 			status: 422,
@@ -159,7 +160,9 @@ fn internal_server_error_with_message<'r>(
 	message: String,
 ) -> impl Responder<'r, 'static> {
 	Accepter {
-		html: template!("errors/500.html"; error: String = message.clone()),
+		html: template!("errors/500.html", {
+			error: String = message.clone(),
+		}),
 		json: Json(JsonError {
 			error: "internal server error",
 			status: 500,
@@ -177,7 +180,9 @@ fn not_implemented_with_message<'r>(
 	message: String,
 ) -> impl Responder<'r, 'static> {
 	Accepter {
-		html: template!("errors/501.html"; error: String = message.clone()),
+		html: template!("errors/501.html", {
+			error: String = message.clone(),
+		}),
 		json: Json(JsonError {
 			error: "not implemented",
 			status: 501,

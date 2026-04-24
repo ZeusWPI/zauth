@@ -4,6 +4,7 @@ use jsonwebtoken::jwk::JwkSet;
 use rocket::State;
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar};
+use rocket::response::content::RawHtml;
 use rocket::response::{Redirect, Responder};
 use rocket::serde::json::Json;
 use std::fmt::Debug;
@@ -11,7 +12,7 @@ use std::fmt::Debug;
 use crate::DbConn;
 use crate::config::Config;
 use crate::ephemeral::session::UserSession;
-use crate::errors::Either::{Left, Right};
+use crate::errors::Either;
 use crate::errors::*;
 use crate::http_authentication::BasicAuthentication;
 use crate::jwt::JWTBuilder;
@@ -118,11 +119,10 @@ pub async fn authorize<'r>(
 				let client_description = client.description.clone();
 				let state = AuthState::from_req(client, req);
 				cookies.add_private(state.into_cookie()?);
-				Ok(template! {
-					"oauth/authorize.html";
+				Ok(RawHtml(template!("oauth/authorize.html", {
 					authorize_post_url: String = uri!(do_authorize).to_string(),
 					client_description: String = client_description,
-				})
+				})))
 			} else {
 				Err(AuthenticationError::Unauthorized(format!(
 					"client with id {} is not authorized to use redirect_uri '{}'",
@@ -187,12 +187,11 @@ pub async fn grant_get<'r>(
 	match Client::find(state.client_id, &db).await {
 		Ok(client) => {
 			if client.needs_grant {
-				Ok(Left(template! {
-					"oauth/grant.html";
+				Ok(Either::Left(RawHtml(template!("oauth/grant.html", {
 					client_description: String = client.description.clone(),
-				}))
+				}))))
 			} else {
-				Ok(Right(
+				Ok(Either::Right(
 					authorization_granted(
 						state,
 						session.user,
