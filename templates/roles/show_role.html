@@ -23,7 +23,7 @@
 		</div>
 	{% endif %}
 
-	<!-- info message -->
+	<!-- Info message -->
 	{% if let Some(info) = info %}
 		<div class="notification is-info is-light">
 			{{ info }}
@@ -286,14 +286,15 @@
 				<section class="modal-card-body">
 					<div class="field">
 						<label class="label">Client</label>
-						<input
-							class="input"
-							name="client_name"
-							type="text"
-							placeholder="client name"
-							minlength="3"
-							required
-						/>
+						<div class="select">
+							<select name="client_id">
+								{% for client in all_clients %}
+									{# {% if !limited_to_client_ids.contains(client.id) %} #}
+										<option value="{{ client.id }}">{{ client.name }}</option>
+									{# {% endif %} #}
+								{% endfor %}
+							</select>
+						</div>
 					</div>
 				</section>
 
@@ -323,15 +324,16 @@
 				<!-- Content -->
 				<section class="modal-card-body">
 					<div class="field">
-						<label class="label">Username</label>
-						<input
-							class="input"
-							name="username"
-							type="text"
-							placeholder="username"
-							minlength="3"
-							required
-						/>
+						<label class="label">User</label>
+						<div class="select">
+							<select name="username">
+								{% for user in all_users %}
+									{% if !user_ids.contains(user.id) %}
+										<option value="{{ user.id }}">{{ user.username }}</option>
+									{% endif %}
+								{% endfor %}
+							</select>
+						</div>
 					</div>
 				</section>
 
@@ -362,14 +364,15 @@
 				<section class="modal-card-body">
 					<div class="field">
 						<label class="label">Client</label>
-						<input
-							class="input"
-							name="client_name"
-							type="text"
-							placeholder="client name"
-							minlength="3"
-							required
-						/>
+						<div class="select">
+							<select name="client_id">
+								{% for client in all_clients %}
+									{% if !client_ids.contains(client.id) %}
+										<option value="{{ client.id }}">{{ client.name }}</option>
+									{% endif%}
+								{% endfor %}
+							</select>
+						</div>
 					</div>
 				</section>
 

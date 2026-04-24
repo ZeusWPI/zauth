@@ -6,7 +6,7 @@ use zauth::models::client::{Client, NewClient};
 use zauth::models::role::{NewRole, Role};
 use zauth::models::user::User;
 
-use crate::common::{HttpClient, url};
+use crate::common::HttpClient;
 
 #[rocket::async_test]
 async fn list_roles_as_user() {
@@ -201,7 +201,7 @@ async fn add_user_to_role_as_user() {
 		.await
 		.unwrap();
 
-		let role_form = format!("username={}", url(&user.username));
+		let role_form = format!("user_id={}", user.id);
 
 		let response = http_client
 			.post(format!("/roles/{}/users", role.id))
@@ -230,7 +230,7 @@ async fn add_user_to_role_as_admin() {
 		.await
 		.unwrap();
 
-		let role_form = format!("username={}", url(&user.username));
+		let role_form = format!("user_id={}", user.id);
 
 		let response = http_client
 			.post(format!("/roles/{}/users", role.id))

@@ -1,3 +1,5 @@
+use std::vec::Vec;
+
 use diesel::result::DatabaseErrorKind;
 use rocket::form::Form;
 use rocket::http::Status;
@@ -88,8 +90,12 @@ pub async fn show_role_page<'r>(
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(id, &db).await?;
-	let users = role.clone().users(&db).await?;
-	let clients = role.clone().clients(&db).await?;
+
+	let clients: Vec<Client> = role.clone().clients(&db).await?;
+	let client_ids: Vec<i32> = clients.iter().map(|client| client.id).collect();
+
+	let users: Vec<User> = role.clone().users(&db).await?;
+	let user_ids: Vec<i32> = users.iter().map(|user| user.id).collect();
 
 	let client = if let Some(id) = role.client_id {
 		Some(Client::find(id, &db).await?)
@@ -97,14 +103,25 @@ pub async fn show_role_page<'r>(
 		None
 	};
 
+	let all_users: Vec<User> = User::all(&db).await?;
+	let all_clients: Vec<Client> = Client::all(&db).await?;
+
 	Ok(RawHtml(template!("roles/show_role.html", {
 		current_user: User = session.admin,
-		role: Role = role,
-		client: Option<Client> = client,
-		users: Vec<User> = users,
-		clients: Vec<Client> = clients,
+
 		error: Option<String> = error,
 		info: Option<String> = info,
+
+		role: Role = role,
+		client: Option<Client> = client,
+
+		clients: Vec<Client> = clients,
+		client_ids: Vec<i32> = client_ids,
+		users: Vec<User> = users,
+		user_ids: Vec<i32> = user_ids,
+
+		all_clients: Vec<Client> = all_clients,
+		all_users: Vec<User> = all_users,
 	})))
 }
 
@@ -149,19 +166,19 @@ pub async fn delete_role<'r>(
 	})
 }
 
-#[post("/roles/<role_id>/users", data = "<username>")]
+#[post("/roles/<role_id>/users", data = "<user_id>")]
 pub async fn add_user<'r>(
 	// from url
 	role_id: i32,
 	// from body
-	username: Form<String>,
+	user_id: Form<i32>,
 	// from headers
 	_session: AdminSession,
 	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;
-	let user_result = User::find_by_username(username.clone(), &db).await;
+	let user_result = User::find(user_id.into_inner(), &db).await;
 	Ok(match user_result {
 		Ok(user) => {
 			role.add_user(user.id, &db).await?;
@@ -193,19 +210,19 @@ pub async fn add_user<'r>(
 	})
 }
 
-#[post("/roles/<role_id>/clients", data = "<client_name>")]
+#[post("/roles/<role_id>/clients", data = "<client_id>")]
 pub async fn add_client<'r>(
 	// from url
 	role_id: i32,
 	// from body
-	client_name: Form<String>,
+	client_id: Form<i32>,
 	// from headers
 	_session: AdminSession,
 	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;
-	let client_result = Client::find_by_name(client_name.clone(), &db).await;
+	let client_result = Client::find(client_id.clone(), &db).await;
 	Ok(match client_result {
 		Ok(client) => {
 			role.add_client(client.id, &db).await?;
