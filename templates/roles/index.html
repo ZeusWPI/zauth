@@ -54,7 +54,7 @@
 
 						<!-- Name -->
 						<td data-label="Name">
-							<a href="/roles/{{role.id}}">{{ role.name }}</a>
+							<a href="/roles/{{ role.id }}">{{ role.name }}</a>
 						</td>
 
 						<!-- Description -->
@@ -77,7 +77,7 @@
 
 						<!-- Remove -->
 						<td>
-							<form action="/roles/{{role.id}}" method="POST">
+							<form action="/roles/{{ role.id }}" method="POST">
 								<input type="hidden" name="_method" value="delete"/>
 								<button class="button is-danger is-small" type="submit">x</button>
 							</form>
@@ -130,7 +130,7 @@
 							<select name="client_id">
 								<option selected></option>
 								{% for client in clients %}
-									<option value="{{ client.id}}">{{ client.name}} </option>
+									<option value="{{ client.id }}">{{ client.name }} </option>
 								{% endfor %}
 							</select>
 						</div>

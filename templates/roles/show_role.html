@@ -3,13 +3,13 @@
 {% block content %}
 
 <div class="profile-title">
-	Role {{role.name}}
+	Role {{ role.name }}
 </div>
 
 <div class="profile-subtitle mb-4">
 	{% match client %}
 	{% when Some with (client) %}
-		for client <a href="/clients/{{client.id}}/edit">{{client.name}}</a>
+		for client <a href="/clients/{{ client.id }}/edit">{{ client.name }}</a>
 	{% when None %}
 		Global role
 	{% endmatch %}
@@ -69,12 +69,12 @@
 
 						<!-- Name -->
 						<td data-label="Name">
-							<a href="/users/{{user.username}}">{{ user.username }}</a>
+							<a href="/users/{{ user.username }}">{{ user.username }}</a>
 						</td>
 
 						<!-- Remove -->
 						<td>
-							<form action="/roles/{{role.id}}/users/{{user.id}}" method="POST">
+							<form action="/roles/{{ role.id }}/users/{{ user.id }}" method="POST">
 								<input type="hidden" name="_method" value="delete"/>
 								<button class="button is-danger is-small" type="submit">x</button>
 							</form>
@@ -127,12 +127,12 @@
 
 						<!-- Name -->
 						<td data-label="Name">
-							<a href="/clients/{{client.id}}/edit">{{ client.name }}</a>
+							<a href="/clients/{{ client.id }}/edit">{{ client.name }}</a>
 						</td>
 
 						<!-- Remove -->
 						<td>
-							<form action="/roles/{{role.id}}/clients/{{client.id}}" method="POST">
+							<form action="/roles/{{ role.id }}/clients/{{ client.id }}" method="POST">
 								<input type="hidden" name="_method" value="delete"/>
 								<button class="button is-danger is-small" type="submit">x</button>
 							</form>
@@ -155,7 +155,7 @@
 		<a class="modal-background" href="#"></a>
 
 		<div class="modal-card">
-			<form action="/roles/{{role.id}}/users" method="post">
+			<form action="/roles/{{ role.id }}/users" method="post">
 				<!-- Header -->
 				<header class="modal-card-head">
 					<!-- Title -->
@@ -186,7 +186,7 @@
 		<a class="modal-background" href="#"></a>
 
 		<div class="modal-card">
-			<form action="/roles/{{role.id}}/clients" method="post">
+			<form action="/roles/{{ role.id }}/clients" method="post">
 				<!-- Header -->
 				<header class="modal-card-head">
 					<!-- Title -->

@@ -42,7 +42,7 @@
 
 						<!-- Name -->
 						<td data-label="Name">
-							<a href="/clients/{{client.id}}/edit">{{ client.name }}</a>
+							<a href="/clients/{{ client.id }}/edit">{{ client.name }}</a>
 						</td>
 
 						<!-- Description -->
@@ -53,7 +53,7 @@
 
 						<!-- Remove -->
 						<td>
-							<form action="/clients/{{client.id}}" method="POST">
+							<form action="/clients/{{ client.id }}" method="POST">
 								<input type="hidden" name="_method" value="delete"/>
 								<button class="button is-danger is-small" type="submit">x</button>
 							</form>

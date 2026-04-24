@@ -114,12 +114,12 @@
 						<span class="tag is-medium">
 					{% endif %}
 						{% if current_user.admin %}
-							<a href="/roles/{{role.id}}">{{ role.name }}</a>
-							<a class="is-small delete" href="#delete-role-{{role.id}}"></a>
-							<div class="modal modal-target" id="delete-role-{{role.id}}">
+							<a href="/roles/{{ role.id }}">{{ role.name }}</a>
+							<a class="is-small delete" href="#delete-role-{{ role.id }}"></a>
+							<div class="modal modal-target" id="delete-role-{{ role.id }}">
 								<a class="modal-background" href="#"></a>
 								<div class="modal-card">
-									<form action="/users/{{user.username}}/roles/{{role.id}}" method="POST">
+									<form action="/users/{{ user.username }}/roles/{{ role.id }}" method="POST">
 										<header class="modal-card-head">
 											<div class="modal-card-title">Delete</div>
 											<a class="delete" href="#"></a>
@@ -145,12 +145,12 @@
 			</div>
 
 			{% if current_user.admin %}
-				<form action="/users/{{user.username}}/roles" method="post">
+				<form action="/users/{{ user.username }}/roles" method="post">
 					<div class="select">
 						<select name="role_id" required>
 							<option selected></option>
 							{% for role in roles %}
-								<option value="{{ role.id }}">{{ role.name}} </option>
+								<option value="{{ role.id }}">{{ role.name }}</option>
 							{% endfor %}
 						</select>
 					</div>
