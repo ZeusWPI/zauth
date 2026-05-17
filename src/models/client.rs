@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use diesel::{self, prelude::*};
 use validator::Validate;
 
-use super::role::{ClientRole, Role};
+use super::role::{ClientAssignedRole, Role};
 use crate::DbConn;
 use crate::errors::{AuthenticationError, Result, ZauthError};
 use crate::models::schema::{clients, roles};
@@ -166,7 +166,7 @@ impl Client {
 
 	pub async fn roles(self, db: &DbConn) -> Result<Vec<Role>> {
 		db.run(move |conn| {
-			ClientRole::belonging_to(&self)
+			ClientAssignedRole::belonging_to(&self)
 				.inner_join(roles::table)
 				.select(Role::as_select())
 				.load(conn)

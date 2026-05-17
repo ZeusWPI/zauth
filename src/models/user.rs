@@ -14,7 +14,7 @@ use validator::{Validate, ValidationError, ValidationErrors};
 use crate::Config;
 use crate::DbConn;
 use crate::errors::{self, InternalError, LoginError, ZauthError};
-use crate::models::role::{Role, UserRole};
+use crate::models::role::{Role, UserAssignedRole};
 use crate::models::schema::{roles, users};
 use crate::util::random_token;
 
@@ -538,7 +538,7 @@ impl User {
 
 	pub async fn roles(self, db: &DbConn) -> Result<Vec<Role>, ZauthError> {
 		db.run(move |conn| {
-			UserRole::belonging_to(&self)
+			UserAssignedRole::belonging_to(&self)
 				.inner_join(roles::table)
 				.select(Role::as_select())
 				.load(conn)

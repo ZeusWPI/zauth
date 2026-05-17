@@ -100,7 +100,7 @@ pub struct RoleLimitedToClient {
 #[diesel(belongs_to(User))]
 #[diesel(table_name = users_assigned_roles)]
 #[diesel(primary_key(role_id, user_id))]
-pub struct UserRole {
+pub struct UserAssignedRole {
 	pub role_id: i32,
 	pub user_id: i32,
 }
@@ -112,7 +112,7 @@ pub struct UserRole {
 #[diesel(belongs_to(Client))]
 #[diesel(table_name = clients_assigned_roles)]
 #[diesel(primary_key(role_id, client_id))]
-pub struct ClientRole {
+pub struct ClientAssignedRole {
 	pub role_id: i32,
 	pub client_id: i32,
 }
@@ -174,7 +174,7 @@ impl Role {
 				users_assigned_roles::table
 					.filter(users_assigned_roles::user_id.eq(user_id))
 					.filter(users_assigned_roles::role_id.eq(id))
-					.first::<UserRole>(conn)
+					.first::<UserAssignedRole>(conn)
 					.optional()
 			})
 			.await
@@ -182,7 +182,7 @@ impl Role {
 
 		if user_role.is_none() {
 			// UserRole not already exists
-			let user_role = UserRole {
+			let user_role = UserAssignedRole {
 				role_id: self.id,
 				user_id,
 			};
@@ -210,7 +210,7 @@ impl Role {
 				clients_assigned_roles::table
 					.filter(clients_assigned_roles::client_id.eq(client_id))
 					.filter(clients_assigned_roles::role_id.eq(id))
-					.first::<ClientRole>(conn)
+					.first::<ClientAssignedRole>(conn)
 					.optional()
 			})
 			.await
@@ -218,7 +218,7 @@ impl Role {
 
 		if client_role.is_none() {
 			// ClientRole does not already exists
-			let client_role = ClientRole {
+			let client_role = ClientAssignedRole {
 				role_id: self.id,
 				client_id,
 			};
@@ -304,7 +304,7 @@ impl Role {
 
 	pub async fn users(self, db: &DbConn) -> Result<Vec<User>> {
 		db.run(move |conn| {
-			UserRole::belonging_to(&self)
+			UserAssignedRole::belonging_to(&self)
 				.inner_join(users::table)
 				.select(User::as_select())
 				.load(conn)
@@ -315,7 +315,7 @@ impl Role {
 
 	pub async fn clients(self, db: &DbConn) -> Result<Vec<Client>> {
 		db.run(move |conn| {
-			ClientRole::belonging_to(&self)
+			ClientAssignedRole::belonging_to(&self)
 				.inner_join(clients::table)
 				.select(Client::as_select())
 				.load(conn)
