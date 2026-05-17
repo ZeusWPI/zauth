@@ -5,7 +5,6 @@
 	<div class="column is-4">
 		<a href="{{ link }}" target="_blank">
 			<div class="home-service-card">
-
 				<!-- Title -->
 				<div class="home-service-card-title">
 					{{ name }}
@@ -22,17 +21,19 @@
 
 <!-- Content -->
 {% block content %}
-
 	<!-- Hero -->
 	<div class="home-hero">
+		<!-- Title -->
 		<div class="home-hero-title has-text-primary">
 			Zauth
 		</div>
 
+		<!-- Subtitle -->
 		<div class="home-hero-subtitle">
 			The Zeus Authentication Platform for logging in to all Zeus services.
 		</div>
 
+		<!-- Buttons -->
 		<div class="home-hero-actions">
 			<a class="button is-large is-primary is-light" href="/login">Login</a>
 			<a class="button is-large is-primary" href="/register">Create an account</a>
@@ -51,11 +52,11 @@
 			With a Zeus account you have access to all of our services in- and outside the Kelder.
 
 			<div class="columns is-multiline is-centered mt-6">
-				{%- call service_card("Haldis", "Order food from our favorite places and eat together with other Zeus members.", "https://haldis.zeus.gent") -%}
-				{%- call service_card("Tap", "Grab drinks and snacks in the kelder and easily pay for them.", "https://tap.zeus.gent") -%}
-				{%- call service_card("Tab", "Manage your Zeus balance for paying in Haldis or Tap.", "https://tab.zeus.gent") -%}
-				{%- call service_card("Gamification", "Get points for code contributions and join the leaderboard.", "https://zeus.ugent.be/game") -%}
-				{%- call service_card("Cat", "Keep track of who has given hugs to who. We all need some affection sometimes…", "https://cat.zeus.gent") -%}
+				{%- call service_card("Haldis", "Order food from our favorite places and eat together with other Zeus members.", "https://haldis.zeus.gent") -%}{%- endcall -%}
+				{%- call service_card("Tap", "Grab drinks and snacks in the kelder and easily pay for them.", "https://tap.zeus.gent") -%}{%- endcall -%}
+				{%- call service_card("Tab", "Manage your Zeus balance for paying in Haldis or Tap.", "https://tab.zeus.gent") -%}{%- endcall -%}
+				{%- call service_card("Gamification", "Get points for code contributions and join the leaderboard.", "https://zeus.ugent.be/game") -%}{%- endcall -%}
+				{%- call service_card("Cat", "Keep track of who has given hugs to who. We all need some affection sometimes…", "https://cat.zeus.gent") -%}{%- endcall -%}
 			</div>
 		</div>
 	</div>

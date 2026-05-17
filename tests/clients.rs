@@ -1,17 +1,15 @@
-extern crate diesel;
-extern crate rocket;
+mod common;
 
-use common::HttpClient;
 use rocket::http::Accept;
 use rocket::http::ContentType;
 use rocket::http::Status;
-use zauth::models::user::User;
 
-mod common;
-
-use crate::common::{config, url};
 use zauth::models::client::{Client, NewClient};
 use zauth::models::session::Session;
+use zauth::models::user::User;
+
+use crate::common::HttpClient;
+use crate::common::{config, url};
 
 #[rocket::async_test]
 async fn create_and_update_client() {

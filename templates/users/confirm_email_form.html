@@ -1,8 +1,10 @@
-{% extends "../layout.html" %}
+{% extends "layout.html" %}
+
+<!-- Content -->
 {% block content %}
-    <h1>Confirm your email</h1>
-    <form action="/users/confirm" method="post">
-        <input type="hidden" name="token" value="{{ token }}">
-        <button type="submit">Confirm your email</button>
-    </form>
+	<h1>Confirm your email</h1>
+	<form action="/users/confirm" method="post">
+		<input type="hidden" name="token" value="{{ token }}" />
+		<button type="submit">Confirm your email</button>
+	</form>
 {% endblock content %}

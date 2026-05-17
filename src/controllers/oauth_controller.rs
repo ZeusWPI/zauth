@@ -4,29 +4,56 @@ use jsonwebtoken::jwk::JwkSet;
 use rocket::State;
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar};
+use rocket::response::content::RawHtml;
 use rocket::response::{Redirect, Responder};
 use rocket::serde::json::Json;
-use std::fmt::Debug;
 
 use crate::DbConn;
 use crate::config::Config;
 use crate::ephemeral::session::UserSession;
-use crate::errors::Either::{Left, Right};
+use crate::ephemeral::session::ensure_logged_in_and_redirect;
+use crate::errors::Either;
+use crate::errors::OAuthError::InvalidCookie;
 use crate::errors::*;
 use crate::http_authentication::BasicAuthentication;
 use crate::jwt::JWTBuilder;
 use crate::models::client::*;
 use crate::models::session::*;
 use crate::models::user::*;
+use crate::token_store::TokenStore;
 use crate::util::split_scopes;
 
-use crate::ephemeral::session::ensure_logged_in_and_redirect;
-use crate::errors::OAuthError::InvalidCookie;
-use crate::token_store::TokenStore;
+/// See https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
+#[get("/.well-known/openid-configuration")]
+pub async fn get_well_known_openid_configuration<'r>(
+	// injected
+	config: &State<Config>,
+) -> impl Responder<'r, 'static> {
+	// FIXME: Should only be serialized once on boot since config is immutable.
+	#[derive(Serialize)]
+	pub struct OpenidConfiguration {
+		pub issuer: String,
+		pub authorization_endpoint: String,
+		pub token_endpoint: String,
+		pub jwks_uri: String,
+		pub response_types_supported: Vec<String>,
+		pub grant_types_supported: Vec<String>,
+		pub userinfo_endpoint: String,
+	}
+	Json(OpenidConfiguration {
+		issuer: config.base_url.clone(),
+		authorization_endpoint: config.base_url.clone() + "/oauth/authorize",
+		token_endpoint: config.base_url.clone() + "/oauth/token",
+		jwks_uri: config.base_url.clone() + "/oauth/jwks",
+		response_types_supported: Vec::from(["code".to_string()]),
+		grant_types_supported: Vec::from(["authorization_code".to_string()]),
+		userinfo_endpoint: config.base_url.clone() + "/current_user",
+	})
+}
 
 const OAUTH_COOKIE: &str = "ZAUTH_OAUTH";
 
-#[derive(Serialize, Deserialize, Debug, FromForm, UriDisplayQuery)]
+#[derive(Debug, Deserialize, FromForm, Serialize, UriDisplayQuery)]
 pub struct AuthState {
 	pub client_id: i32,
 	pub client_name: String,
@@ -91,7 +118,7 @@ impl AuthState {
 	}
 }
 
-#[derive(Debug, FromForm, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, FromForm, Serialize)]
 pub struct AuthorizationRequest {
 	pub response_type: String,
 	pub client_id: String,
@@ -102,8 +129,11 @@ pub struct AuthorizationRequest {
 
 #[get("/oauth/authorize?<req..>")]
 pub async fn authorize<'r>(
-	cookies: &CookieJar<'_>,
+	// from url
 	req: AuthorizationRequest,
+	// from headers
+	cookies: &CookieJar<'_>,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	if !req.response_type.eq("code") {
@@ -118,11 +148,10 @@ pub async fn authorize<'r>(
 				let client_description = client.description.clone();
 				let state = AuthState::from_req(client, req);
 				cookies.add_private(state.into_cookie()?);
-				Ok(template! {
-					"oauth/authorize.html";
+				Ok(RawHtml(template!("oauth/authorize.html", {
 					authorize_post_url: String = uri!(do_authorize).to_string(),
 					client_description: String = client_description,
-				})
+				})))
 			} else {
 				Err(AuthenticationError::Unauthorized(format!(
 					"client with id {} is not authorized to use redirect_uri '{}'",
@@ -139,15 +168,17 @@ pub async fn authorize<'r>(
 	}
 }
 
-#[derive(FromForm, Debug)]
+#[derive(Debug, FromForm)]
 pub struct AuthorizeFormData {
 	authorized: bool,
 }
 
 #[post("/oauth/authorize", data = "<form>")]
 pub async fn do_authorize(
-	cookies: &CookieJar<'_>,
+	// from body
 	form: Form<AuthorizeFormData>,
+	// from headers
+	cookies: &CookieJar<'_>,
 ) -> Result<Redirect> {
 	let state = AuthState::from_cookies(cookies)?;
 	if form.into_inner().authorized {
@@ -157,7 +188,7 @@ pub async fn do_authorize(
 	}
 }
 
-#[derive(FromForm, Debug)]
+#[derive(Debug, FromForm)]
 pub struct GrantFormData {
 	grant: bool,
 }
@@ -173,8 +204,10 @@ pub struct UserToken {
 
 #[get("/oauth/grant")]
 pub async fn grant_get<'r>(
-	session: UserSession,
+	// from headers
 	cookies: &CookieJar<'_>,
+	session: UserSession,
+	// injected
 	token_store: &State<TokenStore<UserToken>>,
 	db: DbConn,
 ) -> Result<
@@ -187,12 +220,11 @@ pub async fn grant_get<'r>(
 	match Client::find(state.client_id, &db).await {
 		Ok(client) => {
 			if client.needs_grant {
-				Ok(Left(template! {
-					"oauth/grant.html";
+				Ok(Either::Left(RawHtml(template!("oauth/grant.html", {
 					client_description: String = client.description.clone(),
-				}))
+				}))))
 			} else {
-				Ok(Right(
+				Ok(Either::Right(
 					authorization_granted(
 						state,
 						session.user,
@@ -208,9 +240,12 @@ pub async fn grant_get<'r>(
 
 #[post("/oauth/grant", data = "<form>")]
 pub async fn grant_post<'r>(
-	session: UserSession,
-	cookies: &CookieJar<'_>,
+	// from body
 	form: Form<GrantFormData>,
+	// from headers
+	cookies: &CookieJar<'_>,
+	session: UserSession,
+	// injected
 	token_store: &State<TokenStore<UserToken>>,
 ) -> Result<impl Responder<'r, 'static> + use<'r>> {
 	let data = form.into_inner();
@@ -255,7 +290,7 @@ fn authorization_denied(state: AuthState) -> Redirect {
 	))
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug, Serialize)]
 pub struct TokenSuccess {
 	access_token: String,
 	token_type: String,
@@ -264,7 +299,7 @@ pub struct TokenSuccess {
 	expires_in: i64,
 }
 
-#[derive(FromForm, Debug)]
+#[derive(Debug, FromForm)]
 pub struct TokenFormData {
 	grant_type: String,
 	code: Option<String>,
@@ -431,11 +466,14 @@ pub async fn client_credentials_grant(
 
 #[post("/oauth/token", data = "<form>")]
 pub async fn token(
-	auth: Option<BasicAuthentication>,
+	// from body
 	form: Form<TokenFormData>,
+	// from headers
+	auth: Option<BasicAuthentication>,
+	// injected
 	config: &State<Config>,
-	token_state: &State<TokenStore<UserToken>>,
 	jwt_builder: &State<JWTBuilder>,
+	token_state: &State<TokenStore<UserToken>>,
 	db: DbConn,
 ) -> Result<Json<TokenSuccess>> {
 	let data = form.into_inner();
@@ -460,6 +498,9 @@ pub async fn token(
 }
 
 #[get("/oauth/jwks")]
-pub async fn jwks(jwt_builder: &State<JWTBuilder>) -> Json<JwkSet> {
+pub async fn jwks(
+	// injected
+	jwt_builder: &State<JWTBuilder>,
+) -> Json<JwkSet> {
 	Json(jwt_builder.jwks.clone())
 }

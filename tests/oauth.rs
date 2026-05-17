@@ -1,11 +1,5 @@
-extern crate diesel;
-extern crate regex;
-extern crate rocket;
-extern crate serde_json;
-extern crate urlencoding;
-extern crate zauth;
+mod common;
 
-use self::serde_json::{Number, Value};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use common::HttpClient;
@@ -16,16 +10,17 @@ use regex::Regex;
 use rocket::http::Header;
 use rocket::http::Status;
 use rocket::http::{Accept, ContentType};
+use serde_json::{Number, Value};
 
 use zauth::DbConn;
 use zauth::controllers::oauth_controller::UserToken;
 use zauth::models::client::{Client, NewClient};
 use zauth::models::role::NewRole;
 use zauth::models::role::Role;
+use zauth::models::role::RoleVisibility;
 use zauth::models::user::{NewUser, User};
 use zauth::token_store::TokenStore;
 
-mod common;
 use crate::common::url;
 
 const REDIRECT_URI: &str = "https://example.com/redirect/me/here";
@@ -69,17 +64,30 @@ async fn create_client(db: &DbConn, name: &str) -> Client {
 	client.update(db).await.expect("client updated")
 }
 
-async fn create_role(db: &DbConn, name: &str, client_id: Option<i32>) -> Role {
-	Role::create(
+async fn create_role(
+	db: &DbConn,
+	name: &str,
+	visibility: RoleVisibility,
+	limited_to_client_ids: Vec<i32>,
+) -> Role {
+	let role = Role::create(
 		NewRole {
 			name: name.into(),
 			description: "test".into(),
-			client_id,
+			visibility,
 		},
 		db,
 	)
 	.await
-	.expect("role created")
+	.expect("role created");
+
+	for client_id in limited_to_client_ids {
+		role.add_client_to_limited_to(client_id, db)
+			.await
+			.expect("limited_to client added to role");
+	}
+
+	role
 }
 
 // Test all the usual oauth requests until `access_token/id_token` is retrieved.
@@ -369,14 +377,37 @@ async fn roles_flow() {
 		let user = create_user(&db).await;
 		let client = create_client(&db, CLIENT_ID).await;
 		let client_not_used = create_client(&db, "not_used").await;
-		let role_global = create_role(&db, "global", None).await;
-		let role_client = create_role(&db, "client", Some(client.id)).await;
-		let role_client_not_used =
-			create_role(&db, "client_not_used", Some(client_not_used.id)).await;
-		let _role_global_not_mapped =
-			create_role(&db, "global_not_mapped", None).await;
-		let _role_client_not_mapped =
-			create_role(&db, "client_not_mapped", Some(client.id)).await;
+		let role_global =
+			create_role(&db, "global", RoleVisibility::Global, Vec::from([]))
+				.await;
+		let role_client = create_role(
+			&db,
+			"client",
+			RoleVisibility::Limited,
+			Vec::from([client.id]),
+		)
+		.await;
+		let role_client_not_used = create_role(
+			&db,
+			"client_not_used",
+			RoleVisibility::Limited,
+			Vec::from([client_not_used.id]),
+		)
+		.await;
+		let _role_global_not_mapped = create_role(
+			&db,
+			"global_not_mapped",
+			RoleVisibility::Global,
+			Vec::from([]),
+		)
+		.await;
+		let _role_client_not_mapped = create_role(
+			&db,
+			"client_not_mapped",
+			RoleVisibility::Limited,
+			Vec::from([client.id]),
+		)
+		.await;
 
 		role_global
 			.add_user(user.id, &db)
@@ -462,7 +493,9 @@ async fn roles_flow() {
 async fn client_credentials_flow() {
 	common::as_visitor(async move |http_client, db| {
 		let client = create_client(&db, CLIENT_ID).await;
-		let role_global = create_role(&db, "global", None).await;
+		let role_global =
+			create_role(&db, "global", RoleVisibility::Global, Vec::from([]))
+				.await;
 		role_global
 			.add_client(client.id, &db)
 			.await

@@ -1,7 +1,10 @@
+use askama::Template;
 use lettre::message::{Mailbox, header};
+use rocket::State;
 use rocket::form::validate::Contains;
+use rocket::response::content::RawHtml;
 use rocket::response::{Redirect, Responder};
-use std::fmt::Debug;
+use rocket::serde::json::Json;
 
 use crate::DbConn;
 use crate::config::Config;
@@ -14,24 +17,22 @@ use crate::mailer::Mailer;
 use crate::models::mail::*;
 use crate::models::user::User;
 use crate::views::accepter::Accepter;
-use askama::Template;
-use rocket::State;
-use rocket::serde::json::Json;
 
 /// Show an overview of all mails, sorted by send date
 #[get("/mails")]
 pub async fn list_mails<'r>(
+	// from headers
 	session: UserSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mails = Mail::all(&db).await?;
 
 	Ok(Accepter {
-		html: template! {
-			"maillist/index.html";
+		html: RawHtml(template!("maillist/index.html", {
 			current_user: User = session.user,
 			mails: Vec<Mail> = mails.clone(),
-		},
+		})),
 		json: Json(mails),
 	})
 }
@@ -39,11 +40,14 @@ pub async fn list_mails<'r>(
 /// Send a new mail and archive it
 #[post("/mails", data = "<new_mail>", rank = 2)]
 pub async fn send_mail_as_user<'r>(
-	_session: AdminSession,
+	// from body
 	new_mail: Api<NewMail>,
-	db: DbConn,
+	// from headers
+	_session: AdminSession,
+	// injected
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	send_mail(new_mail, db, conf, mailer).await
 }
@@ -51,11 +55,14 @@ pub async fn send_mail_as_user<'r>(
 /// Send a new mail as a client and archive it
 #[post("/mails", data = "<new_mail>", rank = 1)]
 pub async fn send_mail_as_client<'r>(
-	client_session: ClientSession,
+	// from body
 	new_mail: Api<NewMail>,
-	db: DbConn,
+	// from headers
+	client_session: ClientSession,
+	// injected
 	conf: &'r State<Config>,
 	mailer: &'r State<Mailer>,
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	if !client_session
 		.client
@@ -83,14 +90,6 @@ impl From<ContentType> for header::ContentType {
 	}
 }
 
-// Separate template struct to disable HTML escaping
-#[derive(Template)]
-#[template(path = "mails/mailinglist_mail.html", escape = "none")]
-struct MailingListTemplate {
-	body: String,
-	unsubscribe_url: String,
-}
-
 async fn send_mail<'r>(
 	new_mail: Api<NewMail>,
 	db: DbConn,
@@ -110,19 +109,29 @@ async fn send_mail<'r>(
 			uri!(conf.base_url(), show_confirm_unsubscribe(token));
 
 		let text = match &mail.content_type {
-			&ContentType::Plain => template!(
-				"mails/mailinglist_mail.txt";
+			&ContentType::Plain => template!("mails/mailinglist_mail.txt", {
 				body: String = body.clone(),
 				unsubscribe_url: String = unsubscribe_url.to_string(),
-			)
-			.render(),
-			&ContentType::Markdown => MailingListTemplate {
-				body: body.clone(),
-				unsubscribe_url: unsubscribe_url.to_string(),
-			}
-			.render(),
-		}
-		.map_err(InternalError::from)?;
+			})?,
+			&ContentType::Markdown => {
+				#[derive(Template)]
+				#[template(
+					path = "mails/mailinglist_mail.html",
+					escape = "none"
+				)]
+				struct MailingListTemplate {
+					body: String,
+					unsubscribe_url: String,
+				}
+				MailingListTemplate {
+					body: body.clone(),
+					unsubscribe_url: unsubscribe_url.to_string(),
+				}
+				.render()
+				.map_err(InternalError::from)
+				.map_err(ZauthError::from)?
+			},
+		};
 
 		mailer.create_for_mailinglist(
 			receiver,
@@ -141,30 +150,32 @@ async fn send_mail<'r>(
 /// Show the new_mail page
 #[get("/mails/new")]
 pub async fn show_create_mail_page<'r>(
+	// from headers
 	session: AdminSession,
 ) -> Result<impl Responder<'r, 'static>> {
-	Ok(template! {
-		"maillist/new_mail.html";
+	Ok(RawHtml(template!("maillist/new_mail.html", {
 		current_user: User = session.admin,
-	})
+	})))
 }
 
 /// Show a specific mail
 #[get("/mails/<id>")]
 pub async fn show_mail<'r>(
-	session: UserSession,
-	db: DbConn,
+	// from url
 	id: i32,
+	// from headers
+	session: UserSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mail = Mail::get_by_id(id, &db).await?;
 
 	Ok(Accepter {
-		html: template! {
-			"maillist/show_mail.html";
+		html: RawHtml(template!("maillist/show_mail.html", {
 			current_user: User = session.user,
 			mail: Mail = mail.clone(),
 			rendered_body: Option<String> = mail.render_body().ok(),
-		},
+		})),
 		json: Json(mail),
 	})
 }

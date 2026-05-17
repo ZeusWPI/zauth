@@ -1,8 +1,10 @@
-use crate::config::Config;
-use crate::util;
+use std::collections::HashMap;
+
 use chrono::{DateTime, Duration, Local};
 use rocket::tokio::sync::Mutex;
-use std::collections::HashMap;
+
+use crate::config::Config;
+use crate::util;
 
 #[derive(Debug)]
 pub struct Token<T> {

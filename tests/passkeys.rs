@@ -1,5 +1,4 @@
-extern crate diesel;
-extern crate rocket;
+mod common;
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -12,14 +11,13 @@ use rocket::http::Status;
 use serde_json::json;
 use webauthn_rs::prelude::DiscoverableAuthentication;
 use webauthn_rs::prelude::Uuid;
+
 use zauth::errors::Either;
 use zauth::models::passkey::NewPassKey;
 use zauth::models::passkey::PassKey;
 use zauth::models::user::NewUser;
 use zauth::models::user::User;
 use zauth::webauthn::WebAuthnStore;
-
-mod common;
 
 #[rocket::async_test]
 async fn register_passkey_as_visitor() {

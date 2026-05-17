@@ -3,7 +3,6 @@
 <!-- Content -->
 {% block content %}
 	<div class="card card-content">
-
 		<!-- Title -->
 		<div class="columns is-multiline is-justify-content-space-between">
 			<div class="column is-narrow">
@@ -13,29 +12,25 @@
 				</div>
 				<!-- Subtitle -->
 				<div class="subtitle">
-				Roles are given to users, which allows for more fine-grained client-level permissions. <br>
-				If a client requests the user info after login, it can give this user additional permissions based on the included roles. <br>
-				Global roles are always returned; client-specific roles are only returned for that client. <br>
-				The OAuth scope must include 'roles' for the roles to be included in the ID token or user info. <br>
-				Clients can also be given roles, these are returned during a client credentials flow.
+					Roles are given to users, which allows for more fine-grained client-level permissions. <br />
+					If a client requests the user info after login, it can give this user additional permissions based on the included roles. <br />
+					Global roles are always returned; client-specific roles are only returned for that client. <br />
+					The OAuth scope must include 'roles' for the roles to be included in the ID token or user info. <br />
+					Clients can also be given roles, these are returned during a client credentials flow.
 				</div>
-
-
 			</div>
-
+			<!-- New role button -->
 			<div class="column is-narrow">
 				<a class="button is-primary" href="#new-role">New role</a>
 			</div>
 		</div>
 
 		<!-- Error message -->
-		{% match error %}
-		{% when Some with (error) %}
-		  <div class="notification is-danger is-light">
-			{{ error }}
-		  </div>
-		{% when None %}
-		{% endmatch %}
+		{% if let Some(error) = error %}
+			<div class="notification is-danger is-light">
+				{{ error }}
+			</div>
+		{% endif %}
 
 		<!-- Table -->
 		<table class="table table--responsive table--responsive--labels is-fullwidth">
@@ -43,25 +38,29 @@
 				<tr>
 					<th>Name</th>
 					<th>Description</th>
-					<th></th>
+					<th>Visibility</th>
+					<th><!-- Remove button --></th>
 				</tr>
 			</thead>
-
 			<tbody>
-				{% for role in roles %}
+				{% for role in roles.iter() %}
 					<tr>
-
 						<!-- Name -->
 						<td data-label="Name">
-							<a href="/roles/{{role.id}}">{{ role.name }}</a>
+							<a href="/roles/{{ role.id }}">{{ role.name }}</a>
 						</td>
 
 						<!-- Description -->
 						<td data-label="Description">{{ role.description }}</td>
 
-						<!-- Remove -->
+						<!-- Visibility -->
+						<td data-label="Visibility">
+							{{ role.visibility }}
+						</td>
+
+						<!-- Remove button -->
 						<td>
-							<form action="/roles/{{role.id}}" method="POST">
+							<form action="/roles/{{ role.id }}" method="POST">
 								<input type="hidden" name="_method" value="delete"/>
 								<button class="button is-danger is-small" type="submit">x</button>
 							</form>
@@ -79,7 +78,7 @@
 		</table>
 	</div>
 
-	<!-- New client modal -->
+	<!-- New role modal -->
 	<div class="modal modal-target" id="new-role">
 		<a class="modal-background" href="#"></a>
 
@@ -109,18 +108,14 @@
 					</div>
 
 					<div class="field">
-						<label class="label">Client</label>
+						<label class="label">Visibility</label>
 						<div class="select">
-							<select name="client_id">
-								<option selected></option>
-								{% for client in clients %}
-									<option value="{{ client.id}}">{{ client.name}} </option>
+							<select name="visibility" required>
+								{% for el in crate::models::role::RoleVisibility::VALUES %}
+									<option value="{{ el }}">{{- el -}}</option>
 								{% endfor %}
 							</select>
 						</div>
-						<p class="help">
-							Keeping this empty will create a global role
-						</p>
 					</div>
 				</section>
 

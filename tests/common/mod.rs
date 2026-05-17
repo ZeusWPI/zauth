@@ -3,25 +3,25 @@
 extern crate diesel;
 extern crate parking_lot;
 extern crate rocket;
-extern crate tempfile;
 extern crate urlencoding;
 extern crate zauth;
 
+use std::future::Future;
+use std::str::FromStr;
+use std::time::Duration;
+
 use diesel::RunQueryDsl;
 use diesel::sql_query;
-use parking_lot::Mutex;
-use std::str::FromStr;
-
-use crate::common::zauth::DbConn;
-use crate::common::zauth::config::Config;
-use crate::common::zauth::models::client::*;
-use crate::common::zauth::models::user::*;
 use lettre::Address;
+use parking_lot::Mutex;
 use rocket::http::{ContentType, Status};
 use rocket::tokio::time::sleep;
-use std::future::Future;
-use std::time::Duration;
+
+use zauth::DbConn;
+use zauth::config::Config;
 use zauth::mailer::STUB_MAILER_OUTBOX;
+use zauth::models::client::*;
+use zauth::models::user::*;
 
 pub type HttpClient = rocket::local::asynchronous::Client;
 
@@ -65,7 +65,7 @@ pub fn config() -> Config {
 
 async fn reset_db(db: &DbConn) {
 	db.run(|conn| {
-		sql_query("TRUNCATE TABLE mails, sessions, users, clients, passkeys, users_roles, clients_roles, roles")
+		sql_query("TRUNCATE TABLE mails, sessions, users, clients, passkeys, roles_limited_to_clients, users_assigned_roles, clients_assigned_roles, roles")
 			.execute(conn)
 			.expect("drop all tables");
 	})
