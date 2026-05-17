@@ -570,52 +570,6 @@ impl User {
 		})
 		.await
 		.map_err(ZauthError::from)
-
-		/*
-		db.run(move |conn| {
-			UserRole::belonging_to(&self)
-				.inner_join(roles::table)
-				.filter(
-					roles::client_id
-						.eq(client_id)
-						.or(roles::client_id.is_null()),
-				)
-				.select(Role::as_select())
-				.load(conn)
-		})
-		.await
-		.map_err(ZauthError::from)
-		*/
-
-		/*
-		db.run(move |conn| {
-			users::table
-				.filter(users::id.eq(self.id))
-				.inner_join(
-					users_assigned_roles::table.inner_join(
-						roles::table
-							//.left_outer_join(roles_limited_to_clients::table),
-					),
-				)
-				.filter(roles::visibility.eq(RoleVisibility::Global))
-				.select(Role::as_select())
-				.load(conn)
-		})
-		.await
-		.map_err(ZauthError::from)
-		*/
-
-		/*
-			.union(
-				UserRole::belonging_to(&self)
-					.inner_join(
-						roles::table
-							.inner_join(roles_limited_to_clients::table),
-					)
-					.filter(roles::visibility.eq(RoleVisibility::Limited))
-					.select(Role::as_select()),
-			)
-		*/
 	}
 }
 
