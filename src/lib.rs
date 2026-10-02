@@ -2,30 +2,30 @@
 #![recursion_limit = "256"]
 
 extern crate chrono;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
+#[macro_use]
+extern crate lazy_static;
 extern crate lettre;
+extern crate log;
 extern crate pwhash;
 extern crate rand;
 extern crate regex;
+#[macro_use]
+extern crate rocket;
+extern crate rocket_sync_db_pools;
+#[macro_use]
+extern crate serde_derive;
 extern crate simple_logger;
 extern crate thiserror;
 extern crate toml;
 extern crate validator;
 
 #[macro_use]
-extern crate rocket;
-extern crate rocket_sync_db_pools;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate lazy_static;
-extern crate log;
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
-
-#[macro_use]
 pub mod views;
+
 pub mod config;
 pub mod controllers;
 pub mod db_seed;
@@ -38,6 +38,8 @@ pub mod models;
 pub mod token_store;
 pub mod util;
 pub mod webauthn;
+
+use std::str::FromStr;
 
 use diesel_migrations::MigrationHarness;
 use jwt::JWTBuilder;
@@ -59,8 +61,6 @@ use crate::errors::{
 };
 use crate::mailer::Mailer;
 use crate::token_store::TokenStore;
-
-use std::str::FromStr;
 
 #[database("postgresql_database")]
 pub struct DbConn(PgConnection);
@@ -108,20 +108,19 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				clients_controller::list_clients,
 				clients_controller::update_client_page,
 				clients_controller::update_client,
-				clients_controller::create_client,
 				clients_controller::delete_client,
+				clients_controller::create_client,
 				clients_controller::get_generate_secret,
 				clients_controller::post_generate_secret,
 				clients_controller::current_client,
 				clients_controller::add_role,
 				clients_controller::delete_role,
-				webauthn_controller::start_register,
-				webauthn_controller::finish_register,
-				webauthn_controller::start_authentication,
-				webauthn_controller::finish_authentication,
-				webauthn_controller::list_passkeys,
-				webauthn_controller::new_passkey,
-				webauthn_controller::delete_passkey,
+				mailing_list_controller::list_mails,
+				mailing_list_controller::send_mail_as_user,
+				mailing_list_controller::send_mail_as_client,
+				mailing_list_controller::show_create_mail_page,
+				mailing_list_controller::show_mail,
+				oauth_controller::get_well_known_openid_configuration,
 				oauth_controller::authorize,
 				oauth_controller::do_authorize,
 				oauth_controller::grant_get,
@@ -129,47 +128,53 @@ fn assemble(rocket: Rocket<Build>) -> Rocket<Build> {
 				oauth_controller::token,
 				oauth_controller::jwks,
 				pages_controller::home_page,
-				sessions_controller::create_session,
+				roles_controller::list_roles,
+				roles_controller::create_role,
+				roles_controller::show_role_page,
+				roles_controller::update_description,
+				roles_controller::update_visibility,
+				roles_controller::add_limited_to_client,
+				roles_controller::add_user,
+				roles_controller::add_client,
+				roles_controller::delete_limited_to_client,
+				roles_controller::delete_user,
+				roles_controller::delete_client,
+				roles_controller::delete_role,
 				sessions_controller::new_session,
 				sessions_controller::delete_session,
+				sessions_controller::create_session,
 				sessions_controller::destroy_session,
+				users_controller::current_user_as_client,
+				users_controller::current_user,
+				users_controller::show_user,
+				users_controller::show_ssh_key,
+				users_controller::list_users,
 				users_controller::create_user_page,
 				users_controller::create_user,
 				users_controller::register_page,
 				users_controller::register,
-				users_controller::current_user,
-				users_controller::current_user_as_client,
-				users_controller::show_user,
-				users_controller::show_ssh_key,
-				users_controller::list_users,
 				users_controller::update_user,
-				users_controller::change_state,
 				users_controller::set_admin,
+				users_controller::change_state,
 				users_controller::set_approved,
 				users_controller::reject,
 				users_controller::forgot_password_get,
 				users_controller::forgot_password_post,
+				users_controller::show_confirm_unsubscribe,
+				users_controller::unsubscribe_user,
 				users_controller::reset_password_get,
 				users_controller::reset_password_post,
 				users_controller::confirm_email_get,
 				users_controller::confirm_email_post,
-				users_controller::show_confirm_unsubscribe,
-				users_controller::unsubscribe_user,
 				users_controller::add_role,
 				users_controller::delete_role,
-				mailing_list_controller::list_mails,
-				mailing_list_controller::send_mail_as_user,
-				mailing_list_controller::send_mail_as_client,
-				mailing_list_controller::show_create_mail_page,
-				mailing_list_controller::show_mail,
-				roles_controller::list_roles,
-				roles_controller::create_role,
-				roles_controller::delete_role,
-				roles_controller::show_role_page,
-				roles_controller::add_user,
-				roles_controller::delete_user,
-				roles_controller::add_client,
-				roles_controller::delete_client,
+				webauthn_controller::start_register,
+				webauthn_controller::finish_register,
+				webauthn_controller::start_authentication,
+				webauthn_controller::finish_authentication,
+				webauthn_controller::list_passkeys,
+				webauthn_controller::new_passkey,
+				webauthn_controller::delete_passkey,
 			],
 		)
 		.register(

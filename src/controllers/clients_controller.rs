@@ -1,10 +1,10 @@
 use rocket::form::Form;
 use rocket::http::Status;
+use rocket::response::content::RawHtml;
 use rocket::response::status;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use rocket::serde::json::Json;
-use std::fmt::Debug;
 
 use crate::DbConn;
 use crate::ephemeral::from_api::Api;
@@ -22,7 +22,7 @@ use crate::views::accepter::Accepter;
 // struct does not play nice with any other libraries. (So it can't be
 // deserialized by serde.)
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Deserialize)]
 pub struct JsonClientChange {
 	pub name: Option<String>,
 	pub needs_grant: Option<bool>,
@@ -30,7 +30,7 @@ pub struct JsonClientChange {
 	pub redirect_uri_list: Option<String>,
 }
 
-#[derive(FromForm, Debug)]
+#[derive(Debug, FromForm)]
 pub struct FormClientChange {
 	pub name: Option<String>,
 	pub needs_grant: Vec<bool>,
@@ -62,43 +62,51 @@ impl std::convert::From<FormClientChange> for ClientChange {
 
 #[get("/clients")]
 pub async fn list_clients<'r>(
-	db: DbConn,
+	// from headers
 	session: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let clients = Client::all(&db).await?;
 	Ok(Accepter {
-		html: template! {
-			"clients/index.html";
+		html: RawHtml(template!("clients/index.html", {
 			clients: Vec<Client> = clients.clone(),
 			current_user: User = session.admin,
-		},
+		})),
 		json: Json(clients),
 	})
 }
 
 #[get("/clients/<id>/edit")]
 pub async fn update_client_page<'r>(
+	// from url
 	id: i32,
+	// from headers
 	session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
 
 	let roles = Role::all(&db).await?;
 
-	Ok(template! { "clients/edit_client.html";
+	Ok(RawHtml(template!("clients/edit_client.html", {
 		current_user: User = session.admin,
 		client: Client = client.clone(),
 		client_roles: Vec<Role> = client.roles(&db).await?,
 		roles: Vec<Role> = roles
-	})
+	})))
 }
 
 #[put("/clients/<id>", data = "<change>")]
 pub async fn update_client<'r>(
+	// from url
 	id: i32,
+	// from body
 	change: SplitApi<FormClientChange, JsonClientChange, ClientChange>,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let mut client = Client::find(id, &db).await?;
@@ -112,8 +120,11 @@ pub async fn update_client<'r>(
 
 #[delete("/clients/<id>")]
 pub async fn delete_client<'r>(
+	// from url
 	id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
@@ -126,9 +137,12 @@ pub async fn delete_client<'r>(
 
 #[post("/clients", data = "<client>")]
 pub async fn create_client<'r>(
+	// from body
 	client: Api<NewClient>,
-	db: DbConn,
+	// from headers
 	_admin: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::create(client.into_inner(), &db).await?;
 	Ok(Accepter {
@@ -139,20 +153,26 @@ pub async fn create_client<'r>(
 
 #[get("/clients/<id>/generate_secret")]
 pub async fn get_generate_secret<'r>(
+	// from url
 	id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
-	Ok(template! { "clients/confirm_generate_secret.html";
+	Ok(RawHtml(template!("clients/confirm_generate_secret.html", {
 		client: Client = client,
-	})
+	})))
 }
 
 #[post("/clients/<id>/generate_secret")]
 pub async fn post_generate_secret<'r>(
+	// from url
 	id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let client = Client::find(id, &db).await?;
@@ -190,7 +210,9 @@ impl ClientInfo {
 
 #[get("/current_client")]
 pub async fn current_client(
+	// from headers
 	session: ClientSession,
+	// injected
 	db: DbConn,
 ) -> Result<Json<ClientInfo>> {
 	Ok(Json(ClientInfo::new(session.client, &db).await?))
@@ -198,10 +220,14 @@ pub async fn current_client(
 
 #[post("/clients/<id>/roles", data = "<role_id>")]
 pub async fn add_role<'r>(
+	// from url
 	id: i32,
+	// from body
 	role_id: Form<i32>,
-	db: DbConn,
+	// from headers
 	_session: AdminSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(*role_id, &db).await?;
 	let client = Client::find(id, &db).await?;
@@ -214,9 +240,12 @@ pub async fn add_role<'r>(
 
 #[delete("/clients/<id>/roles/<role_id>")]
 pub async fn delete_role<'r>(
-	role_id: i32,
+	// from url
 	id: i32,
+	role_id: i32,
+	// from headers
 	_session: AdminSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;

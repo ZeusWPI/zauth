@@ -11,7 +11,7 @@ use crate::{
 use super::schema::passkeys;
 
 #[derive(
-	Queryable, Selectable, PartialEq, Debug, Clone, Serialize, AsChangeset,
+	AsChangeset, Clone, Debug, PartialEq, Queryable, Selectable, Serialize,
 )]
 #[diesel(table_name = passkeys)]
 pub struct PassKey {

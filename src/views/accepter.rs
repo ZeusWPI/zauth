@@ -1,5 +1,6 @@
 use rocket::http::{MediaType, QMediaType, Status};
 use rocket::request::Request;
+use rocket::response::content::RawHtml;
 use rocket::response::status::Custom;
 use rocket::response::{self, Responder};
 
@@ -9,7 +10,7 @@ pub struct Accepter<H, J> {
 }
 
 fn not_acceptable<'r>() -> impl Responder<'r, 'static> {
-	Custom(Status::NotAcceptable, template!("errors/406.html"))
+	Custom(Status::NotAcceptable, RawHtml(template!("errors/406.html")))
 }
 
 fn preferred_media<'r>(request: &'r Request<'_>) -> Vec<&'r MediaType> {

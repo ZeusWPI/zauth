@@ -2,18 +2,16 @@
 
 <!-- Title -->
 {% block error_title %}
-  Unprocessable request
+	Unprocessable request
 {% endblock error_title %}
 
 <!-- Content -->
 {% block error_content %}
-<p>Sorry, but your request could not be processed because.
-  Probably because it would cause an illegal state.
-{% match message %}
-{% when Some with (msg) %}
-<p><strong>Message:</strong> {{ msg }}
-{% when None %}
-{% endmatch %}
-
-
+	<p>
+		Sorry, but your request could not be processed because.
+		Probably because it would cause an illegal state.
+	</p>
+	{% if let Some(message) = message %}
+		<p><strong>Message:</strong> {{ message }}</p>
+	{% endif %}
 {% endblock error_content %}

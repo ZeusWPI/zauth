@@ -1,8 +1,8 @@
-Hi {{name}}
+Hi {{ name }}
 
 Welcome at Zeus WPI!
 Please confirm your email by clicking the following link:
-{{confirm_url}}
+{{ confirm_url }}
 
 After your email has been confirmed, an admin will need to approve your account. Once your account is approved, you will receive another email saying your account has been activated, after which you can enjoy the Zeus services.
 

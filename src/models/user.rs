@@ -1,33 +1,32 @@
-use super::schema::{roles, users};
-use crate::DbConn;
-use crate::errors::{self, InternalError, LoginError, ZauthError};
-use diesel::{self, prelude::*};
-use diesel_derive_enum::DbEnum;
 use std::fmt;
 use std::sync::LazyLock;
 
-use crate::Config;
-use crate::util::random_token;
 use chrono::{NaiveDateTime, Utc};
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
+use diesel::{self, prelude::*};
+use diesel_derive_enum::DbEnum;
 use lettre::message::Mailbox;
 use pwhash::bcrypt::{self, BcryptSetup};
 use regex::Regex;
 use rocket::{FromFormField, serde::Serialize};
-use std::convert::TryFrom;
 use validator::{Validate, ValidationError, ValidationErrors};
 
-use super::role::{Role, UserRole};
+use crate::Config;
+use crate::DbConn;
+use crate::errors::{self, InternalError, LoginError, ZauthError};
+use crate::models::role::{Role, UserAssignedRole};
+use crate::models::schema::{roles, users};
+use crate::util::random_token;
 
 #[derive(
+	Clone,
 	DbEnum,
 	Debug,
 	Deserialize,
 	FromFormField,
-	Serialize,
-	Clone,
 	PartialEq,
 	QueryId,
+	Serialize,
 )]
 pub enum UserState {
 	PendingApproval,
@@ -52,15 +51,15 @@ impl fmt::Display for UserState {
 }
 
 #[derive(
-	Validate,
-	Serialize,
 	AsChangeset,
-	Selectable,
-	Queryable,
-	Debug,
 	Clone,
-	PartialEq,
+	Debug,
 	Identifiable,
+	PartialEq,
+	Queryable,
+	Selectable,
+	Serialize,
+	Validate,
 )]
 #[diesel(table_name = users)]
 #[diesel(treat_none_as_null = true)]
@@ -103,7 +102,7 @@ pub struct User {
 static NEW_USER_REGEX: LazyLock<Regex> =
 	LazyLock::new(|| Regex::new(r"^[a-z][-a-z0-9_]{2,31}$").unwrap());
 
-#[derive(Validate, FromForm, Deserialize, Debug, Clone)]
+#[derive(Clone, Debug, Deserialize, FromForm, Validate)]
 pub struct NewUser {
 	#[validate(regex(
 		path = *NEW_USER_REGEX,
@@ -126,7 +125,7 @@ pub struct NewUser {
 	pub not_a_robot: bool,
 }
 
-#[derive(Serialize, Insertable, Debug, Clone)]
+#[derive(Clone, Debug, Insertable, Serialize)]
 #[diesel(table_name = users)]
 struct PendingUserHashed {
 	username: String,
@@ -140,7 +139,7 @@ struct PendingUserHashed {
 	pending_email_expiry: NaiveDateTime,
 }
 
-#[derive(Serialize, Insertable, Debug, Clone)]
+#[derive(Clone, Debug, Insertable, Serialize)]
 #[diesel(table_name = users)]
 struct NewUserHashed {
 	username: String,
@@ -151,7 +150,7 @@ struct NewUserHashed {
 	email: String,
 }
 
-#[derive(FromForm, Deserialize, Debug, Clone)]
+#[derive(Clone, Debug, Deserialize, FromForm)]
 pub struct UserChange {
 	pub username: Option<String>,
 	pub password: Option<String>,
@@ -161,17 +160,17 @@ pub struct UserChange {
 	pub subscribed_to_mailing_list: bool,
 }
 
-#[derive(FromForm, Deserialize, Debug, Clone)]
+#[derive(Clone, Debug, Deserialize, FromForm)]
 pub struct ChangeAdmin {
 	pub admin: bool,
 }
 
-#[derive(FromForm, Deserialize, Debug, Clone)]
+#[derive(Clone, Debug, Deserialize, FromForm)]
 pub struct ChangeStatus {
 	pub state: UserState,
 }
 
-#[derive(Validate, FromForm, Deserialize, Debug, Clone)]
+#[derive(Clone, Debug, Deserialize, FromForm, Validate)]
 pub struct ChangePassword {
 	#[validate(length(
 		min = 8,
@@ -539,7 +538,7 @@ impl User {
 
 	pub async fn roles(self, db: &DbConn) -> Result<Vec<Role>, ZauthError> {
 		db.run(move |conn| {
-			UserRole::belonging_to(&self)
+			UserAssignedRole::belonging_to(&self)
 				.inner_join(roles::table)
 				.select(Role::as_select())
 				.load(conn)
@@ -554,15 +553,20 @@ impl User {
 		db: &DbConn,
 	) -> Result<Vec<Role>, ZauthError> {
 		db.run(move |conn| {
-			UserRole::belonging_to(&self)
-				.inner_join(roles::table)
-				.filter(
-					roles::client_id
-						.eq(client_id)
-						.or(roles::client_id.is_null()),
-				)
-				.select(Role::as_select())
-				.load(conn)
+			diesel::sql_query("
+				SELECT roles.*
+				FROM users
+				INNER JOIN users_assigned_roles ON users.id = users_assigned_roles.user_id
+				INNER JOIN roles ON users_assigned_roles.role_id = roles.id
+				LEFT OUTER JOIN roles_limited_to_clients ON roles.id = roles_limited_to_clients.role_id
+				WHERE users.id = $1 AND (
+					roles.visibility = 'global' OR
+					(roles.visibility = 'limited' AND roles_limited_to_clients.client_id = $2)
+				);
+			")
+				.bind::<diesel::sql_types::Int4, _>(self.id)
+				.bind::<diesel::sql_types::Int4, _>(client_id)
+				.get_results(conn)
 		})
 		.await
 		.map_err(ZauthError::from)

@@ -1,10 +1,10 @@
+use std::str::FromStr;
+
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use rocket::http::Status;
-use rocket::request::{self, FromRequest, Request};
-
 use rocket::outcome::Outcome;
-use std::str::FromStr;
+use rocket::request::{self, FromRequest, Request};
 
 #[derive(Debug)]
 pub struct BasicAuthentication {

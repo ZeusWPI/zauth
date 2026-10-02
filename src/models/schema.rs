@@ -6,11 +6,14 @@ pub mod sql_types {
 	pub struct ContentType;
 
 	#[derive(diesel::sql_types::SqlType)]
-	#[diesel(postgres_type(name = "user_state"))]
-	pub struct UserState;
+	#[diesel(postgres_type(name = "role_visibility"))]
+	pub struct RoleVisibility;
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
 	clients (id) {
 		id -> Int4,
 		#[max_length = 255]
@@ -25,7 +28,10 @@ diesel::table! {
 }
 
 diesel::table! {
-	clients_roles (client_id, role_id) {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
+	clients_assigned_roles (client_id, role_id) {
 		client_id -> Int4,
 		role_id -> Int4,
 	}
@@ -33,6 +39,7 @@ diesel::table! {
 
 diesel::table! {
 	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
 	use super::sql_types::ContentType;
 
 	mails (id) {
@@ -47,6 +54,9 @@ diesel::table! {
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
 	passkeys (id) {
 		id -> Int4,
 		user_id -> Int4,
@@ -60,17 +70,34 @@ diesel::table! {
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+	use super::sql_types::RoleVisibility;
+
 	roles (id) {
 		id -> Int4,
 		#[max_length = 255]
 		name -> Varchar,
 		#[max_length = 255]
 		description -> Varchar,
-		client_id -> Nullable<Int4>,
+		visibility -> RoleVisibility,
 	}
 }
 
 diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
+	roles_limited_to_clients (role_id, client_id) {
+		role_id -> Int4,
+		client_id -> Int4,
+	}
+}
+
+diesel::table! {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
 	sessions (id) {
 		id -> Int4,
 		#[max_length = 255]
@@ -86,7 +113,7 @@ diesel::table! {
 
 diesel::table! {
 	use diesel::sql_types::*;
-	use crate::models::user::UserStateMapping;
+	use crate::models::schema_custom_sql_types::*;
 
 	users (id) {
 		id -> Int4,
@@ -103,7 +130,7 @@ diesel::table! {
 		#[max_length = 255]
 		email -> Varchar,
 		ssh_key -> Nullable<Text>,
-		state -> UserStateMapping,
+		state -> UserState,
 		last_login -> Timestamp,
 		created_at -> Timestamp,
 		#[max_length = 255]
@@ -118,28 +145,33 @@ diesel::table! {
 }
 
 diesel::table! {
-	users_roles (user_id, role_id) {
+	use diesel::sql_types::*;
+	use crate::models::schema_custom_sql_types::*;
+
+	users_assigned_roles (user_id, role_id) {
 		user_id -> Int4,
 		role_id -> Int4,
 	}
 }
 
-diesel::joinable!(clients_roles -> clients (client_id));
-diesel::joinable!(clients_roles -> roles (role_id));
+diesel::joinable!(clients_assigned_roles -> clients (client_id));
+diesel::joinable!(clients_assigned_roles -> roles (role_id));
 diesel::joinable!(passkeys -> users (user_id));
-diesel::joinable!(roles -> clients (client_id));
+diesel::joinable!(roles_limited_to_clients -> clients (client_id));
+diesel::joinable!(roles_limited_to_clients -> roles (role_id));
 diesel::joinable!(sessions -> clients (client_id));
 diesel::joinable!(sessions -> users (user_id));
-diesel::joinable!(users_roles -> roles (role_id));
-diesel::joinable!(users_roles -> users (user_id));
+diesel::joinable!(users_assigned_roles -> roles (role_id));
+diesel::joinable!(users_assigned_roles -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
 	clients,
-	clients_roles,
+	clients_assigned_roles,
 	mails,
 	passkeys,
 	roles,
+	roles_limited_to_clients,
 	sessions,
 	users,
-	users_roles,
+	users_assigned_roles,
 );

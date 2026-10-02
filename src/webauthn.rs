@@ -10,7 +10,8 @@ use webauthn_rs::{
 	},
 };
 
-use crate::{config::Config, errors::Either};
+use crate::config::Config;
+use crate::errors::Either;
 
 type Authentication =
 	Either<DiscoverableAuthentication, (PasskeyAuthentication, i32)>;

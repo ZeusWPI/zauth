@@ -1,20 +1,17 @@
-use diesel::{self, prelude::*};
-
-use crate::DbConn;
-use crate::errors::{AuthenticationError, Result, ZauthError};
-
-use crate::models::schema::{clients, roles};
-
-use crate::util::random_token;
 use chrono::NaiveDateTime;
+use diesel::{self, prelude::*};
 use validator::Validate;
 
-use super::role::{ClientRole, Role};
+use super::role::{ClientAssignedRole, Role};
+use crate::DbConn;
+use crate::errors::{AuthenticationError, Result, ZauthError};
+use crate::models::schema::{clients, roles};
+use crate::util::random_token;
 
 const SECRET_LENGTH: usize = 64;
 
 #[derive(
-	Serialize, AsChangeset, Queryable, Debug, Clone, Identifiable, Selectable,
+	AsChangeset, Clone, Debug, Identifiable, Queryable, Selectable, Serialize,
 )]
 pub struct Client {
 	pub id: i32,
@@ -26,20 +23,20 @@ pub struct Client {
 	pub created_at: NaiveDateTime,
 }
 
-#[derive(Validate, FromForm, Deserialize, Debug, Clone)]
+#[derive(Clone, Debug, Deserialize, FromForm, Validate)]
 pub struct NewClient {
 	#[validate(length(min = 3, max = 80))]
 	pub name: String,
 }
 
-#[derive(Insertable, Debug, Clone)]
+#[derive(Clone, Debug, Insertable)]
 #[diesel(table_name = clients)]
 pub struct NewClientWithSecret {
 	pub name: String,
 	pub secret: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct ClientChange {
 	pub name: Option<String>,
 	pub needs_grant: Option<bool>,
@@ -169,7 +166,7 @@ impl Client {
 
 	pub async fn roles(self, db: &DbConn) -> Result<Vec<Role>> {
 		db.run(move |conn| {
-			ClientRole::belonging_to(&self)
+			ClientAssignedRole::belonging_to(&self)
 				.inner_join(roles::table)
 				.select(Role::as_select())
 				.load(conn)

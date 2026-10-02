@@ -81,12 +81,13 @@ You can also test the OAuth2 flow manually by running the flask application in
 
 ### Creating a migration
 
-To make a change to the database scheme, we use diesel migrations
+To make a change to the database schema, we use diesel migrations.
 
-1. To create a migration, run `diesel migration generate <migration name>`
-2. Fill in the generated `up.sql` and `down.sql`
-3. Re-generate `src/models/schema.rs` by running `diesel print-schema`
-   > Caution: at the moment, the `users` schema cannot be generated correctly automatically.
+1. To create a migration, run `diesel migration generate <migration_name>`
+2. Fill in the generated `up.sql` and `down.sql`.
+3. Run the new migration with `diesel migration run`
+4. Check that the migration can be undone and redone with `diesel migration redo`
+5. By runnning a migration, the `src/models/schema.rs` file will have been regenerated, so make sure `cargo test` still succeeds and add the changes to git.
 
 ### Using Nix
 

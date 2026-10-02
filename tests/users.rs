@@ -1,14 +1,12 @@
-extern crate diesel;
-extern crate rocket;
+mod common;
 
-use common::HttpClient;
+use pwhash::bcrypt;
 use rocket::http::{Accept, ContentType, Status};
 use rocket::local::asynchronous::LocalResponse;
 
-use pwhash::bcrypt;
 use zauth::models::user::*;
 
-mod common;
+use crate::common::HttpClient;
 
 async fn post_registration<'a>(
 	http_client: &'a common::HttpClient,

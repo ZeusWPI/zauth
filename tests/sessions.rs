@@ -1,13 +1,11 @@
-extern crate chrono;
-extern crate diesel;
-extern crate rocket;
+mod common;
 
 use chrono::{Duration, Utc};
-use common::HttpClient;
 use rocket::http::Status;
-use zauth::models::session::*;
 
-mod common;
+use zauth::models::session::Session;
+
+use crate::common::HttpClient;
 
 #[rocket::async_test]
 async fn valid_user_session() {

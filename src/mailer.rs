@@ -1,5 +1,5 @@
-use crate::config::Config;
-use crate::errors::{InternalError, LaunchError, Result, ZauthError};
+use std::convert::TryInto;
+use std::time::Duration;
 
 use lettre::message::{Mailbox, header::ContentType};
 use lettre::transport::smtp::authentication::Credentials;
@@ -9,8 +9,9 @@ use rocket::Config as RocketConfig;
 use rocket::tokio::sync::mpsc::Receiver;
 use rocket::tokio::sync::mpsc::{self, UnboundedReceiver};
 use rocket::tokio::time::sleep;
-use std::convert::TryInto;
-use std::time::Duration;
+
+use crate::config::Config;
+use crate::errors::{InternalError, LaunchError, Result, ZauthError};
 
 #[derive(Clone)]
 pub struct Mailer {

@@ -1,6 +1,7 @@
 use chrono::{DateTime, Local};
 use rocket::form::Form;
 use rocket::http::{CookieJar, Status};
+use rocket::response::content::RawHtml;
 use rocket::response::status::Custom;
 use rocket::response::{Redirect, Responder};
 use rocket::{State, serde::json::Json};
@@ -27,9 +28,12 @@ use crate::webauthn::WebAuthnStore;
 
 #[post("/webauthn/start_register", format = "json", data = "<residential>")]
 pub async fn start_register(
-	session: UserSession,
-	webauthn_store: &State<WebAuthnStore>,
+	// from body
 	residential: Json<bool>,
+	// from headers
+	session: UserSession,
+	// injected
+	webauthn_store: &State<WebAuthnStore>,
 	db: DbConn,
 ) -> Result<Json<CreationChallengeResponse>> {
 	let authenticator_criteria = AuthenticatorSelectionCriteria {
@@ -76,9 +80,12 @@ pub struct PassKeyRegistration {
 
 #[post("/webauthn/finish_register", format = "json", data = "<reg>")]
 pub async fn finish_register<'r>(
-	session: UserSession,
-	webauthn_store: &State<WebAuthnStore>,
+	// from body
 	reg: Json<PassKeyRegistration>,
+	// from headers
+	session: UserSession,
+	// injected
+	webauthn_store: &State<WebAuthnStore>,
 	db: DbConn,
 ) -> Result<Either<Redirect, impl Responder<'r, 'static> + use<'r>>> {
 	let reg_state =
@@ -105,18 +112,21 @@ pub async fn finish_register<'r>(
 			PassKey::create(passkey, &db).await?;
 			Ok(Either::Left(Redirect::to(uri!(list_passkeys))))
 		},
-		Err(e) => Ok(Either::Right(template! {
-			"passkeys/new_passkey.html";
-			current_user: User = session.user,
-			errors: Option<String> = Some(e.to_string()),
-		})),
+		Err(e) => Ok(Either::Right(RawHtml(
+			template!("passkeys/new_passkey.html", {
+				current_user: User = session.user,
+				errors: Option<String> = Some(e.to_string()),
+			}),
+		))),
 	}
 }
 
 #[post("/webauthn/start_auth", format = "json", data = "<username>")]
 pub async fn start_authentication(
-	webauthn_store: &State<WebAuthnStore>,
+	// from body
 	username: Json<Option<String>>,
+	// injected
+	webauthn_store: &State<WebAuthnStore>,
 	db: DbConn,
 ) -> Result<Json<(DateTime<Local>, RequestChallengeResponse)>> {
 	let now = Local::now();
@@ -236,10 +246,13 @@ async fn authenticate(
 
 #[post("/webauthn/finish_auth", data = "<auth>")]
 pub async fn finish_authentication<'r>(
-	webauthn_store: &State<WebAuthnStore>,
+	// from body
 	auth: Form<PassKeyAuthentication>,
+	// from headers
 	cookies: &'r CookieJar<'_>,
+	// injected
 	config: &'r State<Config>,
+	webauthn_store: &State<WebAuthnStore>,
 	db: DbConn,
 ) -> Result<Either<Redirect, impl Responder<'r, 'static> + use<'r>>> {
 	let id = serde_json::from_str(&auth.id)
@@ -258,10 +271,9 @@ pub async fn finish_authentication<'r>(
 			Ok(Either::Left(stored_redirect_or(cookies, uri!(home_page))))
 		},
 		Err(ZauthError::LoginError(login_error)) => {
-			Ok(Either::Right(template! {
-				"session/login.html";
+			Ok(Either::Right(RawHtml(template!("session/login.html", {
 				error: Option<String> = Some(login_error.to_string()),
-			}))
+			}))))
 		},
 		Err(e) => Err(e),
 	}
@@ -269,34 +281,39 @@ pub async fn finish_authentication<'r>(
 
 #[get("/passkeys")]
 pub async fn list_passkeys<'r>(
-	db: DbConn,
+	// from headers
 	session: UserSession,
+	// injected
+	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let passkeys = PassKey::find_by_user_id(session.user.id, &db).await?;
 	Ok(Accepter {
-		html: template! {
-			"passkeys/index.html";
+		html: RawHtml(template!("passkeys/index.html", {
 			passkeys: Vec<PassKey> = passkeys.clone(),
-			current_user: User = session.user
-		},
+			current_user: User = session.user,
+		})),
 		json: Json(passkeys),
 	})
 }
 
 #[get("/passkeys/new")]
 pub async fn new_passkey<'r>(
+	// from headers
 	session: UserSession,
 ) -> Result<impl Responder<'r, 'static>> {
-	Ok(template! { "passkeys/new_passkey.html";
+	Ok(RawHtml(template!("passkeys/new_passkey.html", {
 		current_user: User = session.user,
 		errors: Option<String> = None,
-	})
+	})))
 }
 
 #[delete("/passkeys/<id>")]
 pub async fn delete_passkey<'r>(
+	// from url
 	id: i32,
+	// from headers
 	session: UserSession,
+	// injected
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let passkey = PassKey::find(id, &db).await?;

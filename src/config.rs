@@ -3,7 +3,7 @@ use lettre::message::Mailbox;
 use rocket::http::uri::Absolute;
 use rocket::serde::Deserialize;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct Config {
 	pub admin_email: String,

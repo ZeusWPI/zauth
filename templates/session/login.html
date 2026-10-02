@@ -2,60 +2,57 @@
 
 <!-- Content -->
 {% block content %}
-<div class="card-page">
-  <div class="card-page-content">
+	<div class="card-page">
+		<div class="card-page-content">
+			<!-- Logo -->
+			<a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
+				<img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
+			</a>
 
-    <!-- Logo -->
-    <a class="card-page-image" href="https://zeus.ugent.be/" target="_blank">
-      <img src="https://zinc.zeus.gent/ff5f00" alt="Zeus Logo">
-    </a>
+			<!-- Error messages -->
+			{% if let Some(error) = error %}
+				<div class="notification is-danger is-light">
+					{{ error }}
+				</div>
+			{% endif %}
 
-    <!-- Error messages -->
-    {% match error %}
-    {% when Some with (message) %}
-      <div class="notification is-danger is-light">
-        {{ message }}
-      </div>
-    {% when None %}
-    {% endmatch %}
+			<div class="card-page-card">
+				<!-- Title -->
+				<div class="title">
+					Login with Zauth
+				</div>
 
-    <div class="card-page-card">
-      <!-- Title -->
-      <div class="title">
-        Login with Zauth
-      </div>
+				<!-- Login form -->
+				<form class="form mb-2" action="/login" method="post">
+					<div class="field ">
+						<label class="label">Username</label>
+						<input class="input is-medium" id="login-username" name="username" type="text" placeholder="Username" required />
+					</div>
 
-      <!-- Login form -->
-      <form class="form mb-2" action="/login" method="post">
-        <div class="field ">
-          <label class="label">Username</label>
-          <input class="input is-medium" id="login-username" name="username" type="text" placeholder="Username" required />
-        </div>
+					<div class="field">
+						<label class="label">Password</label>
+						<input class="input is-medium" name="password" type="password" placeholder="Password" required />
+						<p class="help is-size-6 is-flex is-justify-content-end">
+							<a href="/users/forgot_password">Forgot your password?</a>
+						</p>
+					</div>
 
-        <div class="field">
-          <label class="label">Password</label>
-          <input class="input is-medium" name="password" type="password" placeholder="Password" required />
-          <p class="help is-size-6 is-flex is-justify-content-end">
-            <a href="/users/forgot_password">Forgot your password?</a>
-          </p>
-        </div>
+					<button class="button is-primary" type="submit">Login</button>
+				</form>
 
-       <button class="button is-primary" type="submit">Login</button>
-      </form>
+				<form id="webauthn" action="/webauthn/finish_auth", method="post">
+					<input name="credential" id="webauthn-credential" type="text" hidden />
+					<input name="id" id="webauthn-id" type="text" hidden />
+				</form>
 
-	  <form id="webauthn" action="/webauthn/finish_auth", method="post">
-		<input name="credential" id="webauthn-credential" type="text" hidden />
-		<input name="id" id="webauthn-id" type="text" hidden />
-	  </form>
-
-	  <button class="button is-light" onclick="login_passkey()">With passkey</button>
+				<button class="button is-light" onclick="login_passkey()">With passkey</button>
 
 
-      <!-- Register -->
-     <div class="has-text-grey-light">
-        Don't have an account? <a href="/register">Create one here!</a>
-     </div>
-    </div>
-  </div>
-</div>
+				<!-- Register -->
+				<div class="has-text-grey-light">
+					Don't have an account? <a href="/register">Create one here!</a>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock content %}

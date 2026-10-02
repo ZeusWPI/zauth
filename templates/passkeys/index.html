@@ -2,11 +2,8 @@
 
 <!-- Content -->
 {% block content %}
-
 	<!-- Passkeys -->
 	<div class="card card-content">
-
-
 		<!-- Title -->
 		<div class="columns is-multiline is-justify-content-space-between">
 			<div class="column is-narrow">
@@ -25,14 +22,12 @@
 					<th>Name</th>
 					<th>Last Used</th>
 					<th>Created at</th>
-					<th>Delete</th>
+					<th><!-- Remove button --></th>
 				</tr>
 			</thead>
-
 			<tbody>
 				{% for passkey in passkeys %}
 					<tr>
-
 						<!-- Name -->
 						<td data-label="Name">{{ passkey.name }}</td>
 
@@ -42,7 +37,7 @@
 						<!-- Created at -->
 						<td data-label="Created at" title="{{ passkey.created_at }}">{{ passkey.created_at.format("%d/%m/%y").to_string() }}</td>
 
-						<!-- Delete -->
+						<!-- Remove button -->
 						<td>
 							<form action="/passkeys/{{ passkey.id }}" method="POST">
 								<input type="hidden" name="_method" value="delete"/>
@@ -55,4 +50,3 @@
 		</table>
 	</div>
 {% endblock content %}
-

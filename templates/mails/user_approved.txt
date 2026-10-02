@@ -1,4 +1,4 @@
-Hi {{name}}
+Hi {{ name }}
 
 Your account has been approved and you can now use our services with your
 account. You can use the following link to login:

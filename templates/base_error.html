@@ -2,31 +2,30 @@
 
 <!-- Content -->
 {% block content %}
-<div class="card-page">
-  <div class="card-page-content">
-
-		<!-- Image -->
-		<div class="card-page-image">
-			<img src="/static/img/error/error.svg" alt="Error image">
-		</div>
-
-		<!-- Card -->
-		<div class="card-page-card">
-
-			<!-- Title -->
-			<div class="title">
-				{% block error_title %}
-          Something went wrong!
-        {% endblock error_title %}
+	<div class="card-page">
+		<div class="card-page-content">
+			<!-- Image -->
+			<div class="card-page-image">
+				<img src="/static/img/error/error.svg" alt="Error image">
 			</div>
 
-			<!-- Content -->
-			<div class="subtitle">
-				{% block error_content %}
-          An unexpected error occurred.
-        {% endblock error_content %}
+			<!-- Card -->
+			<div class="card-page-card">
+
+				<!-- Title -->
+				<div class="title">
+					{% block error_title %}
+						Something went wrong!
+					{% endblock error_title %}
+				</div>
+
+				<!-- Content -->
+				<div class="subtitle">
+					{% block error_content %}
+						An unexpected error occurred.
+					{% endblock error_content %}
+				</div>
 			</div>
 		</div>
-  </div>
-</div>
+	</div>
 {% endblock %}
