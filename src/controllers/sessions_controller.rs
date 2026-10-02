@@ -74,9 +74,9 @@ pub async fn create_session<'r>(
 }
 
 #[post("/logout")]
-pub async fn destroy_session<'r>(
+pub async fn destroy_session(
 	// from headers
-	cookies: &'r CookieJar<'_>,
+	cookies: &CookieJar<'_>,
 	session: UserSession,
 	// injected
 	db: DbConn,

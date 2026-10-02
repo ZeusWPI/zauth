@@ -190,7 +190,7 @@ impl User {
 		matches!(self.state, UserState::Active)
 	}
 
-	pub async fn find_by_username<'r>(
+	pub async fn find_by_username(
 		username: String,
 		db: &DbConn,
 	) -> errors::Result<User> {
@@ -225,7 +225,7 @@ impl User {
 	}
 
 	/// Find a user given their unique unsubscribe token
-	pub async fn find_by_unsubscribe_token<'r>(
+	pub async fn find_by_unsubscribe_token(
 		token: String,
 		db: &DbConn,
 	) -> errors::Result<Option<User>> {
@@ -256,7 +256,7 @@ impl User {
 		Ok(())
 	}
 
-	pub async fn find_by_password_token<'r>(
+	pub async fn find_by_password_token(
 		token: String,
 		db: &DbConn,
 	) -> errors::Result<Option<User>> {
@@ -289,7 +289,7 @@ impl User {
 		false
 	}
 
-	pub async fn find_by_email_token<'r>(
+	pub async fn find_by_email_token(
 		token: String,
 		db: &DbConn,
 	) -> errors::Result<Option<User>> {
@@ -601,7 +601,7 @@ impl TryFrom<&User> for Mailbox {
 	}
 }
 
-fn validate_ssh_key_list(ssh_keys: &String) -> Result<(), ValidationError> {
+fn validate_ssh_key_list(ssh_keys: &str) -> Result<(), ValidationError> {
 	lazy_static! {
 		static ref SSH_KEY_REGEX: Regex = Regex::new(
 			r"(?x)^

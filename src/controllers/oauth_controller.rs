@@ -1,3 +1,4 @@
+#![allow(clippy::needless_borrows_for_generic_args)]
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use jsonwebtoken::jwk::JwkSet;

@@ -183,7 +183,7 @@ pub async fn add_limited_to_client<'r>(
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;
-	let client_result = Client::find(client_id.clone(), &db).await;
+	let client_result = Client::find(*client_id, &db).await;
 	Ok(match client_result {
 		Ok(client) => {
 			role.add_client_to_limited_to(client.id, &db).await?;
@@ -277,7 +277,7 @@ pub async fn add_client<'r>(
 	db: DbConn,
 ) -> Result<impl Responder<'r, 'static>> {
 	let role = Role::find(role_id, &db).await?;
-	let client_result = Client::find(client_id.clone(), &db).await;
+	let client_result = Client::find(*client_id, &db).await;
 	Ok(match client_result {
 		Ok(client) => {
 			role.add_client(client.id, &db).await?;

@@ -32,14 +32,13 @@
         postgresql
         pgcli
         diesel-cli
-        nodePackages.npm
         nodejs
         python3
         python3Packages.flask
         (
           pkgs.writeShellScriptBin "start-dockers" ''
             trap "systemd-run --user --no-block docker stop zauth-db" 0
-            docker run --name zauth-db -p 5432:5432 --rm -v zauth-db-data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=zauth -e POSTGRES_USER=zauth postgres:13-alpine -c log_statement=all
+            docker run --name zauth-db -p 5432:5432 --rm -v zauth-db-data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=zauth -e POSTGRES_USER=zauth postgres:16-alpine -c log_statement=all
           ''
           )
       ];

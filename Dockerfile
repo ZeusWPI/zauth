@@ -1,4 +1,4 @@
-FROM rust:bookworm AS builder
+FROM rust:trixie AS builder
 
 WORKDIR /usr/src/zauth
 
@@ -13,7 +13,7 @@ COPY . .
 RUN npm install
 RUN npm run-script build
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 WORKDIR /usr/src/zauth
 
