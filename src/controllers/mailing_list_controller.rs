@@ -108,12 +108,12 @@ async fn send_mail<'r>(
 		let unsubscribe_url =
 			uri!(conf.base_url(), show_confirm_unsubscribe(token));
 
-		let text = match &mail.content_type {
-			&ContentType::Plain => template!("mails/mailinglist_mail.txt", {
+		let text = match mail.content_type {
+			ContentType::Plain => template!("mails/mailinglist_mail.txt", {
 				body: String = body.clone(),
 				unsubscribe_url: String = unsubscribe_url.to_string(),
 			})?,
-			&ContentType::Markdown => {
+			ContentType::Markdown => {
 				#[derive(Template)]
 				#[template(
 					path = "mails/mailinglist_mail.html",
