@@ -10,6 +10,7 @@ use jsonwebtoken::jwk::{
 use jsonwebtoken::{EncodingKey, Header, encode};
 use openssl::bn::{BigNum, BigNumContext};
 use openssl::ec::EcKey;
+use openssl::sha::Sha256;
 use serde::Serialize;
 
 use crate::config::Config;
@@ -58,7 +59,7 @@ impl JWTBuilder {
 
 		let key = EncodingKey::from_ec_pem(&buffer)
 			.map_err(|err| LaunchError::BadConfigValueType(err.to_string()))?;
-		let header = Header::new(jsonwebtoken::Algorithm::ES384);
+		let mut header = Header::new(jsonwebtoken::Algorithm::ES384);
 
 		let private_key = EcKey::private_key_from_pem(&buffer)
 			.map_err(|err| LaunchError::BadConfigValueType(err.to_string()))?;
@@ -71,6 +72,13 @@ impl JWTBuilder {
 			.affine_coordinates(private_key.group(), &mut x, &mut y, &mut ctx)
 			.expect("x,y coordinates");
 
+		let mut sha2 = Sha256::new();
+		sha2.update(&x.to_vec());
+		sha2.update(&y.to_vec());
+		let key_id = sha2.finish();
+		let key_id = URL_SAFE_NO_PAD.encode(key_id);
+		header.kid = Some(key_id.clone());
+
 		let jwk = Jwk {
 			common: CommonParameters {
 				public_key_use: Some(
@@ -78,7 +86,7 @@ impl JWTBuilder {
 				),
 				key_algorithm: Some(jsonwebtoken::jwk::KeyAlgorithm::ES384),
 				key_operations: None,
-				key_id: None,
+				key_id: Some(key_id),
 				x509_url: None,
 				x509_chain: None,
 				x509_sha1_fingerprint: None,
