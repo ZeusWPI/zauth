@@ -52,15 +52,11 @@ impl Session {
 			scope: None,
 		};
 		db.run(move |conn| {
-			conn.transaction(|conn| {
-				// Create a new session
-				diesel::insert_into(sessions::table)
-					.values(&session)
-					.execute(conn)?;
-				// Fetch the last created session
-				sessions::table.order(sessions::id.desc()).first(conn)
-			})
-			.map_err(ZauthError::from)
+			// Create a new session
+			diesel::insert_into(sessions::table)
+				.values(&session)
+				.get_result::<Session>(conn)
+				.map_err(ZauthError::from)
 		})
 		.await
 	}
@@ -84,15 +80,11 @@ impl Session {
 			scope,
 		};
 		db.run(move |conn| {
-			conn.transaction(|conn| {
-				// Create a new session
-				diesel::insert_into(sessions::table)
-					.values(&session)
-					.execute(conn)?;
-				// Fetch the last created session
-				sessions::table.order(sessions::id.desc()).first(conn)
-			})
-			.map_err(ZauthError::from)
+			// Create a new session
+			diesel::insert_into(sessions::table)
+				.values(&session)
+				.get_result::<Session>(conn)
+				.map_err(ZauthError::from)
 		})
 		.await
 	}

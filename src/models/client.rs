@@ -63,15 +63,11 @@ impl Client {
 			secret: Self::generate_random_secret(),
 		};
 		db.run(move |conn| {
-			conn.transaction(|conn| {
-				// Create a new client
-				diesel::insert_into(clients::table)
-					.values(&client)
-					.execute(conn)?;
-				// Fetch the last created client
-				clients::table.order(clients::id.desc()).first(conn)
-			})
-			.map_err(ZauthError::from)
+			// Create a new client
+			diesel::insert_into(clients::table)
+				.values(&client)
+				.get_result::<Client>(conn)
+				.map_err(ZauthError::from)
 		})
 		.await
 	}
