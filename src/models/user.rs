@@ -336,15 +336,9 @@ impl User {
 			last_login: Utc::now().naive_utc(),
 		};
 		db.run(move |conn| {
-			conn.transaction(|conn| {
-				// Create a new user
-				diesel::insert_into(users::table)
-					.values(&user)
-					.execute(conn)?;
-				// Fetch the last created user
-				let user = users::table.order(users::id.desc()).first(conn)?;
-				Ok(user)
-			})
+			diesel::insert_into(users::table)
+				.values(&user)
+				.get_result::<User>(conn)
 		})
 		.await
 		.map_err(db_error_to_client_error)
@@ -381,15 +375,10 @@ impl User {
 			last_login: Utc::now().naive_utc(),
 		};
 		db.run(move |conn| {
-			conn.transaction(|conn| {
-				// Create a new user
-				diesel::insert_into(users::table)
-					.values(&user)
-					.execute(conn)?;
-				// Fetch the last created user
-				let user = users::table.order(users::id.desc()).first(conn)?;
-				Ok(user)
-			})
+			// Create a new user
+			diesel::insert_into(users::table)
+				.values(&user)
+				.get_result::<User>(conn)
 		})
 		.await
 		.map_err(db_error_to_client_error)

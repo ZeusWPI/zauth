@@ -1,7 +1,6 @@
 use std::cmp::Reverse;
 
 use chrono::NaiveDateTime;
-use diesel::result::Error as DieselError;
 use diesel::{self, prelude::*};
 use diesel_derive_enum::DbEnum;
 use markdown;
@@ -56,16 +55,10 @@ impl NewMail {
 		self.validate()?;
 
 		db.run(move |conn| {
-			conn.transaction::<_, DieselError, _>(|conn| {
-				// Insert the new mail
-				diesel::insert_into(mails::table)
-					.values(&self)
-					.execute(conn)?;
-
-				// Return the newly inserted mail
-				let mail = mails::table.order(mails::id.desc()).first(conn)?;
-				Ok(mail)
-			})
+			// Insert the new mail
+			diesel::insert_into(mails::table)
+				.values(&self)
+				.get_result::<Mail>(conn)
 		})
 		.await
 		.map_err(ZauthError::from)
